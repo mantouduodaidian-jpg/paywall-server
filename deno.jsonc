@@ -1,0 +1,1 @@
+{"tasks":{"start":"deno run --allow-net main.ts"},"compilerOptions":{"lib":["deno.ns","deno.unstable"]}}
