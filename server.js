@@ -119,7 +119,7 @@ app.get('/api/stats', (req, res) => {
 
 const PORT = process.env.PORT || 3456;
 console.log('Using port:', PORT);
-app.listen(PORT, () => {
-  console.log(`✅ 付费验证服务已启动: http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ 付费验证服务已启动: http://0.0.0.0:${PORT}`);
   console.log(`📊 管理后台: http://localhost:${PORT}/admin.html`);
 });
