@@ -1,0 +1,10 @@
+app = 'paywall-server'
+primary_region = 'hkg'
+
+[env]
+  NODE_VERSION = '20'
+
+[http_service]
+  internal_port = 3456
+  force_https = true
+
