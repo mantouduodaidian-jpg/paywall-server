@@ -1,0 +1,1 @@
+{"version":2,"builds":[{"src":"api/verify.js","use":"@vercel/node"}],"rewrites":[{"source":"/api/(.*)","destination":"/api/verify.js?path=$1"}]}
