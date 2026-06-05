@@ -34,6 +34,12 @@ Deno.serve(async (req) => {
     return cors({ totalPwd: total, usedPwd: used, revenue: used * 0.99 });
   }
 
+  if (req.method === "GET" && path === "/api/passwords") {
+    const list = [];
+    for (const val of store.values()) list.push(val);
+    return cors(list.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || "")));
+  }
+
   if (req.method === "POST" && path === "/api/passwords") {
     const { count = 1, label = "" } = await req.json();
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
