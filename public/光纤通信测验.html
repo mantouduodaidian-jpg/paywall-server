@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>光纤通信 — 交互式复习</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    background: linear-gradient(135deg, #eef4ff 0%, #d8e6ff 50%, #e8f0fe 100%);
+    padding: 20px; min-height: 100vh; overflow-y: scroll;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 26px; color: #1a3a5c; margin-bottom: 4px; }
+  .subtitle { text-align: center; color: #7a9ab8; font-size: 14px; margin-bottom: 20px; }
+
+  .mode-selector { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .mode-btn {
+    padding: 8px 20px; border: 2px solid #d0e0f0; border-radius: 20px;
+    background: #fff; color: #5a7a9a; cursor: pointer; font-size: 14px; transition: all .2s;
+  }
+  .mode-btn:hover { border-color: #7ab0d8; background: #f0f6ff; }
+  .mode-btn.active { border-color: #3a7ab8; background: #e6f0ff; color: #2a5a8a; font-weight: 600; }
+
+  .panel-selector { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+  .panel-btn {
+    padding: 6px 14px; border: 1px solid #d0e0f0; border-radius: 14px;
+    background: #fff; color: #7a9ab8; cursor: pointer; font-size: 13px; transition: all .2s;
+  }
+  .panel-btn:hover { border-color: #7ab0d8; background: #f0f6ff; }
+  .panel-btn.active { border-color: #3a7ab8; background: #e6f0ff; color: #2a5a8a; font-weight: 600; }
+
+  .filter-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-row label {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px;
+    background: #fff; border: 1px solid #d0e0f0; border-radius: 16px;
+    color: #5a7a9a; font-size: 13px; cursor: pointer;
+  }
+
+  .stats-row {
+    display: flex; gap: 10px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .stat-card {
+    background: #fff; padding: 8px 18px; border-radius: 14px; box-shadow: 0 2px 8px rgba(42,90,138,.06);
+    color: #4a6a8a; font-size: 13px; display: flex; align-items: center; gap: 6px;
+  }
+  .stat-card .num { font-weight: 700; font-size: 16px; }
+  .stat-card .num.green { color: #38a169; }
+  .stat-card .num.red { color: #e53e3e; }
+  .stat-card .num.blue { color: #2b6cb0; }
+
+  .progress-bar-wrap {
+    background: #e2e8f0; border-radius: 10px; height: 8px; overflow: hidden; margin-bottom: 16px;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 10px; transition: width .5s cubic-bezier(.34,1.24,.64,1);
+    background: linear-gradient(90deg, #63b3ed, #4299e1);
+  }
+
+  .question-card {
+    background: #fff; border-radius: 16px; padding: 28px;
+    display: none; box-shadow: 0 4px 20px rgba(42,90,138,.08);
+    border: 1px solid #e2e8f0;
+  }
+  .question-card.active { display: block; }
+  .q-number {
+    display: inline-block; padding: 3px 12px; border-radius: 10px;
+    font-size: 13px; margin-bottom: 12px; background: #ebf4ff; color: #2b6cb0;
+  }
+  .q-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 8px;
+    font-size: 12px; margin-left: 8px; background: #fef3c7; color: #d69e2e;
+  }
+  .q-text { font-size: 18px; line-height: 1.7; margin-bottom: 18px; color: #2d3748; font-weight: 500; }
+
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    padding: 14px 18px; border: 2px solid #e2e8f0; border-radius: 12px;
+    cursor: pointer; font-size: 16px; background: #fafcff; color: #4a5568; transition: all .2s;
+  }
+  .option:hover:not(.disabled) { border-color: #90c4f0; background: #f0f6ff; }
+  .option.selected { border-color: #4299e1; background: #ebf6ff; }
+  .option.correct {
+    border-color: #38a169; background: #f0fff4; color: #276749;
+    animation: pop 0.35s ease;
+  }
+  .option.correct.viewed { animation: none; }
+  .option.wrong {
+    border-color: #e53e3e; background: #fff5f5; color: #c53030;
+    animation: shake 0.4s ease;
+  }
+  .option.wrong.viewed { animation: none; }
+  .option.disabled { cursor: default; }
+  .multi-confirm-btn {
+    display: block; width: 100%; margin-top: 14px;
+    padding: 12px; border: 2px solid #4299e1; border-radius: 12px;
+    background: #ebf6ff; color: #2b6cb0; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+  }
+  .multi-confirm-btn:hover { background: #dceeff; border-color: #2b6cb0; transform: translateY(-1px); }
+  .hint-btn { font-size: 13px; color: #7a9ab8; cursor: pointer; border-bottom: 1px dashed #c0d0e0; transition: all .2s; }
+  .hint-btn:hover { color: #5a8ab8; border-color: #8ab8e0; }
+  .feedback.hint-show {
+    display: block; background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 1px solid #fde68a; border-radius: 12px;
+    padding: 16px 18px; color: #92400e; margin-top: 14px;
+    box-shadow: 0 2px 8px rgba(251,191,36,.08);
+    animation: fadeUp .35s ease;
+  }
+  .feedback.hint-show .hint-icon {
+    display: inline-flex; width: 28px; height: 28px;
+    background: #fbbf24; border-radius: 50%;
+    align-items: center; justify-content: center;
+    font-size: 14px; margin-right: 8px; flex-shrink: 0;
+  }
+  .feedback.hint-show .hint-title {
+    font-weight: 700; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center;
+  }
+  .feedback.hint-show .hint-body {
+    font-size: 13px; line-height: 1.7; color: #a06800; padding-left: 36px;
+  }
+  .option .key {
+    display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 8px; background: #edf2f7; margin-right: 12px; font-size: 14px; font-weight: 700; color: #a0aec0;
+  }
+  .option.selected .key { background: #bee3f8; color: #2b6cb0; }
+  .option.correct .key { background: #c6f6d5; color: #276749; }
+  .option.wrong .key { background: #fed7d7; color: #c53030; }
+
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.03)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+
+  .feedback { display: none; margin-top: 14px; padding: 14px 18px; border-radius: 12px; font-size: 14px; line-height: 1.7; }
+  .feedback.show { display: block; }
+  .feedback.correct { background: #f0fff4; border: 1px solid #c6f6d5; color: #276749; }
+  .feedback.wrong { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; }
+
+  .nav-bar { display: none; justify-content: center; gap: 10px; margin-top: 18px; flex-wrap: wrap; align-items: center; }
+  .nav-btn {
+    padding: 8px 22px; border: 1px solid #d0e0f0; border-radius: 10px;
+    background: #fff; color: #5a7a9a; cursor: pointer; font-size: 14px; transition: all .2s;
+  }
+  .nav-btn:hover { border-color: #7ab0d8; background: #f0f6ff; }
+  .nav-btn.primary { border-color: #4299e1; background: #ebf6ff; color: #2b6cb0; }
+  .nav-btn.primary:hover { background: #dceeff; }
+  .nav-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Panel Stats Module */
+  .panel-stats-module { display: none; margin-bottom: 16px; }
+  .panel-stats-module.show { display: block; }
+  .panel-stats-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: #fff; border-radius: 12px;
+    border: 1px solid #e2e8f0; cursor: pointer; margin-bottom: 8px;
+    transition: all .2s;
+  }
+  .panel-stats-header:hover { border-color: #90c4f0; box-shadow: 0 2px 8px rgba(42,90,138,.06); transform: translateY(-1px); }
+  .panel-stats-header .title { font-size: 14px; color: #2d3748; font-weight: 600; }
+  .panel-stats-toggle { display: inline-block; transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+  .panel-stats-toggle.rotated { transform: rotate(180deg); }
+  .panel-stats-toggle .arrow-wrap { position: relative; display: inline-block; width: 18px; height: 12px; }
+  .panel-stats-toggle .arrow-inner, .panel-stats-toggle .arrow-outer {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 7px solid transparent; border-right: 7px solid transparent;
+    transition: all .3s;
+  }
+  .panel-stats-toggle .arrow-outer {
+    top: 0; border-top: 10px solid rgba(56,147,219,.25);
+  }
+  .panel-stats-toggle .arrow-inner {
+    top: 3px; border-top: 7px solid #3893db;
+  }
+  .panel-stats-content {
+    overflow: hidden; height: 0;
+    transition: height .5s cubic-bezier(.34,1.24,.64,1);
+  }
+  .panel-stats-content.open { height: var(--content-h, 400px); }
+  .ps-row {
+    display: flex; align-items: center; gap: 10px; padding: 6px 0;
+    font-size: 13px; color: #4a6a8a;
+    opacity: 0; transform: translateY(-6px);
+  }
+  .panel-stats-content.open .ps-row {
+    animation: rowIn .4s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes rowIn {
+    0% { opacity: 0; transform: translateY(-6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes rowOut {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
+  .ps-row .ps-name { width: 80px; flex-shrink: 0; }
+  .ps-row .ps-bar-bg { flex: 1; height: 8px; background: #edf2f7; border-radius: 6px; overflow: hidden; }
+  .ps-row .ps-bar-fill { height: 100%; border-radius: 6px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .ps-row .ps-bar-fill.green { background: linear-gradient(90deg,#68d391,#38a169); }
+  .ps-row .ps-bar-fill.yellow { background: linear-gradient(90deg,#f6e05e,#d69e2e); }
+  .ps-row .ps-bar-fill.red { background: linear-gradient(90deg,#fc8181,#e53e3e); }
+  .ps-row .ps-bar-fill.blue { background: linear-gradient(90deg,#63b3ed,#3182ce); }
+  .ps-row .ps-pct { width: 50px; text-align: right; font-weight: 600; }
+
+  .pd-color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+
+  .sidebar-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,.2); z-index: 98;
+  }
+  .sidebar-overlay.show { display: block; }
+  .sidebar {
+    position: fixed; top: 0; right: -280px; width: 260px; height: 100%;
+    background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,.06);
+    transition: right .3s; z-index: 99; padding: 20px; overflow-y: auto;
+  }
+  .sidebar.open { right: 0; }
+  .sidebar h3 { font-size: 16px; margin-bottom: 12px; color: #2d3748; }
+  .q-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  .q-dot {
+    width: 34px; height: 34px; border-radius: 8px; border: 2px solid #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; cursor: pointer; color: #a0aec0; background: #fff;
+  }
+  .q-dot:hover { border-color: #90c4f0; }
+  .q-dot.current { border-color: #4299e1; color: #2b6cb0; }
+  .q-dot.answered-correct { background: #f0fff4; border-color: #68d391; color: #276749; }
+  .q-dot.answered-wrong { background: #fff5f5; border-color: #fc8181; color: #c53030; }
+
+  .complete-msg { text-align: center; padding: 40px 20px; }
+  .complete-msg h2 { font-size: 24px; color: #2d3748; margin-bottom: 8px; }
+  .complete-msg p { color: #7a9ab8; }
+
+  /* === Modal === */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,.3); z-index: 200;
+    align-items: center; justify-content: center;
+    animation: modalFade .25s ease;
+  }
+  .modal-overlay.show { display: flex; }
+  @keyframes modalFade { 0%{opacity:0} 100%{opacity:1} }
+  @keyframes modalPop {
+    0% { transform: scale(.85); opacity: 0; }
+    60% { transform: scale(1.03); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .modal-box {
+    background: #fff; border-radius: 18px; padding: 28px; min-width: 320px; max-width: 90vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.12);
+    animation: modalPop .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  .modal-box h3 { font-size: 18px; color: #1a202c; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .modal-box p { font-size: 14px; color: #4a5568; line-height: 1.6; margin-bottom: 20px; }
+  .modal-box .btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-box .btns button {
+    padding: 8px 22px; border-radius: 10px; border: 1px solid #d0e0f0;
+    background: #fff; color: #4a6a8a; cursor: pointer; font-size: 14px; transition: all .15s;
+  }
+  .modal-box .btns button:hover { border-color: #90c4f0; background: #f0f6ff; }
+  .modal-box .btns button.primary {
+    border-color: #4299e1; background: #4299e1; color: #fff;
+  }
+  .modal-box .btns button.primary:hover { background: #3182ce; }
+  .modal-box .btns button.danger {
+    border-color: #e53e3e; background: #e53e3e; color: #fff;
+  }
+  .modal-box .btns button.danger:hover { background: #c53030; }
+
+  @keyframes diceRoll {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  #randomBtn { padding: 8px 16px; }
+  #randomBtn .dice { display: inline-block; line-height: 1; }
+  #randomBtn.rolling .dice { animation: diceRoll .5s ease-out; }
+  .question-card.flip-out {
+    animation: cardFlipOut .25s ease-in forwards;
+  }
+  .question-card.flip-in {
+    animation: cardFlipIn .35s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes cardFlipOut {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-12px) scale(.97); }
+  }
+  @keyframes cardFlipIn {
+    0% { opacity: 0; transform: translateY(12px) scale(.97); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .question-card.belt-out-left {
+    animation: beltOutLeft .25s ease-in forwards;
+  }
+  .question-card.belt-in-left {
+    animation: beltInLeft .35s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  .question-card.belt-out-right {
+    animation: beltOutRight .25s ease-in forwards;
+  }
+  .question-card.belt-in-right {
+    animation: beltInRight .35s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes beltOutLeft  { 0% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(-60px); } }
+  @keyframes beltInLeft   { 0% { opacity: 0; transform: translateX(-60px); } 100% { opacity: 1; transform: translateX(0); } }
+  @keyframes beltOutRight { 0% { opacity: 1; transform: translateX(0); } 100% { opacity: 0; transform: translateX(60px); } }
+  @keyframes beltInRight  { 0% { opacity: 0; transform: translateX(60px); } 100% { opacity: 1; transform: translateX(0); } }
+
+  .kbd-hint { text-align: center; font-size: 11px; color: #a0aec0; margin-top: 8px; }
+  .kbd-hint span { display: inline-block; padding: 1px 6px; border: 1px solid #e2e8f0; border-radius: 4px; margin: 0 2px; }
+
+  .egg-toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #fff; border-radius: 16px; padding: 14px 24px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.12); border: 1px solid #e2e8f0;
+    z-index: 300; opacity: 0; transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    font-size: 15px; color: #2d3748; white-space: nowrap;
+  }
+  .egg-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .egg-toast .egg-icon { display: inline-block; margin-right: 8px; }
+  /* 🔒 Lock Screen */
+  .lock-overlay {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px; animation: fadeIn .4s ease;
+  }
+  .lock-overlay.unlocked { animation: fadeOut .4s ease forwards; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  .lock-box {
+    background: #fff; border-radius: 24px; padding: 32px;
+    max-width: 380px; width: 100%; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    animation: popIn .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .lock-icon { font-size: 48px; margin-bottom: 8px; }
+  .lock-box h2 { font-size: 22px; color: #1a202c; margin-bottom: 4px; }
+  .lock-desc { font-size: 14px; color: #7a9ab8; margin-bottom: 16px; }
+  .price-tag { font-size: 18px; color: #e53e3e; margin-bottom: 20px; }
+  .pay-section { background: #f7fafc; border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 2px dashed #e2e8f0; }
+  .pay-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pay-qr img { width: 260px; height: auto; border-radius: 12px; max-height: 320px; object-fit: contain; }
+  .qr-icon { font-size: 40px; }
+  .qr-text { font-size: 13px; color: #5a7a9a; line-height: 1.5; }
+  .pay-note { font-size: 12px; color: #a0aec0; margin-top: 8px; }
+  .unlock-section { display: flex; gap: 8px; margin-bottom: 8px; }
+  .unlock-input {
+    flex: 1; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px;
+    font-size: 16px; outline: none; transition: border .2s;
+  }
+  .unlock-input:focus { border-color: #4299e1; }
+  .unlock-btn {
+    padding: 12px 24px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #4299e1, #3182ce); color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .unlock-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(66,153,225,.3); }
+  .unlock-btn:active { transform: translateY(0); }
+  .unlock-error { font-size: 13px; color: #e53e3e; min-height: 20px; }
+  .lock-contact { font-size: 12px; color: #a0aec0; margin-top: 12px; padding-top: 12px; border-top: 1px solid #edf2f7; }
+
+  @media (max-width: 640px) {
+    body { padding: 10px; }
+    .container { max-width: 100%; }
+    h1 { font-size: 20px; }
+    .subtitle { font-size: 12px; margin-bottom: 12px; }
+    .mode-btn { padding: 6px 14px; font-size: 12px; }
+    .panel-btn { padding: 5px 10px; font-size: 11px; }
+    .stats-row { gap: 6px; }
+    .stat-card { padding: 6px 12px; font-size: 11px; }
+    .stat-card .num { font-size: 14px; }
+    .question-card { padding: 16px; border-radius: 12px; }
+    .q-text { font-size: 15px; margin-bottom: 14px; }
+    .option { padding: 11px 14px; font-size: 14px; border-radius: 10px; }
+    .option .key { width: 22px; height: 22px; line-height: 22px; font-size: 12px; margin-right: 8px; }
+    .nav-bar { gap: 6px; }
+    .nav-btn { padding: 6px 12px; font-size: 11px; }
+    .multi-confirm-btn { padding: 10px; font-size: 14px; }
+    .feedback { font-size: 12px; padding: 12px 14px; }
+    .feedback.hint-show .hint-body { font-size: 12px; padding-left: 0; margin-top: 4px; }
+    .feedback.hint-show .hint-title { font-size: 13px; }
+    .ps-row { font-size: 11px; gap: 6px; }
+    .ps-row .ps-name { width: 50px; font-size: 10px; }
+    .ps-row .ps-pct { width: 30px; font-size: 11px; }
+    .panel-stats-header { padding: 8px 12px; }
+    .panel-stats-header .title { font-size: 12px; }
+    .sidebar { width: 220px; right: -240px; }
+    .q-grid { gap: 4px; }
+    .q-dot { width: 28px; height: 28px; font-size: 10px; }
+    .kbd-hint { font-size: 9px; }
+    .kbd-hint span { padding: 1px 4px; font-size: 9px; }
+    .filter-row label { font-size: 11px; padding: 4px 10px; }
+    .progress-bar-wrap { height: 6px; }
+  }
+  @media (max-width: 400px) {
+    .mode-selector { gap: 4px; }
+    .mode-btn { padding: 4px 10px; font-size: 11px; }
+    .panel-selector { gap: 4px; }
+    .panel-btn { padding: 4px 8px; font-size: 10px; }
+    .question-card { padding: 12px; }
+    .q-text { font-size: 14px; }
+    .option { padding: 9px 10px; font-size: 13px; }
+    .option .key { width: 20px; height: 20px; line-height: 20px; font-size: 11px; margin-right: 6px; }
+    .nav-btn { padding: 4px 8px; font-size: 10px; }
+    .stats-row .stat-card { padding: 4px 8px; }
+    .stat-card .num { font-size: 12px; }
+    .feedback { font-size: 11px; padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 🔒 付费解锁 -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <h2>付费复习资料</h2>
+    <p class="lock-desc">本题库为付费内容，付款后获取解锁密码</p>
+    <div class="price-tag">💰 定价：<strong>¥0.99</strong></div>
+    <div class="pay-section">
+      <div class="pay-qr">
+        
+        <img src="data:image/png;base64,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kb0LmaI0ZXee9httPy6erj/XzlVjpDXZu98lGSuRUD9PofH9Gds9VujLVqEnV42J5HQvGg27aFZoC7hfZ87yzbFER5dD6voUXQ1YGSzp67qREy4mxu6+QnRGIO3i5nzJb7vDMsDq4ub6ms6bAVbGOsUywMpYp1gGWBnrFMsAK2OdYhlgZaxTLAOsLm7O1yRGpw2wIpGIVq1aZZZ//FeWk5OjYcOGaf369ebvoUOHauXKlWppaVEwGNTIkSNNzay5uVmrV68209B79eqlgQMH/tOx1q1bp507d5qVANmuuLjYbLts2TLtscce6tmzp9mO4zQ0NMjv92vUqFHasWOHtm3b1lGbo/jO7yNGjFB2drb5DBxjwIAB5prY3y5N/mXGe927d9egQYP+6+8tIzf8G2OwZsyYodraWjPQXwW+CRMm6L333tNll11mXnvmmWd01lln6eOPPzYD89FHH6lbt25asmSJjjjiCIVCIV144YW65557/ul4V1xxhV544QUFAgGFw2FdddVVuuSSSzRt2jTdcsstOu+88wxILr74Ys2dO9cADRDfdddd+t3vfmf2s8V3AL9gwQKNHj1aW7Zs0dSpU3XvvfdqyJAh5nfWE/uqpRs596mnnqq//vWv/y2udpmNufssbRiLuxaWYTBPPPHEL33/j3/8Y8fd/5vf/MYM9gknnKClS5eabRjQU045xYChX79+evLJJztAdtJJJ+nhhx9WXl5exzF//vOf67vf/a7Z/swzzzTn7927t1566SXtvffehhV/+tOfmmP+5Cc/MetO9OjRwwD1oIMOMmCxTMTNAJMCdADy0EMPGUAtX77c3BBc78SJE78ALvZta2vTL37xC3PudLK0AZa1yZMn69BDD9Xs2bM7Bg0XdPjhh+utt94yjIGNHTtWmzdv1qWXXqojjzxSlZWVBmB///vfNXz4cMM6xx13nHltxYoVev755w0YjjrqqA6Xs++++3acd+HChfL5fGY7QAJoP/zwQ7388stm4Pfbbz+z3d/+9jfDMH379tWBBx74T9cPkN599109++yzyQVQYjFzvOnTp6u0tFTz5s3rcL1FRUX61re+ZRgwdVnJdLC0AxZgwp0de+yxHa/l5uaaeIgvP/WOhwmIYe6++2698cYbhkkw2AXma2pqMowDSLAf/ehHJlbC5eEirSsDKH/4wx908803G2YDyJwHFwc4OA62detWc4yKigrttddexvXhAtnOrLuVlWX25aeqqsqwpr1e/gWks2bN6rj+MWPG6B//+Edy5b/d3AH6jQMWRiDMXc2AYQxuaqBsjYHEYIULLrhA48aNM8x2+eWX64YbbjDv/elPfzKxFm4Pu/XWW/XnP//Z7EN8xYB+73vfMywD0AoLCzV//nzjEmEXYp8zzjjDvAfAn3vuOd13333mGJyPa7CgAsDsD6gOOOAAE9fl5+d3XPeujXhfFUumg6UlsGAmCyosNZYxi5u13/1PPPGEeQ+mIYurr69XY2OjARJujthpypQpqqur6zgWsROxD2z3zjvv6NNPPzUZ3NVXX22y0tbWVuMOYSLcLteBu7IZHnHSM888Y4BG0oDLW7NmjTk2TGh/37hxo0lEiPHsde/q7lI/Y7pZWgKLlB0ZgS/erIHerZtxL5h1GQ888IBeeeUV8/uLL75oWA3r37+/jj/+eM2cOdMExuwLIAAeA0uMde655xr3d/LJJxtWInMjdoJBYKprrrnGAAv24TpgQNwWtn37dgPm/fff37jeTz75RGVlZdpzzz3NdXAMYjhAzf4WTPzL31wHoATYgHV3thN/o4HFoBG/MGDWABPgSHWD/I0BqFdffdUE8wAJQOAWibEKCgoM+L797W/r6KOPNsH5r371K6MZMbiwE68//fTTZoD5IZabNGmSkROQHtjGxmJkbuPHj9fPfvYzcw6kBViSJIEMlP0tuwIwbpC3336743MRN8J+9ubg2rkm7F/pXP+LljbA4ovly7/ttttM9pf6Rdv4BP3KAoqAmvSeNB72IrZigH/wgx8YERPXdt1115l9Fy1aZNL/O+64w7AgLHbnnXfq97//fUd89OMf/9i4z0MOOcS8Rmy0adMm/fKXvzTHIeu8//77ddNNN6m8vNzsTwz161//2rAPxyCwJ7ZCLgGUMCNMCzvCegTzu34ujCSALDadLG2AxcAgG6CEo2p/meFiUNa50wEBajruBcbBReFuyBAJ1HkfNmIwYQ3AB0AADYONys45GVz2I+AmY0w1AAGgACP62WOPPabTTz/duE1cKBkkDIRazzFqamqMUMv2gBDpBKABepjPfi7OmQow4ja2TSdLG2AxOATNsNa/03QYuGuvvdYMMGBkkHCHaF8YrHLwwQfrtddeM+6IIB0GgvVwa4AQZuI8xGPs/+ijjxrAEi9hyBHEV6+//rrZ5/333zevcz6MfTgGwTsMRUyFO8SFfuc73zHbmIdADRlirs26SPNYEq/3C/IC+2bkhk40vlzc01/+8hcDiNTX+RuXwyAw0IiKxCyk+ATcyAoo89ZgjsMOO8y8ftppp5lgG/AiqA4ePFhnn3222Q73inAKkBhwBh+moqTzyCOPmN9R0tkeoJEUVFVVdYAL8RQNjPiL/XGf1iwrAejzzz/fCK6wLDdQ6uejtMS2hAHpYmnDWAwMdz+xEwPNYNh0nMF96qmnjFRAoRfXR7zEYMMaBOiABqZAZ2J7jgfLcDzkhg8++MBoVaj6sBTJAToW6j0ujLLNhg0bjGAJkGEuAnO2JdtDJSc5sEXyHj16GKbiPbajtMR7uGBAitskgOc92JCEgcQCIRfQ9unTxxwHQPG5SVjSydIGWGg+CJVoUjfeeKMBBlkdxoDizhhkfqjlPf7442ZQiGFI+5EOEC5xXWRa/KBpwQywGlkihnBKQH777bebmApNCpDgWjmuVcIxgIwQikRBnAZT2pregAEDTJEZ4MKksI1lIco6ABxgkWUiX8CMuGdqk2zLtVmXD9NRgE8nSxtg2aD6yiuvNHc0fxNDEdjalJ/Bx1XCSLgpBsmCgBiG1hkYAvdHxgg7wXypbgfWsIYLIx5jgGEcWC3VOCasCfuwDccHyFu3bu04L24boRYmRbGnVklJCdbiMyBdADQ6I4i3yCgBEhkknwHj+Egi6WRpAyxcDZIAabwdYCSDc845x8RKDDJ3NQDgdwbohz/8oRk8BhL3SYBOBwMKOu/DYLgZBtwagwhAYC3c09q1a00mSYaHPFBdXW3AbZ5c2l5aYjs6JGA5G1+tW7fOuGLUdjomiK1whTCYZTXiQLYHRBhsSHwFgyFHkNHCXmSQAJHPmi6WNsCCrUi5AQKDiRvCrfHlU6KBMZAbiKlwPbhN9B+MweI9mABGwe0gE1DwhUGQMGA+4ioAB9Ao6+BqKQ0R9BNvIX7SekPXAoVwYjMCbmQJXCHAQIh1twuh3ACwF2xEcgAbpmZ3SBR0V3DtHJc4EXACKq6HDonFixebOI/SUjpZ2gALCYDWFBr+YB8CcjQiW/JAGAUAxDVYauMcQTTZGSIngGTwaJ0BqACG48BEBMh0O5DZ4aJgCWsE77AUAGWw2e7BBx80ACTGI6uDCVPrlo7jdCjnAI9rTO2AxW3DgryG2yZ5gP3sZwJYc+bM6VDq08nSBlhWpGQAuaNxL7gJBsKq1xdddJEBHd0GuBNiKAJwBgUgkRmiZVFqIa4BEByHwSMhIBCnKM15eA+QWLOA4HgwmW0WxJ3CmvRroWHtKhVYUP32t781sVaq8GnbfWBXWBJ1nc5XykGcB1ByLD4b71FuShdLG2DhRgAMkoEt+OJeUKsJcomLCOIJzrnjGRj2gZXIGHF/gJPBAmTmIVGOYwACMIm/cI/sDzPhTnc12AqwEvNQ9gEAqPeo7MRNgIA4MC8vzyQTnI+4DwBxA/A3rhIqMK/+AAAQAElEQVTXjaxgr4f3OA4BOuCERbkmMkNEXPv508nSBlik/Og9GAMPiBgw4ixYDIMRECthGjJHAm/kAko4xDKW2QjgkQNwNbANZSAASO86r/E7gTLbGrdEi3A4bIRUyi8A6uxZszTtkEPMtTD4dH+STOBuly1bZsCGobazH9cO2Dg+2+KSATGCKFqX/VzcIDAnRhwHMIkBbfdGuljaACvVaCVmsNCVbD8TRiEXTYm4B1DABgwm7gkG4ncYCgmB2AYAWeExGou2x2fJxwATP2G7dm8m2ss71njCGWUa6+LIWufPn280KYxYjBok8RUukdiQbBUAoagT/AN020PGtsRwxF+4bbJNNLjUnrF0sLQBFq6NeAamYhIDTXbERdz13M2k7LgzhFFAhcFSDBRlGraHRWhpgXXI5JjRw4AuWPCBXpz9mvY/cJryCwoUiNWbJwF7/DzD2iN/MKhwOKJ4LKa2cLNycvKUV1AoX8CvtpawfK6gWppDCoWatf/++xjGpIiN3ABjkv1hSA/EeTAjbhPwcpOwPdkuACMz5QbhhoGt0MFILogL08nSClgMDK6JcgdiIoo5bgI2oFuTQaScg/iJwVKwi53+RSyGwo7WxQ9qPu7nnblzVFtVo5g7R40AZPt6Hiuo7Fyf4k5cNXW15lF4OVk5amtrUW5OrvxZ2YrFEgbUvXoWKzenpyINUdXXN5hjEtjTskPHKDcC8Rl6GMCGMTFuCspExFq4bkBFnZL2aJIP2Je4i+vOtM10ktlWErIr4hiCZWIsBosskTsapRzZgIyOwbJpOi4Q10dKbzM2UnuySsBY1L1A7kC28gvzFK7boUg0ourKDaJ/79MlS7V5Y4Xy8vLlcSX1KX+WXwMHDVLJgFL16N1TFY3VCuTkKz9/oILZwY7gn20RRAn4ATxxVWpWeP3115t/uVlw0UgaSCYwKcDCbX722Wcdpat0srQK3nELCJwYoMJQxMmYqAcSIxHw2smlCKKAjRiIDgfb6UnvFQOIu2Gb42eepKWryoxrawzvVNn6Zcr2u7WlbKO2lZfLk/CqubbBPJI3Fo2qckujtmyoUK8+KzRo2DANGTZMrpij2tYyNTUOMXrb97//fdObhRtDtOV6ARCuGuBzftuUyE3ADQPLcU0AEpZlXxIFYjEmZqSTpQ2wAA8BO/EKd7IVDAFLSUmJKT4joqJgM1AMDr/jRlCxcY+8RkAPC7AfwTsM0tTUqIDPa9zaZx/OkyIt2r6zUevXrDGxWCKeZKpwJGoG3hP0q7GhUTtr6tRU/7HWLlupkWNHadBewxUNhxQo6m1Yhq4IwEPsx3mYO0hMhbpPYE6nA24dwCE3EKBT/4SNOQ8yBJ8JuYQbgM7XdLG0AZY14g8YB2AQeONyGDjKKaTxVvlmQNGDABK1QgYPwLE96TzZm3VLq1euVFVjq4Z1661Yc62Kirppy6ZNCvqDysqmi9Rlkoa6+gZlZ2XJ6/aoqLDQxH0Br1dtzc1a+O581TfUa/oRp+j99943LEkWyAxqykYAhnNyPQAL181ngZG4JkCNu0TkZRvaftDeaO0hHgRcdnJIOljaAIs7lxjkmGOOMXUzW/agvkarC3c8YEudBgYjMDAACoZDTCV1T92G38vLy+Qr7CuKLwOHDVNz7Q4lYnHDVmbSAy4rEVdWMGhcMgxnWm5ycpRw4srKy1K8OaFVy1do25YtCgZzTdCOKyNZQBDFPXONZKSIvDAQ/fB0Wtjro1zFTQIQKVDj1rlB2DczmaKTjLgEfYjYg05NYhV+584HIBSIrabFQNHvxFQvan6p4LS9WGSTc+e+q2OOOVo7akIaPKCfvLBR/h7yt9TJ7/MpHkuoKdSkbH9Qhbl5am5uM5LD0KFDtHTJUuXn5xr3lZxwEVS4LSIn4cjr8RidikwU8OCqAQbBO6xqjQyQKgLXy42Ci0a34magCoArhdWsK08nSxvG4g5HLeeOJi2HCQh2kQwIjCksE6AzoPzNwJCRMTgMHPvZ3nG2YWbOww8/ZIA1ctxw5XYvUCQhbamKKD9QpD0GDtC29eVqbYlqXWOlRpeUqDA3V4319UxOlDeYp6qdTXI7bsWiSdfrRB3jJp12UdVOxMCoPyJ62iUCuBYSDspUyA7cFLTscLOQEdo2a35H38IdppOlDbAAEYBiAIinABqukZgKl8UdT58U6jVMgVskJoHdGCT6qwAjbIVcgUui/GP62MPVckWLFG7MVV0oquK9xmvc+AO04KVHtWN7jap3NKulV0yDS/fU0k9XavmKVWpsatW27TvUq3uRevfqpli0NbnIWbtI77S7W0BOfIQeBaCYuoZgS8zGtaCycy3EY4CQJIXXiNFwiSjzlKy4Vlg4XSxtgEWgjLDIvyy6AaBQsNGt7BoLtLuQOREI8z7ug/IJ6botiRCvwAT0Sj36l0d14UUXqmlbhZbOfVsJJ6CBYydryIAS1dS1qmTUFLXW71RBYqsmjB2r0uH9FI6GVF3XopzWWnmcgEYMHa4+JXnasX2rnGjE1BUjkYhR3gHzm2++aa4FtuI1GNS243DNlJSoIHCtNnakfgmYyCJx5wT4mdVmOslwa2hSdA4Qs6AVURNkMBhI2laYxs5AcZcTT9Fgh6Rg17yC2eiIII5hgJ948nEDrDPP+KG2VJRpwfvzNaC0ROGmBr3y/JMqW7tC4/sV6PgTpyunR66CAY/223e86uta1DY8oub6RvnygnJ7wmqo82lnY0jNoTb1LO5t9DbOzXUBIM4L4Ll22pTp3aJ1hwI42zI5AynCxpPsyw8uG4Dt2orzv25pw1gY7g21mpQcV8L0LnqpMFyNXRAEs71UDA4sxeu4JdwLNTz0LTtYzW3NWr11s5ZXNeiDsjfVu6ingrF6ffLRe8oaPVJnHDtVgYBHsbgUag6rZ36Osnp0VyJepOqGWr330So9++YiVTXHdVZVraYfdZwp3QB8uhvs7ByCcmIqbgoCcj4LTIZZ6QS2skatE1BRlsrEWJ1kxCwE3bsuUWSNwQNwgAZXY+UIXAjb0v8EEInBKLkQ6N9ww41mQJ945mn945NPVdkYlsfj1/qNW3Xw2IE67sgZqti8VU+8Pk97DylRfk5QO1aUy98zX64sv3bsqNLW6lqFg8W6+KdXKTcrqH0nTjLZHdkcMRElI0DO73ZqGq8hkDL5w67dAMDIGrluWA0ZgmumpYaMN90sbRiLoJYeKeQFlGlaZlgKiEyRHnSCW+IvXCCuJNXsRFMYC6aiw4D6IizCoNfV1cjricstvxFDiwqypERUI4YOMUnD+ooKLXllrkYOGaQcr1s1a8q0fXuN8nr00VXX/EF7TdpblU6TnERc/b2FaqmuN1ICmSkBOgVzO32LygGggoHoVgXgXB+MiyvHEFP5bLxH1mu7NdLJ0mqWDqIhg0BmhaKNEcBTZyNuovWEQH5XA2joSSzSQdzFcew8Qhhr4l55GtK7UKt2eLWttk0Th+2httaIdmzfodycHA3Zc6CK+/SWxxdQQgll+7I0snSErrryBm3Nj+jwj2/SJ6EKoSyUBIp0115nmnYd4iraechercGedk1T2oCQE1KN2I/3qHXaGwmWoyaaTpY2wEI1Z5oXbg6WwWXgUlCrafelQI34iOsj/rIFXtvpgHuxM5VT15xKJOKav7RKPfNDGr1nXykWVo88n6piycdGNrc0KxpHRnCpoX6nAXhdU5MOmXG01D1bJy66QetbqyR3XEWeQg3L7aHXd3yqgXn9TCmJBsKvMmQHbhK7TJIFOskGcgOdG7Z9Od0sbYDFl82kA+p8NO1RAsF1UPVHSiAgppGPzAqdiqCZYNiu6Ym8QHwFQ1CcRgoYMnSozjrzTPUvHaPquiqFvT0VcQe1ck2ZcnK7y8V6oT6PPOG46urq5fG4FW5tNU+FHzdmvBbUrNL61kr9sN9h6p7TS0MCRZpXv1J/3PqWegUKdObUaQq1tJhrom2amUJ2ATiMHitmEAEq2BRpgRYbtqEywA+WAVYnx1jU2Jinh3bFl86AkXkBHlJ5UnvAQ42OYBm3Y4GFnkRAjGyBGwSguKozzzhD48eP0ZqyLSrfukPdeu6h+h0hqalBjuPWzp31yssuUKg1LK/Po0gkKr/Hr7qaWvXo29fcm2viO3WUq0RXlb+g8kglD79Wb3+BCulQKOquV2bPNkBHabdZKzcFuhstNXwOgnekElb023UiB82AuEjqlOliacNYAAqXR7aFoo72A0DsUpHEWMRRFHoBDB0QqbEN0oJ9KoRlDZiA36cfPE3DBm9VU3Moudy+c5iioXoFs3NNBknwnOyZD8rn86q5OaTi/v3UN69E5/Q7WA9tmas3t3+UfIi6Ix3fa7JO6ztZv776ajMjiL4smIibA2DjTrleJnnQgIjbxk0zWxqVftdgnd4uOh3+vz1A4OuxtAEWdytgQdvBrTDgxFpkhMQqDBIdB2wHM1E+gbUABNkgrMD76EiIjmRtzNMjAyN7C7Qvse32uNW3T19NP+wwvff++4pFY5o6NTkxYvXqNUbYPOGE4zuu6ye9Z5hidTAQNAXoyUXDdFbPySpfX2ZkArv+u52+RXcFPVhUBGAo4kTADeDtmqowLS02yBYE+FwX2Wk6WdoAC7YhM2KRMqv9oPswG4YCM0E97pFBo5CLZsXUMFJ69rFLHjGQGAyC+AgoAavt72IwMWKeq6662hzPAuuvf31Kt912q6ZNqzDT3jnmqLGj9Uj3C6S41NLcrKaGBv3u+hv0+t/f0Ltz3zWVAZjIPowABkMEpUxDwoHMQJs0Qq7tcMX4LMgNbMt1ZeYVdrLZQJa7mrsZBgFEFKiZsACL8QNTEWsBJFiNAWaA2N/GMHZNU7sPLokZMtQkcaO4pNQHI8EsJBEcg20ow+Ci8J5PPfuUKYLX1taYCRXj997bHJO5hpzXriaIobdxM3Ac2JPrR5cj3rKTaHGRuH5mdpPlcj30nqWLpQ1j4a74cmlBZkIomRSuBGDBVswgtmuG8kOjHUAAXPZJYICCkg6DCohsezMpP4VgZv0w2LgdNLGf/vSyji4Fjj9o0BC9/c7bhj2oArSEWs11nHb66QpmBXXPvffqsMOmm5gIQMFAMF/qVH2mfFGiwQUDHJIOFHa2p9+MrNVOUuXcgAq3iAtNJ0sbYMEyrB7DTBtYhB4lAEEwjLzAADDIsAMDiZtjJrSdom6nthM048JI7cnMcJMMNsyD0IpbAoAkAMxaplD8pz/dpZKSATr00EM0vL3h7oSZM/XxRx/r1ltvM8kDLnf6t75lgOF2e/Tsc88l10uNxzV0+LAOVZ3ODNiV5MOyL+fi2tDk7CwdrsvOR+RGomuDikG6WNoAC/ZhcGAb2Ig7HFAhJ9DkB1sBPgBmp0uRYRHEk3GhZtOKQtzCNrCCnWbFNoCSjJN/UbuJoSKRsNatW6sf/OD7WrVqtYYP/7yLE5li6JChJgsFvJMmTVTcSZgWnSuvvlrX/PrXBeOdjAAAC+xJREFUyVYXl0tnnHmGjjz8CLMfGSHtM/S9M73exlXcHMwtRFTlhiCmhKlgR9aKQCBGWkkXSxtgEUQTjzAwuDDiG750an8Ud2mOA2DEKrASA4YAaWfkwEIIo4CMkg7dBfvss4/RhzDAiA5GXY9gHtChl1lra2v9p2si61u+fFlHR0I0HNHYcWN1ySXfN9fA8e+9/z6dftrpHftQ4qGCgItGu0KKgNlwtTAwRm8WS2JybXSXMnF11/rn/7qlDbAAE66AXndiEu5ogIVbYQD44nlAAGwDkJjlQozCQDIjGYWeiRi0/8II1PIoWFtjANkOkCBP8L5diINz0zcFAxKjMXnDTL33+wwDYrhSZI61a9bq8cce0wcLFxoG7caU/fbjsB96HDEhILexF2xMXIZgyjlhVIrQuGYSAtg53Z6rkzbAIkMj3mEAcV0MANoU7oYYBxBRK2SQKN/wg1sjIMbFIUugaiNRwG42S2Q/wEHcRkxDMmAfhUKAb7UlykiPPfa40dCmTTtEEydOMOxpjfgIdkQ2iEaj5jgwVlFRD7WEQvpw0SLDlCQh1kgqYDaAxLXhGom7YGCaGskkid3IFm3tM10sbYAFu+DacB/MeIahcB9kcgAElsIVwgoMDl0OgAy9CnAQDKNrwSKwFpNfGTRYA1djV5ehQY9YJ/VJELZAHI8nnzp2+OEz9NBDD+vss2d1zLAhWz3q6KO/8JhcV/uCvKx2w+PnUlcZBKwUmu06DhjvI/By47BKDVIDoMo0+nWiwSoEybgkjDsYBiAO4nfep4WGgWCA2NZ2l6J3EbeQkSGe0pLCLOPU5x0COARYsjW0L+qSMA8ZGwG+ZQzEzvPOO18333yTqf8BcNwz9Tw0sEDAb/aDdViEDSPoBtSIocRXJBycC5E0tTOUSgEunNfsY1eQJdJten1aMRbMgLZjHw9iWcquzIcbI+5BImDw0I9wlQwQdz7AAgQkABwHl5S6Vig/xHCAgvcsszC4SBcAlawUwJCB4uq2bavUkUceoVdeedWInv37F3c0FXo8Hj388CPmfY5FHIgWhcxh4ytcJSUf2BWgAXyM6+AcdpXBdJtTmFbAYmDIoBAmd21LtkaswsCT1VmNiHjJBsmABjfH/ky4YNqVXRoSkNLxQLAMo1kDJLAZrgl3RwnIApLMESnggAOmaPToUcblsY6Wz+fV4sUfafLk/YzQyvlhQFgNENkVCLkpuFbagchGuQ6yV9wyWTAxJYyJKwTg6WRpAyxrZG4MxK7ToWAFeqzsw5IAGW6NYJv2ZQrYdD/AJJRxYAiCeNxOajcBwKKuZ585zeDDeoizgBRmsmy2aNEHGj+ep9mv0z77TDLnnD79MMM8/A4AKc3YWIvuiFTjfVgLXQ61HyHUAhlDFOW91FUL08XSDlhkTzCOfeASA4H0AKPgQlLdG7IBoMIAhM3I7MPB6XBIbbyjrEOwj3hKJmkfVgBgrapvtKX2x8shGwAqzOVKPkwAIIwZM8Yo6W1trGHq0pIlS/X888+aovbgwXt2PLjpiSceN9sDJI6Nm+Z6kFGQNugh47MS+FO8TidLO2AxAOhQsI812MD2wKeaBRnT2+0TIzBiHABCAA+4cD+4JNgQhRu3A6PhiuikIEhPPf+woUPbWSt5/OSTW7O1bNlyRaPETvvqoosu7OhImDdvvj799BM98MB9uuCCC81sItqOZ89+xfwAfo5nJ9UiQ1CyIinAAGoGWLvBYAbubBs7MYA2iE81XsPN4daIqawhOKKHIbQSA+EmcUn2AZVkc/wOoIh3Uld7+bLnBibjswfNAiSOk9DvfnejaZOeP/9dc50HHXSgPvxwkQ466GDdd9+9plpAJyqGhIJmBusisPIEWJKN1MJ1uj2rMC0ZC7MLq1mz8cyuA8CgMugE6KjuDBouEYZDASe+InvcNcAncGYyKW7QLu+N3JA6CcMuBWnPQ/D99NNPmXjo9tvv0GuvvWLOedXVV2v/yZONW6bRcMaMw43CDmuBVYJ8mg/Rs5AjyBptIZ3PxLXS9pNulnbAsrIAGZpVxXFlDFwqq/BDIZnaITEVWSLlGqQDyiUo5QAS1rLNfcRFyAik+ehdCKeUcNChYJXUsgqLjdj+L2p8dF0ADJhxwoS9FQ63qbW1zXQ3YICS+A2djZiJLgqAxjGbmpoNKxYU5He0/iBD8DmTzDffgN02C6aDpRWw7BJETOVKbXqzWZfN7izYKNtYAZI0nzgKECEnEKcxYEgODDIDR1xD8RdRkmPhclH3k2WcaUYRt+ez/eoE8IAF4KCPHXPMseaxJXPmvNXBgHaK/0MPPdjBtpwLWSKVBXGn5533PfM74i+Faq6P/TONfp1ofMH0qfOlM0Cp5REGiKAXV8LfZHX0YNHGgjEwFJZhNmZS22n4zDQGGBR8YRw6HOxCabhJQEZ5hyyO34m5yNiIvxBMiY04Lor8wQdPNZrThAl7d1zzj370Y8N2sOVrr72qt96aY2I8GPSWP9yiE47/vH/+uOOO1ejRxIKOYUR0Lz4zZSoYNJ0sbRgLBkJSIF76KiPoJcOCaWAggnYyQFiDeIfBwuiCAFAAkwEjCyR4p3aIyo2L4xi8TnyDgs/7xGsABNESd2qfn8PfnLe8fIPZPifn85VhRo0aqdbWkAE0rIo6j0tkjmLvXsnOCGvM0ubHGsenTwvW5YZJJ0sbYDGgsMp/Y6jwaFG7mp1riOG2UnWsXY02HBgSo0PCPsqEKgA/1igl0eO1q1188cVf+Bv3xs9/qtml0wPG0xJYGUsvywArY51iGWBlrFMsA6yMdYplgJWxTrEuCyzkAHrIUw0FHokBKcF2RVijSJ06b49U3z7pwj5p1S77jcBJGYd97Kyh/9QaGxvNcVOn03dF63LAooxDfY8uBToXMMottP2iuiNMAhDAwrJCFnwInwCNWh+CKCo7mhnHQ3+iBZr1TSk0002KQMsUNHrDbK2R0g49VAsWLOio76Hu04ZD5wKi7Jw5b5sC9BFHHG7qjxs2lJu+McpIXcm6FLAYbMo49gnztMbQpow4CWjsv7ANYKErAgGV5kBKPCju9snxqN6wFseyC4bAVmwP4NCt7IPKMUBLv5d9Rs4VV1xh9qNfHnG3uLi/UeXpXwdYv//dTfrJT5MPEgCI1CW7knUpYJn1FFpaDBvBKrQD8zdgoKEOBqM3nlIMRWjAAyPhNmkXBijUFHFttkEQ1d1OagV89HDBhoAUgPE+gFy3bp1R7TnHddddZ9qWASldEoisnHPz5k3Kzc0zAC0q6m5mT3fvXtixDEBXsi4FLJjGtrPQimJn0DBdDBUeIFHKsf3jzDHEPdGizA/Awj0BHkooxGR2OW/abdiPdhuORbcndUXmMhKHmSev+v1mttBpp53WcU12zQaMstLZZ59jzvPIIw+b1zgff3c161LAwmxNjXYT6ns0zwEM2lPoUCCGIiYi5gE0sBXuyS6KSwBP7zlukK4HmIu+LAAAM3EsWA73xoqCsBd1SWKw1JnVuxoTXpkCNm7cWAPEm2/+gyk6x+OxLhdfdTlgwVC4OMBDR4Cd/o7RfkLMY58ERl8WhvuCdWAy4iO7bCMApT7J8ZiZg9vjhy4GwEVxGIbEPcJmuD7YEQB7viRL5DgUq+1EWFp4KE4TE6Y++q6rWJcCFsE4TXRfZnamy67NcnagU0FoDSb6d2Y7JjD65L8KWNOmTfvC3/ZpE8x83lUW6QrWpYD1dZsN+P8bS30wZleyDLAy1imWAVbGOsUywMpYp1gGWF3cnG8KsMxzk7+wilTGOtPccinxNcBrtwKL1YRXt21TS6RNOf70WqEuXW19aIeqoo1fmGbW5YBlFs1o2aYry5/WdUNPVZ67a7eOfN22pW2nLtv4hEKRti8sftIlXaHX49Pt2+fonbo12iu3v7xcwtcVCHRFc7UvVOKEtbipTBXRWvm9vt3+Fe92YBFd+dxefRbZrM9qWMHui+tcZez/r7XHry5mbHvlc+9+UH2tWaHP5ZX+88bLjKWZZeSGjHWKZYCVsU6xDLAy1imWAVbGOsUywMpYp1gGWBnrFMsAK2OdYhlgZUydYf8PPscLznmH8foAAAAASUVORK5CYII=" alt="收款码"><div class="qr-text">扫码付款¥0.99后获取密码</div>
+      </div>
+      <div class="pay-note">长按保存 → 微信/支付宝扫码</div>
+    </div>
+    <div class="unlock-section">
+      <input type="password" class="unlock-input" id="pwdInput" placeholder="输入解锁密码" onkeydown="if(event.key==='Enter')checkPwd()">
+      <button class="unlock-btn" onclick="checkPwd()">🔓 解锁</button>
+    </div>
+    <div class="unlock-error" id="pwdError"></div>
+    <div class="lock-contact">📞 联系获取密码：请私信</div>
+  </div>
+</div>
+<!-- 管理面板（独立于锁定层） -->
+
+
+<div class="container">
+  <h1>🔦 光纤通信</h1>
+  <div class="subtitle">交互式复习 · 点击选项查看答案与解析</div>
+
+  <div class="mode-selector">
+    <button class="mode-btn active" data-mode="panel" onclick="switchMode('panel')">📂 按板块</button>
+    <button class="mode-btn" data-mode="all" onclick="switchMode('all')">📋 全部</button>
+    <button class="mode-btn" data-mode="wrongbook" onclick="switchMode('wrongbook')">📕 错题本 <span id="wrongBookCount" style="font-size:12px;opacity:.7;">(0)</span></button>
+    <button class="mode-btn" data-mode="outline" onclick="switchMode('outline')">📖 提纲</button>
+  </div>
+
+  <div class="panel-selector" id="panelSelector">
+    <button class="panel-btn active" data-panel="basic" onclick="switchPanel('basic')">光纤基础</button>
+    <button class="panel-btn" data-panel="device" onclick="switchPanel('device')">光器件</button>
+    <button class="panel-btn" data-panel="sdh" onclick="switchPanel('sdh')">SDH技术</button>
+    <button class="panel-btn" data-panel="system" onclick="switchPanel('system')">系统组成</button>
+    <button class="panel-btn" data-panel="access" onclick="switchPanel('access')">接入网</button>
+    <button class="panel-btn" data-panel="amp" onclick="switchPanel('amp')">光放大</button>
+  </div>
+
+  <!-- Panel Stats Module -->
+  <div class="panel-stats-module show" id="panelStatsModule">
+    <div class="panel-stats-header" onclick="togglePanelStats()">
+      <span class="title">📊 各板块掌握度</span>
+      <span class="panel-stats-toggle" id="panelStatsToggle"><span class="arrow-wrap"><span class="arrow-outer"></span><span class="arrow-inner"></span></span></span>
+    </div>
+    <div class="panel-stats-content" id="panelStatsContent">
+      <div id="panelStatsRows"></div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">📌 进度 <span class="num blue" id="progress">0/0</span></div>
+    <div class="stat-card">✅ 正确 <span class="num green" id="correctCount">0</span></div>
+    <div class="stat-card">❌ 错误 <span class="num red" id="wrongCount">0</span></div>
+  </div>
+
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBar" style="width:0%"></div></div>
+
+  <div id="questionContainer"></div>
+
+  <!-- 提纲 -->
+  <div id="outlinePanel" style="display:none;">
+    <div class="question-card active" style="display:block;">
+      <div class="q-number">📖 学习提纲</div>
+      <div id="outlineContent" style="font-size:15px;line-height:1.8;color:#2d3748;"></div>
+    </div>
+  </div>
+
+  <div class="nav-bar" id="navBar">
+    <button class="nav-btn primary" id="prevBtn" onclick="prevQuestion()">← 上一题</button>
+    <button class="nav-btn" id="randomBtn" onclick="randomQuestion()"><span class="dice">🎲</span></button>
+    <button class="nav-btn" onclick="toggleSidebar()">📋 题号</button>
+    <button class="nav-btn" onclick="resetLight()" title="重置当前板块答题记录">🔹 小重置</button>
+    <button class="nav-btn" onclick="resetPanel()" title="重置当前板块答题+错题">🔶 重置</button>
+    <button class="nav-btn" onclick="resetAll()" title="重置所有板块全部数据">🔴 全部重置</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="nextQuestion()">下一题 →</button>
+  </div>
+  <div class="kbd-hint"><span>←</span><span>→</span> 翻题 <span>R</span> 随机</div>
+</div>
+
+<!-- Custom Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3 id="modalTitle">确认</h3>
+    <p id="modalMsg">确定执行此操作？</p>
+    <div class="btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div class="egg-toast" id="eggToast">
+  <div class="egg-msg" id="eggMsg"></div>
+</div>
+<div class="sidebar" id="sidebar">
+  <h3>📋 题目列表</h3>
+  <div class="q-grid" id="qGrid"></div>
+</div>
+
+<script>
+// ==================== SOUND FX (Web Audio API) ====================
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playCorrect() {
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+    osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+  } catch(e) {}
+}
+function playWrong() {
+  try {
+    initAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+// ==================== PANEL CONFIG ====================
+const PANEL_INFO = [
+  { key: 'basic',  name: '光纤基础', color: '#3182ce' },
+  { key: 'device', name: '光器件',   color: '#38a169' },
+  { key: 'sdh',    name: 'SDH技术', color: '#d69e2e' },
+  { key: 'system', name: '系统组成', color: '#805ad5' },
+  { key: 'access', name: '接入网',   color: '#e53e3e' },
+  { key: 'amp',    name: '光放大',   color: '#dd6b20' },
+];
+const PANEL_MAP = Object.fromEntries(PANEL_INFO.map(p => [p.key, p]));
+
+// ==================== QUESTION DATA ====================
+const ALL_QUESTIONS = [
+  // --- 光纤基础 ---
+  { id: 1, panel: 'basic', type: '单选', text: '表示光纤捕捉光射线能力的物理量被定义为( )?用( )表示?', options: ['数值孔径，Δ', '数值孔径，NA', 'NA，数值孔径', 'Δ，数值孔径'], answer: 1, wrong: false },
+  { id: 2, panel: 'basic', type: '单选', text: '计算n1=1.48及n2=1.46的阶跃光纤的数值孔径?', options: ['0.1403', '0.3841', '0.2524', '0.2425'], answer: 3, wrong: false },
+  { id: 3, panel: 'basic', type: '单选', text: '阶跃光纤纤芯和包层的折射率分别为n1=1.5及n2=1.45，求相对折射率Δ？', options: ['0.1403', '0.0656', '0.0983', '0.0328'], answer: 3, wrong: false },
+  { id: 4, panel: 'basic', type: '单选', text: '光纤通信与光通信的含义一样吗？', options: ['两者完全一样', '光通信的范围大于光纤通信', '两者根本不是一回事', '光纤通信的范围大于光通信'], answer: 1, wrong: false },
+  { id: 5, panel: 'basic', type: '多选', text: '光纤的两个主要特性包括?', options: ['距离', '色散', '容量', '损耗'], answer: [1, 3], wrong: false },
+  { id: 6, panel: 'basic', type: '多选', text: '光纤的结构可分为哪两部分?', options: ['加强元件', '包层', '护层', '纤芯'], answer: [1, 3], wrong: false },
+  { id: 7, panel: 'basic', type: '填空', text: '单模光纤中不存在( )色散。', options: ['模式', '材料', '波导', '偏振模'], answer: 0, wrong: false },
+
+  // --- 光器件 ---
+  { id: 8, panel: 'device', type: '单选', text: '光源的主要功能是完成电信号到光信号的转换，产生什么波？', options: ['模拟信号', '数字信号', '电磁波', '光载波'], answer: 3, wrong: false },
+  { id: 9, panel: 'device', type: '单选', text: '光电检测器的作用是', options: ['将电信号转换为光信号', '将电信号进行放大', '将光信号进行放大', '将光信号转换为电信号'], answer: 3, wrong: false },
+  { id: 10, panel: 'device', type: '单选', text: '当物质中处于高能级上的粒子数大于处于低能级上的粒子数时，则物质处于( )状态。', options: ['粒子数反转', '自发辐射', '全反射', '自发吸收'], answer: 0, wrong: false },
+  { id: 11, panel: 'device', type: '填空', text: 'LED的主要两种结构包括:___ 和 ___。', options: ['平面型、双异质结型', '边发光型、面发光型', 'LED、LD', '同质结、异质结'], answer: 0, wrong: false },
+  { id: 12, panel: 'device', type: '填空', text: '电光调制器的基本工作原理是晶体的___。', options: ['线性电光效应', '非线性电光效应', '光电效应', '声光效应'], answer: 0, wrong: false },
+  { id: 13, panel: 'device', type: '填空', text: '粒子数反转是高能级上的粒子数___低能级上的粒子数的状态。', options: ['大于', '小于', '等于', '远小于'], answer: 0, wrong: false },
+
+  // --- SDH技术 ---
+  { id: 14, panel: 'sdh', type: '单选', text: 'SDH帧结构中，STM-1的净负荷区具有多少个字节？', options: ['19440', '18792', '2349', '2340'], answer: 2, wrong: false },
+  { id: 15, panel: 'sdh', type: '单选', text: '在SDH传输网中，信息采用标准化的模块结构，即为( )。', options: ['OTM-n.m', 'PDH', 'STM-N', 'ATM'], answer: 2, wrong: false },
+  { id: 16, panel: 'sdh', type: '单选', text: '在SDH复用中，由标准容器(C)出来的数字流加上通道开销(POH)后构成了所谓的虚容器(VC)，这个过程称为( )。', options: ['复用', '定位校准', '映射', '指针处理'], answer: 2, wrong: false },
+  { id: 17, panel: 'sdh', type: '多选', text: 'STM-4的帧结构可以分为哪些基本区域？', options: ['复用段开销区', '再生段开销区', '管理单元指针区', '净负荷区'], answer: [0, 1, 2, 3], wrong: false },
+  { id: 18, panel: 'sdh', type: '多选', text: '同步传输模块STM-N中的N可取值为( )。', options: ['16', '4', '8', '64'], answer: [0, 1, 3], wrong: false },
+  { id: 19, panel: 'sdh', type: '填空', text: '低速支路信号复用成STM-N信号过程中经历了3个步骤:__、__、__。', options: ['映射、定位、复用', '映射、复用、定位', '定位、映射、复用', '复用、映射、定位'], answer: 0, wrong: false },
+  { id: 20, panel: 'sdh', type: '填空', text: 'STM-256的速率是____。', options: ['13.27104Gb/s', '39.81312Gb/s', '2.48832Gb/s', '9.95328Gb/s'], answer: 0, wrong: false },
+
+  // --- 系统组成 ---
+  { id: 21, panel: 'system', type: '单选', text: '下列哪个不属于光纤通信系统？', options: ['光接收机', '光纤', '光发射机', '光滤波器'], answer: 3, wrong: false },
+  { id: 22, panel: 'system', type: '单选', text: '光纤通信系统最基本的三个组成部分是( )。', options: ['中继器', '光发送机', '光纤链路', '光接收机'], answer: 1, wrong: false },
+  { id: 23, panel: 'system', type: '单选', text: '( )是光接收机的关键指标。', options: ['灵敏度和过载功率', '过载功率和信噪比', '动态范围和噪声', '灵敏度和动态范围'], answer: 3, wrong: false },
+  { id: 24, panel: 'system', type: '单选', text: '目前光纤通信系统中广泛使用的调制—检测方式是( )。', options: ['强度调制—直接检测', '频率调制—直接检测', '强度调制—相干检测', '相位调制—相干检测'], answer: 0, wrong: false },
+  { id: 25, panel: 'system', type: '单选', text: '光纤通信具有的特点包括( )。', options: ['损耗小、中继距离长', '以上都是', '频带宽、传输容量大', '重量轻、体积小'], answer: 1, wrong: false },
+  { id: 26, panel: 'system', type: '单选', text: '光纤的色散指的是', options: ['光纤的模式色散', '不同波长光的群时延不一样', '光纤的材料色散', '光纤的波导色散'], answer: 1, wrong: false },
+  { id: 27, panel: 'system', type: '单选', text: '下面说法正确的是？', options: ['损耗决定传输模式', '损耗决定通信容量', '损耗决定传输距离', '损耗决定传输速率'], answer: 2, wrong: false },
+  { id: 28, panel: 'system', type: '多选', text: '光纤通信系统最基本的三个组成部分是( )。', options: ['中继器', '光发送机', '光纤链路', '光接收机'], answer: [1, 2, 3], wrong: false },
+  { id: 29, panel: 'system', type: '单选', text: '模拟信号数字化的主要步骤包括____。', options: ['抽样、编码和调制', '调制、解调和纠错', '抽样、编码和纠错', '抽样、量化和编码'], answer: 3, wrong: false },
+
+  // --- 接入网 ---
+  { id: 30, panel: 'access', type: '多选', text: '根据传输介质的不同，接入网技术可分为以下三大类？', options: ['光接入', '有线接入', '无线接入', '有线无线综合接入'], answer: [1, 2, 3], wrong: false },
+  { id: 31, panel: 'access', type: '多选', text: '接入网的主要功能包括( )?', options: ['用户端口功能', '业务端口功能', '传送功能', '核心功能'], answer: [0, 1, 2, 3], wrong: false },
+  { id: 32, panel: 'access', type: '多选', text: '根据不同应用场合，光接口可分为( )。', options: ['局间通信', '多波长通信', '局内通信', '单波长通信'], answer: [0, 2], wrong: false },
+  { id: 33, panel: 'access', type: '填空', text: 'ONU的中文名称是（）。', options: ['光网络单元', '光线路终端', '光分配网络', '光网络终端'], answer: 0, wrong: false },
+  { id: 34, panel: 'access', type: '多选', text: 'EDFA的应用，可以分为以下哪些应用方式？(接收入网侧)', options: ['线路放大器', '前置放大器', '光探测器', '功率放大器'], answer: [0, 1, 3], wrong: false },
+
+  // --- 光放大 ---
+  { id: 35, panel: 'amp', type: '判断', text: '当泵浦功率一定时，EDFA的增益会随掺铒光纤的长度增加而增大。', options: ['对', '错'], answer: 1, wrong: false },
+  { id: 36, panel: 'amp', type: '判断', text: '光纤拉曼放大器采用后向泵浦可减小泵浦光和信号光相互作用的长度，从而减小泵浦噪声对信号的影响。', options: ['对', '错'], answer: 0, wrong: false },
+  { id: 37, panel: 'amp', type: '多选', text: 'L-64.3中的3表示( )。', options: ['所用光纤为G.653光纤', '标称工作波长为1550nm', '所用光纤为G.652', '超长距离通信'], answer: 0, wrong: false },
+];
+
+// ==================== EXPLAINS ====================
+const EXPLAINS = {
+  1: '数值孔径(NA)表示光纤捕捉光射线的能力。NA=n₁√(2Δ)，n₁=纤芯折射率，Δ=相对折射率差。NA越大，收集光的能力越强，耦合效率越高。',
+  2: 'NA=√(n₁²-n₂²)=√(1.48²-1.46²)=√(2.1904-2.1316)=√0.0588≈0.2425。n₁=纤芯折射率，n₂=包层折射率。',
+  3: 'Δ=(n₁²-n₂²)/(2n₁²)≈(n₁-n₂)/n₁=(1.5-1.45)/1.5=0.05/1.5≈0.0333。Δ是相对折射率差，表示纤芯和包层折射率的差异程度。',
+  4: '光通信范围更广，包括光纤通信、大气激光通信、水下光通信等。光纤通信只是光通信的一种方式。',
+  5: '光纤的两大主要特性：损耗（决定传输距离）和色散（决定传输容量）。',
+  6: '光纤由纤芯（高折射率，传输光信号）和包层（低折射率，将光约束在纤芯内）两部分组成。',
+  7: '单模光纤只传输基模HE11，不存在模式色散（模间色散），只有材料色散和波导色散。',
+  8: '光源（LED或LD）将电信号转换为光载波信号，通过光纤传输。光载波是电磁波的一种。',
+  9: '光电检测器（PIN或APD）将光信号转换为电信号，是光接收机的核心。',
+  10: '粒子数反转是产生激光的前提条件，高能级粒子数 > 低能级粒子数。',
+  11: 'LED的两种结构：平面型（面发光，结构简单）和双异质结型（边发光，效率高）。',
+  12: '电光调制器利用晶体的线性电光效应（普克尔效应），通过外加电压改变折射率来实现调制。',
+  13: '粒子数反转状态：N2 > N1。这是激光产生的必要条件，属于非热平衡状态。',
+  14: 'STM-1帧共2430字节。其中RSOH 81字节、MSOH 81字节、AU-PTR 9字节。净负荷=2430-81-81-9=2259字节。',
+  15: 'SDH采用STM-N（同步传输模块）作为标准化接口，N=1,4,16,64,256。',
+  16: '映射(C→VC) → 定位(加入指针) → 复用(字节间插)。映射是将支路信号适配到虚容器的过程。',
+  17: 'STM-4帧分四个区域：RSOH（再生段开销）、MSOH（复用段开销）、AU-PTR（管理单元指针）、净负荷区。',
+  18: 'STM-N中N可取1,4,16,64,256。对应速率：155.52Mb/s, 622.08Mb/s, 2.488Gb/s, 9.953Gb/s, 39.813Gb/s。',
+  19: '低速支路→STM-N三步：映射（放入虚容器）→ 定位（加指针）→ 复用（字节间插）。',
+  20: 'STM-256 = STM-1速率×256 = 155.52Mb/s × 256 = 39813.12Mb/s。STM-1=155.52Mb/s。',
+  21: '光纤通信系统由光发射机、光纤、光中继器、光接收机组成。光滤波器不属于基本系统组成部分。',
+  22: '光发送机（电→光）+ 光纤链路（传输光信号）+ 光接收机（光→电）是最基本的三个部分。',
+  23: '灵敏度（最小可检测光功率）和动态范围（过载功率与灵敏度之差）是光接收机的两大关键指标。',
+  24: '强度调制-直接检测(IM-DD)因结构简单、成本低，是目前最广泛使用的调制检测方式。',
+  25: '光纤通信优点：损耗小中继长、频带宽容量大、重量轻体积小、抗电磁干扰。以上都是。',
+  26: '色散指不同波长/模式的光在光纤中传输速度不同导致脉冲展宽。包括模式色散、材料色散、波导色散。',
+  27: '光纤损耗决定传输距离。损耗越大，光信号衰减越快，需更短中继距离。',
+  28: '系统三要素：光发送机（发射）、光纤链路（传输）、光接收机（接收）。中继器不是必须的。',
+  29: '模拟信号数字化三步骤：抽样（时间离散化）→ 量化（幅度离散化）→ 编码（二进制表示）。',
+  30: '接入网按传输介质分：有线接入（铜线/光纤）、无线接入（微波/卫星）、有线无线综合接入。',
+  31: '接入网有四大功能：用户端口功能(UPF)、业务端口功能(SPF)、传送功能(TF)、核心功能(AF)。',
+  32: '光接口按应用场合分：局内通信（短距离）、局间通信（长距离）、超长距离通信等。',
+  33: 'ONU = Optical Network Unit = 光网络单元，位于用户侧，是PON系统的用户端设备。',
+  34: 'EDFA三种应用：功率放大器(BA，发送端后)、线路放大器(LA，中继)、前置放大器(PA，接收端前)。',
+  35: 'EDFA增益随掺铒光纤长度先增后减。过长会产生ASE噪声积累，增益反而下降。',
+  36: '后向泵浦可减小泵浦光和信号光相互作用长度，有效降低泵浦噪声对信号的影响，提高信噪比。',
+  37: 'L-64.3中：L=长途，64=STM-64速率，3=所用光纤为G.653（色散位移光纤）。',
+};
+
+// ==================== PERSISTENCE ====================
+const STORAGE_KEY = 'fiber_quiz_progress';
+
+function saveProgress() {
+  try {
+    const data = {
+      answers: state.answers,
+      results: state.results,
+      wrongSet: Array.from(state.wrongSet),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function loadProgress() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    const data = JSON.parse(saved);
+    if (data.answers) Object.assign(state.answers, data.answers);
+    if (data.results) Object.assign(state.results, data.results);
+    if (data.wrongSet) state.wrongSet = new Set(data.wrongSet);
+  } catch(e) {}
+}
+
+// ==================== STATE ====================
+let state = {
+  mode: 'panel',
+  panel: 'basic',
+  currentIndex: 0,
+  questions: [],
+  answers: {},
+  results: {},
+  wrongSet: new Set(),
+  streak: 0,
+};
+
+// ==================== OUTLINE DATA ====================
+const OUTLINE_DATA = [
+  {
+    title: '第1章 光纤通信概述',
+    content: `
+      <h4 style="color:#2b6cb0;margin:12px 0 8px;">1.3 光纤通信系统的组成</h4>
+      <p>光纤通信系统由三个基本部分组成：</p>
+      <ul style="margin:8px 0 12px 20px;">
+        <li><strong>光发送机</strong>：将电信号转换为光信号（光源：LED或LD），并对光信号进行调制。</li>
+        <li><strong>光纤链路</strong>：传输光信号的介质（光纤+光缆），完成光信号的长距离传输。</li>
+        <li><strong>光接收机</strong>：将光信号转换回电信号（光电检测器：PIN或APD），还原原始信息。</li>
+      </ul>
+
+      <h4 style="color:#2b6cb0;margin:12px 0 8px;">📌 习题一：光纤通信的优缺点</h4>
+      <p><strong>优点：</strong></p>
+      <ul style="margin:8px 0 12px 20px;">
+        <li>✅ 通信容量大（频带宽，传输速率高）</li>
+        <li>✅ 传输距离长（损耗低，中继距离长）</li>
+        <li>✅ 抗电磁干扰、抗噪声干扰</li>
+        <li>✅ 适应环境（耐腐蚀、耐高温）</li>
+        <li>✅ 重量轻、安全、易敷设</li>
+        <li>✅ 保密性好（不易被窃听）</li>
+        <li>✅ 寿命长</li>
+      </ul>
+      <p><strong>缺点：</strong></p>
+      <ul style="margin:8px 0 12px 20px;">
+        <li>❌ 接口昂贵（光纤连接器成本高）</li>
+        <li>❌ 强度差（光纤较脆，需小心敷设）</li>
+        <li>❌ 不能传送电力</li>
+        <li>❌ 需要专用工具、设备及培训</li>
+        <li>❌ 未经受长时间的检验（相对铜缆而言）</li>
+      </ul>
+
+      <h4 style="color:#2b6cb0;margin:12px 0 8px;">📌 习题二：光纤系统组成部分及功能</h4>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:14px;">
+        <tr style="background:#ebf4ff;"><th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">组成部分</th><th style="padding:8px;border:1px solid #e2e8f0;text-align:left;">功能</th></tr>
+        <tr><td style="padding:8px;border:1px solid #e2e8f0;">光发送机</td><td style="padding:8px;border:1px solid #e2e8f0;">将电信号转换为光信号。核心器件是光源（LED或半导体激光器LD），通过强度调制将电信号加载到光载波上。</td></tr>
+        <tr style="background:#fafcff;"><td style="padding:8px;border:1px solid #e2e8f0;">光纤链路</td><td style="padding:8px;border:1px solid #e2e8f0;">作为传输媒质，将光信号从发送端传输到接收端。由光纤、光缆、连接器和中继器组成。光纤利用全反射原理传输光信号。</td></tr>
+        <tr><td style="padding:8px;border:1px solid #e2e8f0;">光接收机</td><td style="padding:8px;border:1px solid #e2e8f0;">将接收到的光信号还原为原始电信号。核心器件是光电检测器（PIN光电二极管或APD雪崩光电二极管），完成光→电转换。</td></tr>
+      </table>
+      <p style="margin-top:8px;font-size:13px;color:#7a9ab8;">💡 三个部分的关系：电信号 → 光发送机 → 光信号 → 光纤传输 → 光信号 → 光接收机 → 电信号</p>
+    `
+  },
+];
+
+function renderOutline() {
+  const container = document.getElementById('outlineContent');
+  let html = '';
+  // Chapter navigation tabs
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">';
+  OUTLINE_DATA.forEach((ch, i) => {
+    html += `<span class="panel-btn active" style="cursor:default;">${ch.title}</span>`;
+  });
+  html += '</div>';
+  // Show the first chapter content
+  html += OUTLINE_DATA[0].content;
+  container.innerHTML = html;
+}
+
+// ==================== FUNCTIONS ====================
+function getDisplayQuestions() {
+  if (state.mode === 'wrongbook') {
+    return ALL_QUESTIONS.filter(q => state.wrongSet.has(q.id));
+  }
+  if (state.mode === 'panel') return ALL_QUESTIONS.filter(q => q.panel === state.panel);
+  return ALL_QUESTIONS;
+}
+
+function switchMode(mode) {
+  state.mode = mode;
+  state.currentIndex = 0;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('panelSelector').style.display = mode === 'panel' ? 'flex' : 'none';
+  document.getElementById('panelStatsModule').style.display = mode === 'panel' ? 'block' : 'none';
+  if (mode === 'outline') {
+    document.getElementById('questionContainer').style.display = 'none';
+    document.getElementById('outlinePanel').style.display = 'block';
+    document.getElementById('navBar').style.display = 'none';
+    renderOutline();
+  } else {
+    document.getElementById('questionContainer').style.display = 'block';
+    document.getElementById('outlinePanel').style.display = 'none';
+    refresh();
+  }
+}
+
+function switchPanel(panel) {
+  state.panel = panel;
+  state.currentIndex = 0;
+  document.querySelectorAll('.panel-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === panel));
+  refresh();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+
+function togglePanelStats() {
+  const c = document.getElementById('panelStatsContent');
+  const t = document.getElementById('panelStatsToggle');
+  const opening = !c.classList.contains('open');
+  if (opening) {
+    c.style.height = 'auto';
+    const h = c.scrollHeight;
+    c.style.height = '0';
+    void c.offsetWidth;
+    c.style.setProperty('--content-h', h + 'px');
+    c.style.height = h + 'px';
+    c.classList.add('open');
+    t.classList.add('rotated');
+    const rows = c.querySelectorAll('.ps-row');
+    rows.forEach((row, i) => {
+      row.style.animationDelay = (i * 50) + 'ms';
+      row.style.animation = 'none';
+      void row.offsetWidth;
+      row.style.animation = `rowIn .4s cubic-bezier(.34,1.56,.64,1) forwards`;
+    });
+  } else {
+    const rows = c.querySelectorAll('.ps-row');
+    rows.forEach((row, i) => {
+      row.style.animation = 'none';
+      row.style.opacity = '1';
+      void row.offsetWidth;
+      row.style.animation = `rowOut .4s cubic-bezier(.34,1.56,.64,1) forwards`;
+      row.style.animationDelay = (rows.length - 1 - i) * 50 + 'ms';
+    });
+    // 容器和行同时收，无间隔
+    setTimeout(() => {
+      c.style.height = '0';
+      c.classList.remove('open');
+      t.classList.remove('rotated');
+    }, 30);
+    setTimeout(() => {
+      rows.forEach(row => { row.style.animation = ''; row.style.animationDelay = ''; row.style.opacity = ''; });
+    }, 600);
+  }
+}
+
+function refresh() {
+  const questions = getDisplayQuestions();
+  state.questions = questions;
+  if (questions.length === 0) {
+    document.getElementById('questionContainer').innerHTML = '<div class="complete-msg"><h2>📭 该板块暂无题目</h2><p>请选择其他板块</p></div>';
+    document.getElementById('navBar').style.display = 'none';
+    updateStats();
+    updateGrid();
+    updatePanelStats();
+    return;
+  }
+  document.getElementById('questionContainer').innerHTML = `
+    <div class="question-card active" id="questionCard">
+      <div><span class="q-number" id="qNumber"></span><span class="q-badge" id="qBadge"></span></div>
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  `;
+  document.getElementById('navBar').style.display = 'flex';
+  showQuestion();
+  updateStats();
+  updateGrid();
+  updatePanelStats();
+}
+
+function showQuestion() {
+  const q = state.questions[state.currentIndex];
+  if (!q) return;
+  document.getElementById('qNumber').textContent = `第 ${state.currentIndex + 1}/${state.questions.length} 题`;
+  const badge = document.getElementById('qBadge');
+  badge.textContent = q.type;
+  badge.className = 'q-badge';
+  document.getElementById('qText').textContent = q.text;
+
+  const optC = document.getElementById('optionsContainer');
+  optC.innerHTML = '';
+  const keys = ['A', 'B', 'C', 'D'];
+  const isMulti = q.type === '多选';
+  const answered = state.answers[q.id] !== undefined;
+  const ansArr = answered ? (Array.isArray(state.answers[q.id]) ? state.answers[q.id] : [state.answers[q.id]]) : [];
+  const corrArr = Array.isArray(q.answer) ? q.answer : [q.answer];
+
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.innerHTML = `<span class="key">${keys[i]}</span>${opt}`;
+    div.dataset.index = i;
+
+    if (answered) {
+      div.classList.add('disabled');
+      if (state.justAnswered !== q.id) div.classList.add('viewed');
+      if (corrArr.includes(i)) div.classList.add('correct');
+      if (ansArr.includes(i) && !corrArr.includes(i)) div.classList.add('wrong');
+      if (ansArr.includes(i)) div.classList.add('selected');
+    } else if (isMulti) {
+      div.onclick = () => {
+        div.classList.toggle('selected');
+        const confirmBtn = document.getElementById('multiConfirm');
+        if (confirmBtn) {
+          const sel = optC.querySelectorAll('.option.selected').length;
+          confirmBtn.textContent = sel === 0 ? '✅ 确认提交' : `✅ 确认提交（已选 ${sel} 项）`;
+        }
+      };
+    } else {
+      div.onclick = () => selectOption(q.id, i);
+    }
+    optC.appendChild(div);
+  });
+
+  // 多选确认按钮
+  const existingBtn = document.getElementById('multiConfirm');
+  if (existingBtn) existingBtn.remove();
+  if (isMulti && !answered) {
+    const btn = document.createElement('button');
+    btn.id = 'multiConfirm';
+    btn.className = 'multi-confirm-btn';
+    btn.textContent = '✅ 确认提交';
+    btn.onclick = () => submitMultiSelect(q.id);
+    optC.appendChild(btn);
+  }
+
+  // hint button
+  if (!answered) {
+    const hb = document.createElement('div');
+    hb.style.cssText = 'text-align:center;margin-top:12px;';
+    hb.innerHTML = '<span class="hint-btn" id="hintBtn">💡 不会？点我看看提示</span>';
+    hb.querySelector('.hint-btn').onclick = () => showHint(q.id);
+    optC.appendChild(hb);
+  }
+
+  const prev = state.answers[q.id];
+  const fb = document.getElementById('feedback');
+  if (prev !== undefined) {
+    fb.className = 'feedback show ' + (state.results[q.id] ? 'correct' : 'wrong');
+    const verdict = state.results[q.id] ? '✅ 正确' : '❌ 错误';
+    const answerText = corrArr.map(i => `${keys[i]}. ${q.options[i]}`).join('、');
+    const explain = EXPLAINS[q.id];
+    fb.innerHTML = `<strong>${verdict}，正确答案：${answerText}</strong>` + (explain ? `<br><br>💡 ${explain}` : '');
+  } else {
+    fb.className = 'feedback';
+    fb.textContent = '';
+  }
+  document.getElementById('prevBtn').disabled = state.currentIndex === 0;
+  document.getElementById('nextBtn').textContent = state.currentIndex === state.questions.length - 1 ? '✅ 完成' : '下一题 →';
+}
+
+function selectOption(qid, idx) {
+  if (state.answers[qid] !== undefined) return;
+  const q = ALL_QUESTIONS.find(q => q.id === qid);
+  const corr = Array.isArray(q.answer) ? q.answer : [q.answer];
+  const correct = corr.includes(idx);
+  state.answers[qid] = idx;
+  state.results[qid] = correct;
+  state.justAnswered = qid;
+  if (correct) { state.wrongSet.delete(qid); state.streak = 0; playCorrect(); }
+  else { state.wrongSet.add(qid); state.streak++; playWrong(); }
+  updateWrongBookCount();
+  saveProgress();
+  showQuestion();
+  if (!state.results[qid]) showStreakEgg(state.streak);
+  setTimeout(() => { if (state.justAnswered === qid) delete state.justAnswered; }, 600);
+  updateStats();
+  updateGrid();
+  updatePanelStats();
+}
+
+function submitMultiSelect(qid) {
+  if (state.answers[qid] !== undefined) return;
+  const q = ALL_QUESTIONS.find(q => q.id === qid);
+  const optC = document.getElementById('optionsContainer');
+  const selected = [...optC.querySelectorAll('.option.selected')].map(el => parseInt(el.dataset.index));
+  const corr = Array.isArray(q.answer) ? q.answer : [q.answer];
+
+  // 排序后比较
+  const sort = a => [...a].sort();
+  const correct = JSON.stringify(sort(selected)) === JSON.stringify(sort(corr));
+
+  state.answers[qid] = selected;
+  state.results[qid] = correct;
+  state.justAnswered = qid;
+  if (correct) { state.wrongSet.delete(qid); state.streak = 0; playCorrect(); }
+  else { state.wrongSet.add(qid); state.streak++; playWrong(); }
+  updateWrongBookCount();
+  saveProgress();
+  showQuestion();
+  if (!state.results[qid]) showStreakEgg(state.streak);
+  setTimeout(() => { if (state.justAnswered === qid) delete state.justAnswered; }, 600);
+  updateStats();
+  updateGrid();
+  updatePanelStats();
+}
+
+const HINTS = {
+  1: 'NA = Numerical Aperture（数值孔径），衡量光纤收集光能力的物理量。想想哪个选项两个字母缩写且含义是"数值孔径"。',
+  2: '代入公式 NA = √(n₁² - n₂²)。n₁=纤芯折射率(=1.48)，n₂=包层折射率(=1.46)，平方相减再开方。',
+  3: 'Δ = (n₁² - n₂²)/(2n₁²) ≈ (n₁ - n₂)/n₁。n₁=纤芯折射率(=1.5)，n₂=包层折射率(=1.45)，代入算。',
+  4: '光通信 ≠ 光纤通信。光通信包含光纤通信、大气激光通信等，想想谁包含谁。',
+  5: '光纤两大特性：损耗（决定能传多远）和色散（决定传多快），看选项哪两个对应。',
+  6: '光纤结构：纤芯（传光）和包层（约束光）。找这两个对应的选项。',
+  7: '单模光纤只传基模 HE₁₁，不存在模间色散。哪个选项说的是"模式"？',
+  8: '光源产生的是光，光是电磁波的一种。',
+  9: '检测器是接收端，把什么变成什么？',
+  10: '激光产生的必要条件，高能级粒子数 > 低能级粒子数。',
+  11: 'LED 的两种结构，一个方向是面发，另一个方向是边发。',
+  12: '电光调制器利用晶体的什么效应？名字里有"电"和"光"。',
+  13: '粒子数反转就是多的比少的...？',
+  14: 'STM-1 帧共 2430 字节，减去三段开销剩下就是净负荷。',
+  15: 'SDH 的标准模块叫什么？三个字母。',
+  16: 'C → VC 的过程，把低速信号装进容器的过程叫什么？',
+  17: 'STM-N 帧的全部区域，缺一不可。',
+  18: 'STM-N 的 N 取哪些值？2 的幂次。',
+  19: '复用三步走：装进去 → 对位置 → 合起来。',
+  20: 'STM-1 是 155.52Mb/s，乘以 256。',
+  21: '哪个选项不是系统基本组成部分？光滤波器是可选器件。',
+  22: '最基本的三个部分：发、传、收。',
+  23: '光接收机两大指标，一个管最小能收到多弱，一个管能收多强到多弱。',
+  24: '目前最广泛的方式，强度调制加直接检测。',
+  25: '光纤通信的所有优点，全都是。',
+  26: '不同波长的光跑得不一样快导致脉冲展宽。',
+  27: '损耗决定了什么？信号能传多远。',
+  28: '三个基本组成部分：发射、传输、接收。哪个不是？',
+  29: '模拟变数字三步：时间离散、幅度离散、二进制编码。',
+  30: '接入网按介质分三大类：有线的、无线的、两者结合的。',
+  31: '接入网的四大功能：用户端口、业务端口、传送、核心。',
+  32: '光接口按应用分：短距离（局内）和长距离（局间）。',
+  33: 'ONU 是用户侧设备，光网络...？',
+  34: 'EDFA 三种应用方式：发端后、线路上、收端前。',
+  35: 'EDFA 增益随光纤长度先增后减，不是越长越好。',
+  36: '后向泵浦减少泵浦光和信号光的相互作用长度，减少噪声。',
+  37: 'L-64.3 中 3 表示光纤类型，G.65x 系列。',
+};
+
+function showHint(qid) {
+  const q = ALL_QUESTIONS.find(q => q.id === qid);
+  if (!q) return;
+  const hint = HINTS[qid] || '看看教材对应章节，注意关键词。';
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback hint-show';
+  fb.innerHTML = `
+    <div class="hint-title"><span class="hint-icon">💡</span>解题方向</div>
+    <div class="hint-body">${hint}</div>
+  `;
+  const btn = document.getElementById('hintBtn');
+  if (btn) { btn.style.opacity = '.4'; btn.style.cursor = 'default'; btn.onclick = null; }
+}
+
+function nextQuestion() {
+  if (state.currentIndex >= state.questions.length - 1) return;
+  const card = document.getElementById('questionCard');
+  if (!card) { state.currentIndex++; showQuestion(); return; }
+  card.classList.add('belt-out-left');
+  setTimeout(() => {
+    state.currentIndex++;
+    showQuestion();
+    card.classList.remove('belt-out-left');
+    card.classList.add('belt-in-left');
+    setTimeout(() => card.classList.remove('belt-in-left'), 400);
+  }, 250);
+}
+function prevQuestion() {
+  if (state.currentIndex <= 0) return;
+  const card = document.getElementById('questionCard');
+  if (!card) { state.currentIndex--; showQuestion(); return; }
+  card.classList.add('belt-out-right');
+  setTimeout(() => {
+    state.currentIndex--;
+    showQuestion();
+    card.classList.remove('belt-out-right');
+    card.classList.add('belt-in-right');
+    setTimeout(() => card.classList.remove('belt-in-right'), 400);
+  }, 250);
+}
+function randomQuestion() {
+  const btn = document.getElementById('randomBtn');
+  btn.classList.remove('rolling');
+  void btn.offsetWidth;
+  btn.classList.add('rolling');
+
+  const card = document.getElementById('questionCard');
+  if (card) {
+    card.classList.remove('flip-in');
+    card.classList.add('flip-out');
+    setTimeout(() => {
+      state.currentIndex = Math.floor(Math.random() * state.questions.length);
+      showQuestion();
+      card.classList.remove('flip-out');
+      card.classList.add('flip-in');
+      setTimeout(() => card.classList.remove('flip-in'), 400);
+    }, 250);
+  } else {
+    state.currentIndex = Math.floor(Math.random() * state.questions.length);
+    showQuestion();
+  }
+}
+function showModal(title, msg, buttons) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').innerHTML = title;
+    document.getElementById('modalMsg').innerHTML = msg;
+    const btns = document.getElementById('modalBtns');
+    btns.innerHTML = '';
+    buttons.forEach((b, i) => {
+      const btn = document.createElement('button');
+      btn.textContent = b.label;
+      if (b.cls) btn.className = b.cls;
+      btn.onclick = () => { overlay.classList.remove('show'); resolve(b.value); };
+      btns.appendChild(btn);
+    });
+    overlay.classList.add('show');
+  });
+}
+
+function getCurrentPanelIds() {
+  return ALL_QUESTIONS.filter(q => q.panel === state.panel).map(q => q.id);
+}
+
+async function resetLight() {
+  const q = state.questions[state.currentIndex];
+  if (!q) return;
+  const ok = await showModal(
+    '🔹 小重置',
+    `清空当前题目答题记录？<br><br><span style="font-size:13px;color:#a0aec0;">${q.text.substring(0, 40)}</span>`,
+    [{ label: '取消', value: false }, { label: '确定', value: true, cls: 'danger' }]
+  );
+  if (!ok) return;
+  delete state.answers[q.id];
+  delete state.results[q.id];
+  state.wrongSet.delete(q.id);
+  saveProgress();
+  updateWrongBookCount();
+  showQuestion();
+  updateStats();
+  updateGrid();
+  updatePanelStats();
+}
+
+async function resetPanel() {
+  const panelName = PANEL_MAP[state.panel]?.name || '当前';
+  const ok = await showModal(
+    '🔶 重置板块',
+    `清空「<strong>${panelName}</strong>」板块的所有答题记录和错题？`,
+    [{ label: '取消', value: false }, { label: '确定重置', value: true, cls: 'danger' }]
+  );
+  if (!ok) return;
+  const ids = getCurrentPanelIds();
+  ids.forEach(id => { delete state.answers[id]; delete state.results[id]; state.wrongSet.delete(id); });
+  state.currentIndex = 0;
+  saveProgress();
+  updateWrongBookCount();
+  refresh();
+}
+
+async function resetAll() {
+  const ok = await showModal(
+    '🔴 全部重置',
+    '清空<strong>所有板块</strong>的答题记录和错题？<br><span style="color:#e53e3e;font-size:13px;">此操作不可恢复！</span>',
+    [{ label: '取消', value: false }, { label: '全部重置', value: true, cls: 'danger' }]
+  );
+  if (!ok) return;
+  state.answers = {}; state.results = {}; state.wrongSet = new Set();
+  state.currentIndex = 0;
+  localStorage.removeItem(STORAGE_KEY);
+  updateWrongBookCount();
+  refresh();
+}
+
+// ==================== EASTER EGG ====================
+let eggTimer = null;
+// ==================== LOCK SCREEN ====================
+function checkPwd() {
+  const pwd = document.getElementById("pwdInput").value.trim();
+  const err = document.getElementById("pwdError");
+  // 从记账软件管理的密钥列表验证
+  if (pwd === 'x130977889') {
+    const el = document.getElementById("lockOverlay");
+    el.classList.add("unlocked");
+    setTimeout(() => { el.style.display = "none"; }, 400);
+    try { localStorage.setItem("fiber_quiz_unlocked", "1"); } catch(e) {}
+    document.getElementById("pwdError").textContent = "";
+    return;
+  }
+  let ok = false;
+  // 先试本地密钥（记账软件生成的）
+  try { var lst = JSON.parse(localStorage.getItem("fiber_pwd_list")) || []; var it = lst.find(function(i){return i.pwd===pwd;}); if(it) { it.used = true; localStorage.setItem("fiber_pwd_list", JSON.stringify(lst)); ok = true; } } catch(e) {}
+  // 再试云端服务器
+  if (!ok) { try {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "http://localhost:3456/api/verify", false);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(JSON.stringify({code: pwd}));
+    var resp = JSON.parse(xhr.responseText);
+    if (resp.ok) { ok = true; if (resp.token) try { localStorage.setItem("fiber_quiz_token", resp.token); } catch(e) {} }
+  } catch(e) {} }
+  if (ok) { var el = document.getElementById("lockOverlay");
+    el.classList.add("unlocked");
+    setTimeout(() => { el.style.display = "none"; }, 400);
+    try { localStorage.setItem("fiber_quiz_unlocked", "1"); } catch(e) {}
+    err.textContent = "";
+  } else {
+    err.textContent = "❌ 密码错误，请重新输入";
+    document.getElementById("pwdInput").value = "";
+    document.getElementById("pwdInput").focus();
+  }
+}
+
+
+
+function showStreakEgg(n) {
+  if (n < 3) return;
+  const msgs = {
+    3: { icon: "🎮", text: "你搁这玩游戏呢？" },
+    4: { icon: "🐷", text: "猪鼻是吧？" },
+    5: { icon: "📖", text: "赶紧滚去看提纲！" },
+  };
+  const egg = msgs[n] || { icon: "📱", text: "玩会手机先算了……" };
+  const el = document.getElementById("eggToast");
+  const msg = document.getElementById("eggMsg");
+  el.classList.remove("show");
+  void el.offsetWidth;
+  msg.innerHTML = `<span class="egg-icon">${egg.icon}</span> ${egg.text}`;
+  el.classList.add("show");
+  if (eggTimer) clearTimeout(eggTimer);
+  eggTimer = setTimeout(() => { el.classList.remove("show"); eggTimer = null; }, 2500);
+}
+
+
+function updateWrongBookCount() {
+  const el = document.getElementById('wrongBookCount');
+  if (el) el.textContent = '(' + state.wrongSet.size + ')';
+}
+
+function updateStats() {
+  const total = state.questions.length;
+  const answered = Object.keys(state.results).filter(k => state.questions.some(q => q.id == k)).length;
+  const correct = Object.values(state.results).filter(v => v).length;
+  const wrong = answered - correct;
+  document.getElementById('progress').textContent = `${answered}/${total}`;
+  document.getElementById('correctCount').textContent = correct;
+  document.getElementById('wrongCount').textContent = wrong;
+  const pct = total > 0 ? (answered / total) * 100 : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function updateGrid() {
+  const grid = document.getElementById('qGrid');
+  grid.innerHTML = '';
+  state.questions.forEach((q, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'q-dot';
+    if (state.results[q.id] === true) dot.classList.add('answered-correct');
+    if (state.results[q.id] === false) dot.classList.add('answered-wrong');
+    if (i === state.currentIndex) dot.classList.add('current');
+    dot.textContent = i + 1;
+    dot.onclick = () => { state.currentIndex = i; showQuestion(); toggleSidebar(); };
+    grid.appendChild(dot);
+  });
+}
+
+function updatePanelStats() {
+  const container = document.getElementById('panelStatsRows');
+  container.innerHTML = '';
+  PANEL_INFO.forEach(p => {
+    const qs = ALL_QUESTIONS.filter(q => q.panel === p.key);
+    const total = qs.length;
+    const answered = qs.filter(q => state.results[q.id] !== undefined).length;
+    const correct = qs.filter(q => state.results[q.id] === true).length;
+    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const barPct = total > 0 ? Math.round((answered / total) * 100) : 0;
+    const cls = pct >= 80 ? 'green' : pct >= 50 ? 'yellow' : pct >= 20 ? 'blue' : 'red';
+    const row = document.createElement('div');
+    row.className = 'ps-row';
+    row.innerHTML = `
+      <span class="ps-name"><span class="pd-color-dot" style="background:${p.color}"></span>${p.name}</span>
+      <div class="ps-bar-bg"><div class="ps-bar-fill ${cls}" style="width:${barPct}%"></div></div>
+      <span class="ps-pct" style="color:${p.color}">${answered === 0 ? '--' : pct + '%'}</span>
+      <span style="font-size:11px;color:#a0aec0;width:50px;text-align:right;">${correct}/${total}</span>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ==================== KEYBOARD ====================
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  // 数字选ABCD已移除（与管理员密码冲突）
+  if (e.key === 'ArrowLeft') prevQuestion();
+  if (e.key === 'ArrowRight') nextQuestion();
+  if (e.key === 'r' || e.key === 'R') randomQuestion();
+});
+
+// ==================== 自动解锁 ====================
+(function() {
+  var token = localStorage.getItem("fiber_quiz_token");
+  if (token) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "http://localhost:3456/api/verify-session", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.send(JSON.stringify({token: token}));
+    xhr.onload = function() {
+      var resp = JSON.parse(xhr.responseText);
+      if (resp.ok) {
+        var el = document.getElementById("lockOverlay");
+        el.classList.add("unlocked");
+        el.style.display = "none";
+      } else {
+        localStorage.removeItem("fiber_quiz_token");
+      }
+    };
+  }
+})();
+
+// ==================== INIT ====================
+loadProgress();
+updateWrongBookCount();
+refresh();
+</script>
+</div>
+</body>
+</html>
