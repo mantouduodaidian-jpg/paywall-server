@@ -1180,7 +1180,7 @@ function checkPwd() {
   // 再试云端服务器
   if (!ok) { try {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://localhost:3456/api/verify", false);
+    xhr.open("POST", "https://paywall-server.onrender.com/api/verify", false);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify({code: pwd}));
     var resp = JSON.parse(xhr.responseText);
@@ -1288,7 +1288,7 @@ document.addEventListener('keydown', (e) => {
   var token = localStorage.getItem("fiber_quiz_token");
   if (token) {
     var xhr = new XMLHttpRequest();
-    xhr.open("POST", "http://localhost:3456/api/verify-session", true);
+    xhr.open("POST", "https://paywall-server.onrender.com/api/verify-session", true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.send(JSON.stringify({token: token}));
     xhr.onload = function() {
