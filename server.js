@@ -140,13 +140,9 @@ app.post('/api/verify-session', (req, res) => {
 // 统计
 app.get('/api/stats', (req, res) => {
   const pid = parseInt(req.query.product_id) || 0;
-  const w = pid ? ' WHERE product_id = ' + pid : '';
-  const totalPwd = qOne('SELECT COUNT(*) as c FROM passwords' + w).c;
-  const usedPwd = qOne('SELECT COUNT(*) as c FROM passwords' + w + (w ? '' : '') + (pid ? '' : ''))?.c || 0;
-  // Need to handle the WHERE clause properly
-  const totalPwd2 = qOne('SELECT COUNT(*) as c FROM passwords' + (pid ? ' WHERE product_id = ' + pid : '')).c;
-  const usedPwd2 = qOne('SELECT COUNT(*) as c FROM passwords WHERE used = 1' + (pid ? ' AND product_id = ' + pid : '')).c;
-  res.json({ totalPwd: totalPwd2, usedPwd: usedPwd2, revenue: usedPwd2 * 0.99 });
+  const t = qOne('SELECT COUNT(*) as c FROM passwords' + (pid ? ' WHERE product_id = ' + pid : '')).c;
+  const u = qOne('SELECT COUNT(*) as c FROM passwords WHERE used = 1' + (pid ? ' AND product_id = ' + pid : '')).c;
+  res.json({ totalPwd: t, usedPwd: u, revenue: u * 0.99 });
 });
 
 const PORT = process.env.PORT || 3456;
