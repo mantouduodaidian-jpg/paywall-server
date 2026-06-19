@@ -1102,12 +1102,14 @@ document.addEventListener('keydown',e=>{
 });
 
 // ============ BOOT ============
-load();
-document.querySelectorAll('#modeGroup .btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===S.mode));
-document.querySelectorAll('#panelGroup .btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===S.panel));
-if(S.mode!=='panel') document.getElementById('panelGroup').style.display='none';
-renderOutline();
-render();
+try {
+  load();
+  document.querySelectorAll('#modeGroup .btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===S.mode));
+  document.querySelectorAll('#panelGroup .btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===S.panel));
+  if(S.mode!=='panel') document.getElementById('panelGroup').style.display='none';
+  renderOutline();
+  render();
+} catch(e) { console.error('Boot error:', e); }
 
 // ===== LOCK SCREEN =====
 async function checkPwd() {
