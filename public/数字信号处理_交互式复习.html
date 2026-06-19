@@ -1107,39 +1107,33 @@ document.querySelectorAll('#modeGroup .btn').forEach(b=>b.classList.toggle('acti
 document.querySelectorAll('#panelGroup .btn').forEach(b=>b.classList.toggle('active',b.dataset.panel===S.panel));
 if(S.mode!=='panel') document.getElementById('panelGroup').style.display='none';
 renderOutline();
-render();</script>
-<script>
 render();
 
 // ===== LOCK SCREEN =====
-function checkPwd() {
+async function checkPwd() {
   const pwd = document.getElementById("pwdInput").value.trim();
   const err = document.getElementById("pwdError");
   const btn = document.querySelector(".unlock-btn");
   if (!pwd) { err.textContent = "❌ 请输入密码"; return; }
   btn.textContent = "⏳ 验证中..."; btn.disabled = true;
   err.textContent = "";
-
-  fetch("https://paywall-server.onrender.com/api/verify", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({code: pwd})
-  })
-  .then(r => r.json())
-  .then(resp => {
-    if (resp.ok) {
-      if (resp.token) try { localStorage.setItem("dsp_quiz_token", resp.token); } catch(e) {}
-      var el = document.getElementById("lockOverlay");
-      err.textContent = "✅ 解锁成功！";
+  try {
+    const resp = await fetch("https://paywall-server.onrender.com/api/verify", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({code: pwd})
+    });
+    const d = await resp.json();
+    if (d.ok) {
+      if (d.token) try { localStorage.setItem("dsp_quiz_token", d.token); } catch(e) {}
       document.getElementById("lockOverlay").style.display = "none";
+      err.textContent = "";
     } else {
-      err.textContent = "❌ " + (resp.msg || "密码错误");
+      err.textContent = "❌ " + (d.msg || "密码错误");
       document.getElementById("pwdInput").value = "";
       document.getElementById("pwdInput").focus();
     }
-  })
-  .catch(e => { err.textContent = "❌ 验证失败，请检查网络"; })
-  .finally(() => { btn.textContent = "🔓 解锁"; btn.disabled = false; });
+  } catch(e) { err.textContent = "❌ 验证失败，请检查网络"; }
+  btn.textContent = "🔓 解锁"; btn.disabled = false;
 }
 (function() {
   var token = localStorage.getItem("dsp_quiz_token");
