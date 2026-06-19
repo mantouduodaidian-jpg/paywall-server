@@ -1128,9 +1128,8 @@ function checkPwd() {
     if (resp.ok) {
       if (resp.token) try { localStorage.setItem("dsp_quiz_token", resp.token); } catch(e) {}
       var el = document.getElementById("lockOverlay");
-      el.classList.add("unlocked");
-      setTimeout(function(){ el.style.display = "none"; }, 400);
-      err.textContent = "";
+      err.textContent = "✅ 解锁成功！";
+      document.getElementById("lockOverlay").style.display = "none";
     } else {
       err.textContent = "❌ " + (resp.msg || "密码错误");
       document.getElementById("pwdInput").value = "";
