@@ -1162,7 +1162,7 @@ async function resetAll() {
 // ==================== EASTER EGG ====================
 let eggTimer = null;
 // ==================== LOCK SCREEN ====================
-function checkPwd() {
+async function checkPwd() {
   const pwd = document.getElementById("pwdInput").value.trim();
   const err = document.getElementById("pwdError");
   // 从记账软件管理的密钥列表验证
@@ -1178,14 +1178,20 @@ function checkPwd() {
   // 先试本地密钥（记账软件生成的）
   try { var lst = JSON.parse(localStorage.getItem("fiber_pwd_list")) || []; var it = lst.find(function(i){return i.pwd===pwd;}); if(it) { it.used = true; localStorage.setItem("fiber_pwd_list", JSON.stringify(lst)); ok = true; } } catch(e) {}
   // 再试云端服务器
-  if (!ok) { try {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://paywall-server.onrender.com/api/verify", false);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({code: pwd}));
-    var resp = JSON.parse(xhr.responseText);
-    if (resp.ok) { ok = true; if (resp.token) try { localStorage.setItem("fiber_quiz_token", resp.token); } catch(e) {} }
-  } catch(e) {} }
+  if (!ok) {
+    const btn = document.querySelector(".unlock-btn");
+    btn.textContent = "⏳ 验证中..."; btn.disabled = true;
+    try {
+      const resp = await fetch("https://paywall-server.onrender.com/api/verify", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({code: pwd})
+      });
+      const d = await resp.json();
+      if (d.ok) { ok = true; if (d.token) try { localStorage.setItem("fiber_quiz_token", d.token); } catch(e) {} }
+    } catch(e) { err.textContent = "❌ 验证失败，请检查网络"; }
+    btn.textContent = "🔓 解锁"; btn.disabled = false;
+  }
   if (ok) { var el = document.getElementById("lockOverlay");
     el.classList.add("unlocked");
     setTimeout(() => { el.style.display = "none"; }, 400);

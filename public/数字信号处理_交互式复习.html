@@ -1113,25 +1113,32 @@ render();
 function checkPwd() {
   const pwd = document.getElementById("pwdInput").value.trim();
   const err = document.getElementById("pwdError");
-  let ok = false;
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST", "https://paywall-server.onrender.com/api/verify", false);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify({code: pwd}));
-    var resp = JSON.parse(xhr.responseText);
-    if (resp.ok) { ok = true; if (resp.token) try { localStorage.setItem("dsp_quiz_token", resp.token); } catch(e) {} }
-  } catch(e) {}
-  if (ok) {
-    var el = document.getElementById("lockOverlay");
-    el.classList.add("unlocked");
-    setTimeout(function(){ el.style.display = "none"; }, 400);
-    err.textContent = "";
-  } else {
-    err.textContent = "❌ 密码错误，请重新输入";
-    document.getElementById("pwdInput").value = "";
-    document.getElementById("pwdInput").focus();
-  }
+  const btn = document.querySelector(".unlock-btn");
+  if (!pwd) { err.textContent = "❌ 请输入密码"; return; }
+  btn.textContent = "⏳ 验证中..."; btn.disabled = true;
+  err.textContent = "";
+
+  fetch("https://paywall-server.onrender.com/api/verify", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({code: pwd})
+  })
+  .then(r => r.json())
+  .then(resp => {
+    if (resp.ok) {
+      if (resp.token) try { localStorage.setItem("dsp_quiz_token", resp.token); } catch(e) {}
+      var el = document.getElementById("lockOverlay");
+      el.classList.add("unlocked");
+      setTimeout(function(){ el.style.display = "none"; }, 400);
+      err.textContent = "";
+    } else {
+      err.textContent = "❌ " + (resp.msg || "密码错误");
+      document.getElementById("pwdInput").value = "";
+      document.getElementById("pwdInput").focus();
+    }
+  })
+  .catch(e => { err.textContent = "❌ 验证失败，请检查网络"; })
+  .finally(() => { btn.textContent = "🔓 解锁"; btn.disabled = false; });
 }
 (function() {
   var token = localStorage.getItem("dsp_quiz_token");
