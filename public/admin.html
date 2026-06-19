@@ -165,12 +165,14 @@ async function loadStats() {
 
 
 function copyPwd(code) {
-  navigator.clipboard.writeText(code).then(() => toast('✅ 已复制: ' + code)).catch(() => {
-    // fallback
-    var ta = document.createElement('textarea');
-    ta.value = code; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta); toast('✅ 已复制: ' + code);
-  });
+  var ta = document.createElement('textarea');
+  ta.value = code;
+  ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select(); ta.setSelectionRange(0, 99999);
+  try { document.execCommand('copy'); toast('✅ 已复制: ' + code); }
+  catch(e) { toast('❌ 复制失败，请手动选中复制'); }
+  document.body.removeChild(ta);
 }
 async function batchGen() {
   const label = document.getElementById('labelInput').value.trim();
