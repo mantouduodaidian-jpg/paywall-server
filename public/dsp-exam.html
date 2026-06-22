@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字信号处理 — 试卷复习</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,'Microsoft YaHei',sans-serif; background:linear-gradient(135deg,#d4c0e8,#e8d8ff,#dcc8f0); padding:20px; color:#2d3748; }
+  .wrap { max-width:800px; margin:0 auto; }
+  h1 { text-align:center; font-size:24px; color:#2d1b69; margin-bottom:4px; }
+  .sub { text-align:center; color:#7a5a9a; font-size:13px; margin-bottom:24px; }
+  .back { text-align:center; margin:20px 0; }
+  .back a { color:#7a42e1; text-decoration:none; font-size:13px; }
+  .back a:hover { text-decoration:underline; }
+  .paper { background:rgba(255,255,255,.95); border-radius:20px; padding:28px; margin-bottom:20px; box-shadow:0 8px 32px rgba(100,50,200,.1); }
+  .paper h2 { font-size:16px; color:#2d1b69; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid rgba(160,120,200,.15); }
+  .q { margin-bottom:10px; padding:8px 12px; border-radius:8px; background:rgba(255,255,255,.5); border:1px solid rgba(160,120,200,.06); font-size:14px; line-height:1.7; }
+  .q .num { color:#7a42e1; font-weight:600; }
+  .sec { font-weight:600; color:#2d1b69; font-size:14px; margin:14px 0 8px; padding:6px 10px; background:rgba(122,66,225,.06); border-radius:8px; }
+  .calc-q { margin-bottom:12px; padding:12px 16px; background:rgba(122,66,225,.04); border-left:3px solid #7a42e1; border-radius:0 10px 10px 0; font-size:14px; line-height:1.7; }
+  .ans { display:inline; cursor:pointer; }
+  .ans .hide { color:#7a42e1; background:rgba(122,66,225,.08); padding:1px 6px; border-radius:4px; font-weight:600; border-bottom:1px dashed #7a42e1; }
+  .ans .show { color:#38a169; font-weight:600; }
+  .controls { text-align:center; margin-top:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .controls button { padding:8px 20px; border-radius:10px; font-size:13px; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 数字信号处理 试卷复习</h1>
+  <p class="sub">点击蓝色答案 → 显示 · 再点击 → 隐藏 · 共50+题</p>
+  <div class="paper"><h2>📘 第1-2章 测验</h2>
+<div class="sec">一、填空题（每题2分）</div>
+<div class="q"><span class="num">1.</span> <span class="text">线性时不变系统，输入x(n)输出y(n)；输入2x(n)输出</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="2y(n)">点击显示答案</span></span> <span class="text">；输入x(n-3)输出</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="y(n-3)">点击显示答案</span></span> <span class="text"></span></div>
+<div class="q"><span class="num">2.</span> <span class="text">采样定理：fs与fmax关系为</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="fs>=2fmax">点击显示答案</span></span> <span class="text"></span></div>
+<div class="q"><span class="num">3.</span> <span class="text">x(n)=sin(30nπ/120)的周期N=</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="8">点击显示答案</span></span> <span class="text"></span></div>
+<div class="q"><span class="num">4.</span> <span class="text">线性移不变系统的性质有</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="交换率、结合率、分配律">点击显示答案</span></span> <span class="text"></span></div>
+<div class="sec">二、选择题（每题3分）</div>
+<div class="q"><span class="num">1.</span> <span class="text">δ(n)的z变换是<br><span style="color:#7a5a9a;font-size:12px;">A.1 B.δ(w) C.2πδ(w) D.2π</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">2.</span> <span class="text">采样定理fs与fmax关系<br><span style="color:#7a5a9a;font-size:12px;">A.fs≥2fmax B.fs≤2fmax C.fs≥fmax D.fs≤fmax</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">3.</span> <span class="text">x1长4，x2长3，线性卷积长度<br><span style="color:#7a5a9a;font-size:12px;">A.5 B.6 C.6 D.7</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">4.</span> <span class="text">IIR滤波器的结构是<br><span style="color:#7a5a9a;font-size:12px;">A.非递归 B.反馈 C.递归 D.不确定</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">5.</span> <span class="text">下列关系正确的为</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">6.</span> <span class="text">序列的傅立叶变换信号特点<br><span style="color:#7a5a9a;font-size:12px;">A.时域连续非周期频域连续非周期 B.时域离散周期频域连续非周期 C.时域离散非周期频域连续非周期 D.时域离散非周期频域连续周期</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">7.</span> <span class="text">系统因果充要条件<br><span style="color:#7a5a9a;font-size:12px;">A.n>0时h(n)=0 B.n>0时h(n)≠0 C.n<0时h(n)=0 D.n<0时h(n)≠0</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">8.</span> <span class="text">满足奈奎斯特条件后通过什么恢复<br><span style="color:#7a5a9a;font-size:12px;">A.理想低通 B.理想高通 C.理想带通 D.理想带阻</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">9.</span> <span class="text">输入δ(n)输出R3(n)，输入u(n)-u(n-2)输出<br><span style="color:#7a5a9a;font-size:12px;">A.R3(n) B.R2(n) C.R3(n)+R3(n-1) D.R2(n)+R2(n-1)</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">10.</span> <span class="text">非因果系统<br><span style="color:#7a5a9a;font-size:12px;">A.h=δ(n) B.h=u(n) C.h=u(n)-u(n-1) D.h=u(n)-u(n+1)</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">11.</span> <span class="text">系统稳定充要条件：收敛域包含<br><span style="color:#7a5a9a;font-size:12px;">A.单位圆 B.原点 C.实轴 D.虚轴</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">12.</span> <span class="text">收敛域|z|<1，序列为<br><span style="color:#7a5a9a;font-size:12px;">A.有限长 B.右边 C.左边 D.双边</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">13.</span> <span class="text">实序列傅里叶变换必是<br><span style="color:#7a5a9a;font-size:12px;">A.共轭对称 B.共轭反对称 C.奇函数 D.偶函数</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">14.</span> <span class="text">h(n)=δ(n-1)+δ(n+1)频率响应<br><span style="color:#7a5a9a;font-size:12px;">A.2cosω B.2sinω C.cosω D.sinω</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">15.</span> <span class="text">实序列DTFT的幅度和幅角<br><span style="color:#7a5a9a;font-size:12px;">A.幅度幅角都偶 B.幅度奇幅角偶 C.幅度偶幅角奇 D.幅度幅角都奇</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">16.</span> <span class="text">y+0.3y(n-1)=x与y=-0.2x+x(n-1)是<br><span style="color:#7a5a9a;font-size:12px;">A.均为IIR B.均为FIR C.前者IIR后者FIR D.前者FIR后者IIR</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">17.</span> <span class="text">非时变系统</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">18.</span> <span class="text">傅里叶变换对应</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">19.</span> <span class="text">因果稳定系统参数范围</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">20.</span> <span class="text">线性系统</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="sec">三、计算题</div>
+<div class="calc-q"><div class="text"><b>1.</b> 已知稳定LTI系统H(z)，确定收敛域和脉冲响应h[n]。</div>
+    <span class="ans" onclick="ta(this)"><span class="hide" data-ans="收敛域0.5<|z|<2，h[n]=...（详见答案）">点击显示答案</span></span></div>
+<div class="calc-q"><div class="text"><b>2.</b> y(n)-0.16y(n-2)=0.25x(n-2)+x(n)，求H(z)并判断稳定性。</div>
+    <span class="ans" onclick="ta(this)"><span class="hide" data-ans="H(z)=(1+0.25z⁻²)/(1-0.16z⁻²)，极点在±0.4，稳定">点击显示答案</span></span></div>
+</div>
+<div class="paper"><h2>📗 第3-6章 练习</h2>
+<p style="color:#7a5a9a;font-size:13px;">点击答案位置显示/隐藏</p>
+<div class="q"><span class="num">1.</span> <span class="text">DFT利用旋转因子的</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="对称性、可约性和周期性">点击显示答案</span></span></div>
+<div class="q"><span class="num">2.</span> <span class="text">FIR设计方法有</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="窗函数法和频率抽样设计法">点击显示答案</span></span></div>
+<div class="q"><span class="num">3.</span> <span class="text">FIR结构有</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="横截型、级联型、频率抽样型">点击显示答案</span></span></div>
+<div class="q"><span class="num">4.</span> <span class="text">时域周期→频域</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="离散">点击显示答案</span></span></div>
+<div class="q"><span class="num">5.</span> <span class="text">10kHz信号最大采样间隔T=</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="0.00005s">点击显示答案</span></span></div>
+<div class="q"><span class="num">6.</span> <span class="text">FIR线性相位→a=</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="2">点击显示答案</span></span></div>
+<div class="q"><span class="num">7.</span> <span class="text">DFT是DTFT的</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="N点等间隔采样">点击显示答案</span></span></div>
+<div class="q"><span class="num">8.</span> <span class="text">窗函数法过渡带与什么有关</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="窗的类型和采样点数">点击显示答案</span></span></div>
+<div class="q"><span class="num">9.</span> <span class="text">DFT与DFS关系</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="有限长=周期序列的主值区间">点击显示答案</span></span></div>
+<div class="q"><span class="num">10.</span> <span class="text">圆周移位定义</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="x((n-m))N RN(n)">点击显示答案</span></span></div>
+<div class="q"><span class="num">11.</span> <span class="text">DIT→DIF流图转置方法</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="输入输出互换">点击显示答案</span></span></div>
+<div class="q"><span class="num">12.</span> <span class="text">谱分析问题：混叠、</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="泄漏、栅栏效应">点击显示答案</span></span></div>
+<div class="q"><span class="num">13.</span> <span class="text">IIR基本结构有</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="直接I型、直接II型、级联型、并联型">点击显示答案</span></span></div>
+<div class="q"><span class="num">14.</span> <span class="text">IIR有反馈→</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="递归型结构">点击显示答案</span></span></div>
+<div class="q"><span class="num">15.</span> <span class="text">数字信号是指</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="时间幅度都离散的信号">点击显示答案</span></span></div>
+<div class="sec">二、选择题</div>
+<div class="q"><span class="num">1.</span> <span class="text">线性卷积长度和5点圆周卷积长度<br><span style="color:#7a5a9a;font-size:12px;">A.5,5 B.6,5 C.6,6 D.7,5</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B, B">点击显示答案</span></span></div>
+<div class="q"><span class="num">2.</span> <span class="text">IIR结构是<br><span style="color:#7a5a9a;font-size:12px;">A.非递归 B.反馈 C.递归 D.不确定</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">3.</span> <span class="text">FIR对称中心<br><span style="color:#7a5a9a;font-size:12px;">A.N/2 B.(N-1)/2 C.(N/2)-1 D.不确定</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">4.</span> <span class="text">N=32基2FFT需几级蝶形<br><span style="color:#7a5a9a;font-size:12px;">A.4 B.5 C.6 D.3</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">5.</span> <span class="text">最适合描述DFT的<br><span style="color:#7a5a9a;font-size:12px;">A.时域离散频域离散 B.时域离散有限长频域离散有限长 C.时域离散无限长频域连续周期 D.时域离散周期频域离散周期</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">6.</span> <span class="text">R5(n)的8点DFT的X(0)=<br><span style="color:#7a5a9a;font-size:12px;">A.2 B.3 C.4 D.5</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">7.</span> <span class="text">频域抽样恢复序列不混叠条件<br><span style="color:#7a5a9a;font-size:12px;">A.N≥M B.N≤M C.N≥M/2 D.N≤M/2</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">8.</span> <span class="text">8点圆周卷积≠线性卷积<br><span style="color:#7a5a9a;font-size:12px;">A.N1=3,N2=4 B.N1=5,N2=4 C.N1=4,N2=4 D.N1=5,N2=5</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">9.</span> <span class="text">序列傅立叶变换信号特点<br><span style="color:#7a5a9a;font-size:12px;">A.连续非周期→连续非周期 B.离散周期→连续非周期 C.离散非周期→连续非周期 D.离散非周期→连续周期</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">10.</span> <span class="text">δ(n)的10点DFT的X(5)=<br><span style="color:#7a5a9a;font-size:12px;">A.10 B.1 C.0 D.-10</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">11.</span> <span class="text">下列收敛域中系统稳定的是<br><span style="color:#7a5a9a;font-size:12px;">A.|z|>2 B.|z|<0.5 C.0.5<|z|<2 D.|z|<0.9</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">12.</span> <span class="text">DFT只限制离散点频谱→<br><span style="color:#7a5a9a;font-size:12px;">A.栅栏效应 B.吉布斯效应 C.泄漏效应 D.奈奎斯特效应</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">13.</span> <span class="text">因果FIR极点全部在<br><span style="color:#7a5a9a;font-size:12px;">A.z=0 B.z=1 C.z=j D.z=∞</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">14.</span> <span class="text">FFT计算量与成正比<br><span style="color:#7a5a9a;font-size:12px;">A.N B.N² C.N³ D.Nlog₂N</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">15.</span> <span class="text">双线性变换不正确的是<br><span style="color:#7a5a9a;font-size:12px;"></span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">16.</span> <span class="text">FIR和IIR不正确的是<br><span style="color:#7a5a9a;font-size:12px;">A.FIR主要采用递归结构 B.IIR不易线性相位 C.FIR总是稳定 D.IIR用于分段常数</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">17.</span> <span class="text">h=δ(n-1)+δ(n+1)频率响应<br><span style="color:#7a5a9a;font-size:12px;">A.2cosω B.2sinω C.cosω D.sinω</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">18.</span> <span class="text">实序列DTFT幅度幅角<br><span style="color:#7a5a9a;font-size:12px;">A.都偶 B.幅度奇幅角偶 C.幅度偶幅角奇 D.都奇</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">19.</span> <span class="text">冲激响应不变法错误的是<br><span style="color:#7a5a9a;font-size:12px;"></span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="D">点击显示答案</span></span></div>
+<div class="q"><span class="num">20.</span> <span class="text">矩形窗比三角窗过渡带和阻带衰减<br><span style="color:#7a5a9a;font-size:12px;">A.窄,小 B.宽,小 C.宽,大 D.窄,大</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">21.</span> <span class="text">IIR结构是</span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">22.</span> <span class="text">双线性变换<br><span style="color:#7a5a9a;font-size:12px;">A.无混频线性频率 B.有混频线性频率 C.无混频非线性频率 D.有混频非线性频率</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">23.</span> <span class="text">N1和N2点线性卷积至少做几点DFT<br><span style="color:#7a5a9a;font-size:12px;">A.N1 B.N1+N2-1 C.N1+N2+1 D.N2</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">24.</span> <span class="text">y+0.3y(n-1)=x与y=-0.2x+x(n-1)是<br><span style="color:#7a5a9a;font-size:12px;">A.均为IIR B.均为FIR C.前者IIR后者FIR D.前者FIR后者IIR</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">25.</span> <span class="text">说法正确的是<br><span style="color:#7a5a9a;font-size:12px;">A.连续非周期→周期连续 B.连续周期→周期连续 C.离散非周期→周期连续 D.离散周期→周期连续</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="C">点击显示答案</span></span></div>
+<div class="q"><span class="num">26.</span> <span class="text">矩形窗最大肩峰8.95%→<br><span style="color:#7a5a9a;font-size:12px;">A.吉布斯效应 B.栅栏效应 C.泄漏效应 D.奈奎斯特效应</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">27.</span> <span class="text">DFT变换定义<br><span style="color:#7a5a9a;font-size:12px;"></span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">28.</span> <span class="text">有界输入有界输出→<br><span style="color:#7a5a9a;font-size:12px;">A.因果系统 B.稳定系统 C.可逆系统 D.线性系统</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="B">点击显示答案</span></span></div>
+<div class="q"><span class="num">29.</span> <span class="text">实序列傅里叶变换必是<br><span style="color:#7a5a9a;font-size:12px;">A.共轭对称 B.共轭反对称 C.奇函数 D.偶函数</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+<div class="q"><span class="num">30.</span> <span class="text">采样角频率与最高截止频率关系<br><span style="color:#7a5a9a;font-size:12px;">A.Ωs≥2Ωc B.Ωs≤2Ωc C.Ωs≥Ωc D.Ωs≤Ωc</span></span> <span class="ans" onclick="ta(this)"><span class="hide" data-ans="A">点击显示答案</span></span></div>
+</div>
+  <div class="back"><a href="https://paywall-server.onrender.com/dsp.html">← 返回 DSP 交互式复习</a></div>
+</div>
+<script>
+function ta(el) {
+  var h = el.querySelector('.hide');
+  var s = el.querySelector('.show');
+  if (h) {
+    var txt = h.getAttribute('data-ans') || '答案';
+    h.className = 'show'; h.textContent = txt;
+  } else if (s) {
+    s.className = 'hide'; s.textContent = '点击显示答案';
+  }
+}
+</script>
+</body>
+</html>

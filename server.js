@@ -160,6 +160,7 @@ const API_KEYS = {
   siliconflow: process.env.SILICONFLOW_KEY || '',
   kimi: process.env.KIMI_KEY || process.env.KIMI_KET || '',
   doubao: process.env.DOUBAO_KEY || process.env.DOUBAO_KET || '',
+  groq: process.env.GROQ_KEY || '',
 };
 const PROXY_BASE = {
   deepseek: 'https://api.deepseek.com',
@@ -168,6 +169,7 @@ const PROXY_BASE = {
   siliconflow: 'https://api.siliconflow.cn/v1',
   kimi: 'https://api.moonshot.cn/v1',
   doubao: 'https://ark.cn-beijing.volces.com/api/v3',
+  groq: 'https://api.groq.com/openai/v1',
 };
 
 function getProvider(model) {
@@ -178,6 +180,7 @@ function getProvider(model) {
   if (m.includes('kimi') || m.includes('moonshot')) return 'kimi';
   if (m.includes('doubao') || m.includes('ark-')) return 'doubao';
   if (m.includes('silicon') || m.includes('glm') || m.includes('yi-')) return 'siliconflow';
+  if (m.includes('groq') || m.includes('llama') || m.includes('mixtral') || m.includes('gemma')) return 'groq';
   return 'deepseek';
 }
 
@@ -315,6 +318,7 @@ app.get('/api/keys', (req, res) => {
       dashscope: ['qwen-plus', 'qwen-turbo', 'qwen-max'],
       kimi: ['kimi-k2', 'moonshot-v1-8k'],
       doubao: ['doubao-pro-32k', 'doubao-lite-32k'],
+      groq: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'],
       siliconflow: ['Pro/deepseek-ai/DeepSeek-V4', 'glm-4-plus'],
     }
   });
@@ -328,8 +332,9 @@ app.get('/v1', (req, res) => {
     dashscope: !!API_KEYS.dashscope,
     kimi: !!API_KEYS.kimi,
     doubao: !!API_KEYS.doubao,
+    groq: !!API_KEYS.groq,
   };
-  const models = { deepseek: ['deepseek-chat','deepseek-v4-flash'], openai: ['gpt-4o-mini','gpt-4o'], dashscope: ['qwen-plus','qwen-turbo'], kimi: ['kimi-k2','moonshot-v1'], doubao: ['doubao-pro-32k'] };
+  const models = { deepseek: ['deepseek-chat','deepseek-v4-flash'], openai: ['gpt-4o-mini','gpt-4o'], dashscope: ['qwen-plus','qwen-turbo'], kimi: ['kimi-k2','moonshot-v1'], doubao: ['doubao-pro-32k'], groq: ['llama3-70b','llama3-8b','mixtral-8x7b'] };
   res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>API Proxy</title><meta name="viewport" content="width=device-width"><style>body{font-family:system-ui;background:#0f0d23;color:#fff;padding:24px;max-width:600px;margin:0 auto;}h1{font-size:22px;color:#a78bfa}code{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px;font-size:13px}.ok{color:#34d399}.off{color:rgba(255,255,255,.15)}.card{background:rgba(255,255,255,.03);border-radius:12px;padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,.06)}</style></head><body>
 <h1>✦ API Proxy</h1>
 <p style="color:rgba(255,255,255,.4);margin-bottom:20px;">POST 请求发送到 <code>/v1/chat/completions</code></p>

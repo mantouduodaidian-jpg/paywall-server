@@ -11,7 +11,7 @@
   h1 { font-size:22px; color:#1a3a5c; margin-bottom:4px; }
   .sub { color:#7a9ab8; font-size:13px; margin-bottom:24px; }
   .pay-box { background:#f7fafc; border-radius:16px; padding:20px; margin-bottom:16px; border:2px dashed #e2e8f0; }
-  .pay-box img { width:220px; border-radius:12px; }
+  .pay-box img { max-width:100%; width:auto; border-radius:12px; }
   .pay-note { font-size:12px; color:#a0aec0; margin-top:8px; }
   input { width:100%; padding:12px 16px; border:2px solid #d0e0f0; border-radius:12px; font-size:16px; text-align:center; outline:none; margin-bottom:12px; letter-spacing:2px; text-transform:uppercase; }
   input:focus { border-color:#4299e1; }
@@ -50,7 +50,7 @@ async function unlock() {
     const d = await r.json();
     if (d.ok) {
       if (d.token) try { localStorage.setItem('dsp_quiz_token', d.token); } catch(e) {}
-      window.location.href = 'dsp-quiz.html';
+      window.location.href = 'dsp.html';
     } else {
       err.textContent = '❌ ' + (d.msg || '密码错误');
       document.getElementById('pwdInput').value = '';
@@ -65,7 +65,7 @@ async function unlock() {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:t})
     }).then(r=>r.json()).then(d => {
-      if (d.ok) window.location.href = 'dsp-quiz.html';
+      if (d.ok) window.location.href = 'dsp.html';
       else localStorage.removeItem('dsp_quiz_token');
     });
   }

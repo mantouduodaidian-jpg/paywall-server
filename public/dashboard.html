@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仪表盘</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0f0d23; color: #fff; min-height: 100vh;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(124,58,237,.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(99,102,241,.04) 0%, transparent 50%);
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
+  .header h1 span { background: linear-gradient(135deg,#c4b5fd,#7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: rgba(255,255,255,.4); }
+  .header-right .dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; display: inline-block; margin-right: 4px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Grid */
+  .grid { display: grid; gap: 16px; }
+  .row-1 { grid-template-columns: 2fr 1fr 1fr; }
+  .row-2 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 800px) { .row-1, .row-2, .row-3 { grid-template-columns: 1fr; } }
+
+  /* Card */
+  .card {
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+    border-radius: 16px; padding: 20px; position: relative; overflow: hidden;
+    backdrop-filter: blur(8px);
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,.3), transparent);
+  }
+  .card-title {
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,.3); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Stats */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 80px; }
+  .stat .num { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .stat .num.v { color: #a78bfa; }
+  .stat .num.g { color: #34d399; }
+  .stat .num.r { color: #f87171; }
+  .stat .num.b { color: #60a5fa; }
+  .stat .num.y { color: #fbbf24; }
+  .stat .lbl { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 2px; }
+
+  /* Progress bar */
+  .pbar-bg { height: 4px; background: rgba(255,255,255,.06); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  .pbar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#a78bfa,#7c3aed); transition: width .8s cubic-bezier(.34,1.24,.64,1); }
+
+  /* Per-topic mini bars */
+  .topic-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+  .topic-row .name { width: 56px; font-size: 11px; color: rgba(255,255,255,.4); flex-shrink: 0; }
+  .topic-row .bar { flex: 1; height: 3px; background: rgba(255,255,255,.04); border-radius: 3px; overflow: hidden; }
+  .topic-row .bar .fill { height: 100%; border-radius: 3px; }
+  .topic-row .pct { width: 32px; text-align: right; font-size: 11px; color: rgba(255,255,255,.3); }
+
+  /* Weather */
+  .weather-main { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .weather-main .temp { font-size: 32px; font-weight: 700; }
+  .weather-main .desc { font-size: 13px; color: rgba(255,255,255,.4); }
+  .weather-details { display: flex; gap: 16px; font-size: 12px; color: rgba(255,255,255,.3); }
+
+  /* Todo */
+  .todo-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .todo-item:last-child { border: none; }
+  .todo-item .cb {
+    width: 18px; height: 18px; border-radius: 6px; border: 2px solid rgba(255,255,255,.15);
+    cursor: pointer; flex-shrink: 0; transition: all .2s; position: relative;
+  }
+  .todo-item .cb:hover { border-color: #a78bfa; }
+  .todo-item .cb.done { background: #7c3aed; border-color: #7c3aed; }
+  .todo-item .cb.done::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
+  .todo-item .txt { font-size: 14px; color: rgba(255,255,255,.7); }
+  .todo-item .txt.done { text-decoration: line-through; color: rgba(255,255,255,.2); }
+
+  /* Countdown */
+  .cd-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .cd-item:last-child { border: none; }
+  .cd-item .name { font-size: 14px; color: rgba(255,255,255,.6); }
+  .cd-item .days { font-size: 18px; font-weight: 700; }
+  .cd-item .days.urgent { color: #f87171; }
+  .cd-item .days.soon { color: #fbbf24; }
+  .cd-item .days.far { color: #34d399; }
+
+  /* AI Usage */
+  .ai-stat { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+  .ai-stat .lbl { color: rgba(255,255,255,.4); }
+  .ai-stat .val { font-weight: 600; }
+
+  /* Quick add */
+  .quick-input { display: flex; gap: 8px; margin-top: 8px; }
+  .quick-input input {
+    flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.04); color: #fff; font-size: 13px; outline: none; font-family: inherit;
+  }
+  .quick-input input::placeholder { color: rgba(255,255,255,.15); }
+  .quick-input input:focus { border-color: rgba(167,139,250,.3); }
+  .quick-input button {
+    padding: 8px 14px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg,#7c3aed,#6366f1); color: #fff;
+    font-size: 13px; cursor: pointer; font-weight: 600;
+  }
+  .quick-input button:hover { opacity: .9; }
+
+  .empty-msg { color: rgba(255,255,255,.15); font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Header -->
+  <div class="header">
+    <h1>✦ <span>Dashboard</span></h1>
+    <div class="header-right">
+      <span><span class="dot"></span>服务器运行中</span>
+      <span id="dateDisplay"></span>
+    </div>
+  </div>
+
+  <!-- Row 1 -->
+  <div class="grid row-1" style="margin-bottom:16px;">
+    <!-- 复习总览 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16"/><line x1="8" y1="8" x2="10" y2="8"/><line x1="8" y1="11" x2="10" y2="11"/></svg> 复习进度</div>
+      <div class="stat-row">
+        <div class="stat"><div class="num v" id="qTotal">-</div><div class="lbl">总题量</div></div>
+        <div class="stat"><div class="num g" id="qCorrect">-</div><div class="lbl">正确</div></div>
+        <div class="stat"><div class="num r" id="qWrong">-</div><div class="lbl">错题</div></div>
+        <div class="stat"><div class="num b" id="qAcc">-</div><div class="lbl">正确率</div></div>
+      </div>
+      <div class="pbar-bg"><div class="pbar-fill" id="progBar" style="width:0%"></div></div>
+      <div style="margin-top:10px;">
+        <div class="topic-row"><div class="name">基础</div><div class="bar"><div class="fill" style="width:85%;background:linear-gradient(90deg,#a78bfa,#7c3aed)"></div></div><div class="pct">85%</div></div>
+        <div class="topic-row"><div class="name">系统</div><div class="bar"><div class="fill" style="width:70%;background:linear-gradient(90deg,#60a5fa,#3b82f6)"></div></div><div class="pct">70%</div></div>
+        <div class="topic-row"><div class="name">卷积</div><div class="bar"><div class="fill" style="width:92%;background:linear-gradient(90deg,#34d399,#059669)"></div></div><div class="pct">92%</div></div>
+        <div class="topic-row"><div class="name">DFT</div><div class="bar"><div class="fill" style="width:55%;background:linear-gradient(90deg,#fbbf24,#f59e0b)"></div></div><div class="pct">55%</div></div>
+        <div class="topic-row"><div class="name">Z变换</div><div class="bar"><div class="fill" style="width:68%;background:linear-gradient(90deg,#c4b5fd,#8b5cf6)"></div></div><div class="pct">68%</div></div>
+        <div class="topic-row"><div class="name">滤波</div><div class="bar"><div class="fill" style="width:72%;background:linear-gradient(90deg,#f87171,#ef4444)"></div></div><div class="pct">72%</div></div>
+      </div>
+    </div>
+
+    <!-- 天气 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg> 天气</div>
+      <div class="weather-main">
+        <div style="font-size:36px;" id="weatherIcon">☀️</div>
+        <div class="temp" id="weatherTemp">--°</div>
+        <div class="desc" id="weatherDesc">加载中...</div>
+      </div>
+      <div class="weather-details">
+        <span>💧 湿度: <span id="weatherHumidity">--</span></span>
+        <span>🌬 风速: <span id="weatherWind">--</span></span>
+      </div>
+    </div>
+
+    <!-- 考试倒计时 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 倒计时</div>
+      <div id="countdownList"><div class="empty-msg">暂无倒计时</div></div>
+      <div class="quick-input">
+        <input id="cdInput" placeholder="考试名称, YYYY-MM-DD" onkeydown="if(event.key==='Enter')addCD()">
+        <button onclick="addCD()">添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2 -->
+  <div class="grid row-2" style="margin-bottom:16px;">
+    <!-- 今日目标 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5.5-6"/></svg> 今日目标</div>
+      <div id="todoList"><div class="empty-msg">还没有目标，加一条吧</div></div>
+      <div class="quick-input">
+        <input id="todoInput" placeholder="写一个目标..." onkeydown="if(event.key==='Enter')addTodo()">
+        <button onclick="addTodo()">添加</button>
+      </div>
+    </div>
+
+    <!-- AI 用量 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><rect x="4" y="16" width="4" height="4" rx="1" fill="rgba(255,255,255,.3)"/><rect x="10" y="10" width="4" height="10" rx="1" fill="rgba(255,255,255,.3)"/><rect x="16" y="4" width="4" height="16" rx="1" fill="rgba(255,255,255,.3)"/></svg> AI 用量</div>
+      <div style="margin-bottom:10px;">
+        <div class="ai-stat"><span class="lbl">今日请求</span><span class="val" id="aiToday">--</span></div>
+        <div class="ai-stat"><span class="lbl">今日 Token</span><span class="val" id="aiTokens">--</span></div>
+        <div class="ai-stat"><span class="lbl">本月估算</span><span class="val" id="aiMonth">--</span></div>
+      </div>
+      <div class="pbar-bg"><div class="pbar-fill" style="width:0%" id="aiBar"></div></div>
+      <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.2);">配额: <span id="aiQuota">--</span></div>
+    </div>
+
+    <!-- 快速笔记 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> 随手记</div>
+      <div id="noteList"><div class="empty-msg">暂无笔记</div></div>
+      <div class="quick-input">
+        <input id="noteInput" placeholder="记录点什么..." onkeydown="if(event.key==='Enter')addNote()">
+        <button onclick="addNote()">记下</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3 -->
+  <div class="grid row-3">
+    <!-- 服务器状态 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r=".8" fill="rgba(255,255,255,.3)"/><circle cx="6" cy="18" r=".8" fill="rgba(255,255,255,.3)"/></svg> 服务器状态</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div><div style="font-size:22px;font-weight:700;color:#34d399;" id="svStatus">● 在线</div><div style="font-size:11px;color:rgba(255,255,255,.3);">运行状态</div></div>
+        <div><div style="font-size:22px;font-weight:700;" id="svUptime">--</div><div style="font-size:11px;color:rgba(255,255,255,.3);">运行时长</div></div>
+        <div><div style="font-size:22px;font-weight:700;" id="svRAM">--</div><div style="font-size:11px;color:rgba(255,255,255,.3);">内存占用</div></div>
+        <div><div style="font-size:22px;font-weight:700;" id="svCPU">--</div><div style="font-size:11px;color:rgba(255,255,255,.3);">CPU</div></div>
+      </div>
+    </div>
+
+    <!-- Codex 状态 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg> Codex &amp; API</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div><div style="font-size:18px;font-weight:700;" id="cxStatus">检测中</div><div style="font-size:11px;color:rgba(255,255,255,.3);">连接状态</div></div>
+        <div><div style="font-size:14px;font-weight:600;" id="cxAccount">--</div><div style="font-size:11px;color:rgba(255,255,255,.3);">账号</div></div>
+        <div><div style="font-size:14px;font-weight:600;" id="cxPlan">--</div><div style="font-size:11px;color:rgba(255,255,255,.3);">套餐</div></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.2);">
+        API 端点: <code style="color:rgba(167,139,250,.4);">/v1/chat/completions</code>
+        <a href="https://paywall-server.onrender.com/api/keys" target="_blank" style="color:rgba(167,139,250,.4);margin-left:8px;">查看模型 →</a>
+      </div>
+    </div>
+
+    <!-- 快捷链接 -->
+    <div class="card">
+      <div class="card-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> 快捷链接</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <a href="https://chatgpt.com" target="_blank" style="padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);text-decoration:none;font-size:13px;transition:all .2s;" onmouseover="this.style.borderColor='rgba(167,139,250,.3)';this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.5)'">ChatGPT</a>
+        <a href="https://platform.deepseek.com" target="_blank" style="padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);text-decoration:none;font-size:13px;transition:all .2s;" onmouseover="this.style.borderColor='rgba(167,139,250,.3)';this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.5)'">DeepSeek</a>
+        <a href="https://github.com" target="_blank" style="padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);text-decoration:none;font-size:13px;transition:all .2s;" onmouseover="this.style.borderColor='rgba(167,139,250,.3)';this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.5)'">GitHub</a>
+        <a href="https://paywall-server.onrender.com/api/keys" target="_blank" style="padding:6px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.5);text-decoration:none;font-size:13px;transition:all .2s;" onmouseover="this.style.borderColor='rgba(167,139,250,.3)';this.style.color='rgba(255,255,255,.8)'" onmouseout="this.style.borderColor='rgba(255,255,255,.06)';this.style.color='rgba(255,255,255,.5)'">API Keys</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== DSP Review Data ======
+(function(){
+  try {
+    const raw = localStorage.getItem('dsp_review_state');
+    if(!raw) return;
+    const d = JSON.parse(raw);
+    const answers = d.answers || {};
+    const results = d.results || {};
+    const total = 47;
+    const answered = Object.keys(answers).length;
+    const correct = Object.values(results).filter(v=>v===true).length;
+    const wrong = Object.values(results).filter(v=>v===false).length;
+    document.getElementById('qTotal').textContent = total;
+    document.getElementById('qCorrect').textContent = correct;
+    document.getElementById('qWrong').textContent = wrong;
+    document.getElementById('qAcc').textContent = answered ? Math.round(correct/answered*100)+'%' : '0%';
+    document.getElementById('progBar').style.width = (answered/total*100)+'%';
+  } catch(e) {}
+})();
+
+// ====== Weather ======
+(async function(){
+  try {
+    const r = await fetch('https://wttr.in/Nanning?format=j1');
+    const d = await r.json();
+    const c = d.current_condition[0];
+    document.getElementById('weatherTemp').textContent = c.temp_C + '°';
+    document.getElementById('weatherDesc').textContent = c.weatherDesc[0].value;
+    document.getElementById('weatherHumidity').textContent = c.humidity + '%';
+    document.getElementById('weatherWind').textContent = c.windspeedKmph + 'km/h';
+    const code = parseInt(c.weatherCode);
+    const icons = {113:'☀️',116:'⛅',119:'☁️',122:'☁️',143:'🌫',176:'🌦',179:'🌧',182:'🌧',185:'🌧',200:'⛈',227:'🌨',230:'❄️',248:'🌫',260:'🌫',263:'🌦',266:'🌦',281:'🌧',284:'🌧',293:'🌦',296:'🌦',299:'🌧',302:'🌧',305:'🌧',308:'🌧',311:'🌧',314:'🌧',317:'🌧',320:'🌨',323:'🌨',326:'🌨',329:'❄️',332:'❄️',335:'❄️',338:'❄️',350:'🌧',353:'🌦',356:'🌧',359:'🌧',362:'🌧',365:'🌧',368:'🌨',371:'❄️',374:'🌧',377:'🌧',386:'⛈',389:'⛈',392:'⛈',395:'❄️'};
+    document.getElementById('weatherIcon').textContent = icons[code]||'🌤';
+  } catch(e) {
+    document.getElementById('weatherDesc').textContent = '加载失败';
+  }
+})();
+
+// ====== Date ======
+document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+// ====== Countdown ======
+function loadCD(){return JSON.parse(localStorage.getItem('dash_cd')||'[]');}
+function saveCD(d){localStorage.setItem('dash_cd',JSON.stringify(d));renderCD();}
+function addCD(){
+  const v=document.getElementById('cdInput').value.trim();
+  if(!v) return;
+  const parts=v.split(',');
+  if(parts.length<2) return;
+  const name=parts[0].trim(), date=parts[1].trim();
+  if(!name||!date) return;
+  const list=loadCD();list.push({name,date});saveCD(list);
+  document.getElementById('cdInput').value='';
+}
+function renderCD(){
+  const list=loadCD();const el=document.getElementById('countdownList');
+  if(!list.length){el.innerHTML='<div class="empty-msg">暂无倒计时</div>';return;}
+  const now=new Date();
+  list.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  el.innerHTML=list.map((item,i)=>{
+    const days=Math.ceil((new Date(item.date)-now)/86400000);
+    const cls=days<7?'urgent':days<30?'soon':'far';
+    return '<div class="cd-item"><span class="name">'+item.name+'</span><span class="days '+cls+'">'+(days>0?days+'天':'今天!')+'</span></div>';
+  }).join('');
+}
+renderCD();
+
+// ====== Todo ======
+function loadTD(){return JSON.parse(localStorage.getItem('dash_todo')||'[]');}
+function saveTD(d){localStorage.setItem('dash_todo',JSON.stringify(d));renderTD();}
+function addTodo(){
+  const v=document.getElementById('todoInput').value.trim();
+  if(!v) return;
+  const list=loadTD();list.push({text:v,done:false});saveTD(list);
+  document.getElementById('todoInput').value='';
+}
+function toggleTodo(i){
+  const list=loadTD();list[i].done=!list[i].done;saveTD(list);
+}
+function renderTD(){
+  const list=loadTD();const el=document.getElementById('todoList');
+  if(!list.length){el.innerHTML='<div class="empty-msg">还没有目标，加一条吧</div>';return;}
+  el.innerHTML=list.map((item,i)=>{
+    return '<div class="todo-item"><div class="cb'+(item.done?' done':'')+'" onclick="toggleTodo('+i+')"></div><span class="txt'+(item.done?' done':'')+'">'+item.text+'</span></div>';
+  }).join('');
+}
+renderTD();
+
+// ====== Notes ======
+function loadNT(){return JSON.parse(localStorage.getItem('dash_notes')||'[]');}
+function saveNT(d){localStorage.setItem('dash_notes',JSON.stringify(d));renderNT();}
+function addNote(){
+  const v=document.getElementById('noteInput').value.trim();
+  if(!v) return;
+  const list=loadNT();list.push({text:v,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});saveNT(list);
+  document.getElementById('noteInput').value='';
+}
+function renderNT(){
+  const list=loadNT();const el=document.getElementById('noteList');
+  if(!list.length){el.innerHTML='<div class="empty-msg">暂无笔记</div>';return;}
+  el.innerHTML=list.slice(-5).reverse().map(item=>{
+    return '<div class="todo-item" style="padding:6px 0;"><span class="txt" style="font-size:13px;">'+item.text+'</span><span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.15);">'+item.time+'</span></div>';
+  }).join('');
+}
+renderNT();
+
+// ====== Fetch Server Data ======
+(async function(){
+  try {
+    const r = await fetch('https://paywall-server.onrender.com/api/dashboard');
+    if(!r.ok) throw new Error('Server error');
+    const d = await r.json();
+
+    // Server status
+    document.getElementById('svUptime').textContent = d.server.uptime;
+    document.getElementById('svRAM').textContent = d.server.ram;
+    document.getElementById('svCPU').textContent = d.server.cpu;
+    document.getElementById('svStatus').innerHTML = '● 在线';
+
+    // AI Usage
+    document.getElementById('aiToday').textContent = d.ai.today;
+    document.getElementById('aiTokens').textContent = (d.ai.tokens || 0).toLocaleString();
+    document.getElementById('aiMonth').textContent = (d.ai.month || 0).toLocaleString();
+    const quota = 5000000;
+    const pct = Math.min(100, ((d.ai.tokens||0) / quota * 100));
+    document.getElementById('aiBar').style.width = pct + '%';
+    document.getElementById('aiQuota').textContent = ((d.ai.tokens||0) / 1000000).toFixed(1) + 'M / 5M';
+  } catch(e) {
+    console.log('Dashboard API unavailable:', e);
+    document.getElementById('svStatus').innerHTML = '○ 离线';
+  }
+})();
+
+// ====== Codex Status ======
+(async function(){
+  try {
+    const r = await fetch('https://paywall-server.onrender.com/api/codex-status');
+    if(!r.ok) throw new Error('offline');
+    const d = await r.json();
+    document.getElementById('cxStatus').textContent = d.connected ? '已连接' : '未连接';
+    document.getElementById('cxAccount').textContent = d.email || '--';
+    document.getElementById('cxPlan').textContent = d.plan || '--';
+    document.getElementById('cxExpiry').textContent = d.expires || '--';
+  } catch(e) {
+    document.getElementById('cxStatus').textContent = '未连接';
+  }
+})();
+</script>
+</body>
+</html>
