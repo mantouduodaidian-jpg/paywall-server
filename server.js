@@ -51,7 +51,7 @@ function qOne(sql, params = []) { const rows = q(sql, params); return rows.lengt
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
 app.use(express.static(join(__dirname, 'public')));
 
 // ==================== 产品 API ====================
@@ -161,6 +161,8 @@ const API_KEYS = {
   kimi: process.env.KIMI_KEY || process.env.KIMI_KET || '',
   doubao: process.env.DOUBAO_KEY || process.env.DOUBAO_KET || '',
   groq: process.env.GROQ_KEY || '',
+  github: process.env.GITHUB_KEY || '',
+  agnes: process.env.AGNES_API_KEY || '',
 };
 const PROXY_BASE = {
   deepseek: 'https://api.deepseek.com',
@@ -170,10 +172,13 @@ const PROXY_BASE = {
   kimi: 'https://api.moonshot.cn/v1',
   doubao: 'https://ark.cn-beijing.volces.com/api/v3',
   groq: 'https://api.groq.com/openai/v1',
+  github: 'https://models.inference.ai.azure.com',
+  agnes: 'https://apihub.agnes-ai.com/v1',
 };
 
 function getProvider(model) {
   const m = model.toLowerCase();
+  if (m.startsWith('gh-')) return 'github';
   if (m.includes('deepseek')) return 'deepseek';
   if (m.includes('gpt') || m.includes('o1') || m.includes('o3')) return 'openai';
   if (m.includes('qwen') || m.includes('qvq') || m.includes('qwq')) return 'dashscope';
@@ -181,28 +186,43 @@ function getProvider(model) {
   if (m.includes('doubao') || m.includes('ark-')) return 'doubao';
   if (m.includes('silicon') || m.includes('glm') || m.includes('yi-')) return 'siliconflow';
   if (m.includes('groq') || m.includes('llama') || m.includes('mixtral') || m.includes('gemma')) return 'groq';
+  if (m.includes('agnes')) return 'agnes';
   return 'deepseek';
 }
 
-function trackAI(model, tokens) {
-  try {
-    const p = join(DATA_DIR, 'ai-usage.json');
-    let d = { today: 0, tokens: 0, month: 0, history: [] };
-    try { d = JSON.parse(readFileSync(p, 'utf8')); } catch(e) {}
-    const today = new Date().toISOString().slice(0,10);
-    if (d.lastDate !== today) { d.today = 0; d.lastDate = today; }
-    d.today += 1;
-    d.tokens += tokens || 0;
-    d.month += tokens || 0;
-    // Keep rolling 30 days
-    if (!d.history) d.history = [];
-    d.history.push({ time: new Date().toISOString(), model, tokens: tokens || 0 });
-    if (d.history.length > 10000) d.history = d.history.slice(-5000);
-    writeFileSync(p, JSON.stringify(d));
-  } catch(e) {}
+function mapModel(provider, model) {
+  if (provider === 'github') return model.replace(/^gh-/, '');
+  return model;
 }
 
-app.post('/v1/chat/completions', express.json(), async (req, res) => {
+const SUPABASE_URL = 'https://hcinnimptpsjocbkkbna.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjaW5uaW1wdHBzam9jYmtrYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxMjgsImV4cCI6MjA5NzY2ODEyOH0.AeEZcgDaVFqn4LmqK5dMqj7qOzYl0WUly398jG_dcpM';
+const SB = (path) => SUPABASE_URL + '/rest/v1/' + path;
+const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+
+async function trackAI(model, tokens) {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const check = await fetch(SB('ai_usage?date=eq.'+today+'&select=id,tokens,requests'), { headers: SB_HEADERS });
+    const rows = await check.json();
+    if (rows && rows.length > 0) {
+      const r = rows[0];
+      await fetch(SB('ai_usage?id=eq.'+r.id), {
+        method: 'PATCH',
+        headers: SB_HEADERS,
+        body: JSON.stringify({ tokens: (r.tokens||0) + (tokens||0), requests: (r.requests||0) + 1 })
+      });
+    } else {
+      await fetch(SB('ai_usage'), {
+        method: 'POST',
+        headers: SB_HEADERS,
+        body: JSON.stringify({ date: today, model: model || 'unknown', tokens: tokens || 0, requests: 1 })
+      });
+    }
+  } catch(e) { console.error('trackAI error:', e.message); }
+}
+
+app.post('/v1/chat/completions', express.json({ limit: '20mb' }), async (req, res) => {
   const { model = 'deepseek-chat', messages = [], stream = false, max_tokens = 4096, temperature = 0.7 } = req.body;
   if (!messages.length) return res.status(400).json({ error: 'messages required' });
 
@@ -213,7 +233,8 @@ app.post('/v1/chat/completions', express.json(), async (req, res) => {
   const baseUrl = PROXY_BASE[provider];
   const url = baseUrl + '/chat/completions';
 
-  const body = JSON.stringify({ model, messages, stream, max_tokens, temperature });
+  const upstreamModel = mapModel(provider, model);
+  const body = JSON.stringify({ model: upstreamModel, messages, stream, max_tokens, temperature });
 
   try {
     const providerRes = await fetch(url, {
@@ -241,17 +262,21 @@ app.post('/v1/chat/completions', express.json(), async (req, res) => {
           for (const line of lines) {
             const d = JSON.parse(line.slice(6));
             if (d.choices?.[0]?.delta?.content) fullText += d.choices[0].delta.content;
-            if (d.usage) trackAI(model, d.usage.total_tokens);
+            if (d.usage) await trackAI(model, d.usage.total_tokens);
           }
         } catch(e) {}
       }
-      if (fullText) trackAI(model, Math.ceil(fullText.length / 2));
+      if (fullText) await trackAI(model, Math.ceil(fullText.length / 2));
       res.write('data: [DONE]\n\n');
       res.end();
     } else {
-      const data = await providerRes.json();
+      const text = await providerRes.text();
+      let data;
+      try { data = JSON.parse(text); } catch(e) {
+        return res.status(502).json({ error: '上游返回异常', detail: text.slice(0,300) });
+      }
       const tokens = data?.usage?.total_tokens || 0;
-      trackAI(model, tokens);
+      await trackAI(model, tokens);
       res.status(providerRes.status).json(data);
     }
   } catch (e) {
@@ -263,16 +288,28 @@ app.post('/v1/chat/completions', express.json(), async (req, res) => {
 import os from 'os';
 const startTime = Date.now();
 
-app.get('/api/dashboard', (req, res) => {
+app.get('/api/dashboard', async (req, res) => {
   const mem = process.memoryUsage();
   const uptime = Math.floor((Date.now() - startTime) / 1000);
   const h = u => u > 86400 ? Math.floor(u/86400)+'d '+Math.floor((u%86400)/3600)+'h' : u > 3600 ? Math.floor(u/3600)+'h '+Math.floor((u%3600)/60)+'m' : Math.floor(u/60)+'m';
 
-  // Read AI usage from JSON file if exists
+  // Read AI usage from Supabase
   let ai = { today: 0, tokens: 0, month: 0 };
   try {
-    ai = JSON.parse(readFileSync(join(DATA_DIR, 'ai-usage.json'), 'utf8'));
-  } catch(e) {}
+    const today = new Date().toISOString().slice(0,10);
+    const monthStart = new Date().toISOString().slice(0,7)+'-01';
+    const [tdRes, moRes] = await Promise.all([
+      fetch(SB('ai_usage?date=eq.'+today+'&select=tokens,requests'), { headers: SB_HEADERS }),
+      fetch(SB('ai_usage?date=gte.'+monthStart+'&select=tokens'), { headers: SB_HEADERS })
+    ]);
+    const td = await tdRes.json();
+    const mo = await moRes.json();
+    ai = {
+      today: td?.reduce((s,r) => s + (r.requests||0), 0) || 0,
+      tokens: td?.reduce((s,r) => s + (r.tokens||0), 0) || 0,
+      month: mo?.reduce((s,r) => s + (r.tokens||0), 0) || 0,
+    };
+  } catch(e) { console.error('dashboard ai error:', e.message); }
 
   res.json({
     server: {
@@ -319,6 +356,7 @@ app.get('/api/keys', (req, res) => {
       kimi: ['kimi-k2', 'moonshot-v1-8k'],
       doubao: ['doubao-pro-32k', 'doubao-lite-32k'],
       groq: ['llama3-70b-8192', 'llama3-8b-8192', 'mixtral-8x7b-32768'],
+      github: ['gpt-4o-mini', 'gpt-4o', 'AI21-Jamba-1.5-Mini', 'cohere-command-r'],
       siliconflow: ['Pro/deepseek-ai/DeepSeek-V4', 'glm-4-plus'],
     }
   });
@@ -333,8 +371,9 @@ app.get('/v1', (req, res) => {
     kimi: !!API_KEYS.kimi,
     doubao: !!API_KEYS.doubao,
     groq: !!API_KEYS.groq,
+    github: !!API_KEYS.github,
   };
-  const models = { deepseek: ['deepseek-chat','deepseek-v4-flash'], openai: ['gpt-4o-mini','gpt-4o'], dashscope: ['qwen-plus','qwen-turbo'], kimi: ['kimi-k2','moonshot-v1'], doubao: ['doubao-pro-32k'], groq: ['llama3-70b','llama3-8b','mixtral-8x7b'] };
+  const models = { deepseek: ['deepseek-chat','deepseek-v4-flash'], openai: ['gpt-4o-mini','gpt-4o'], dashscope: ['qwen-plus','qwen-turbo'], kimi: ['kimi-k2','moonshot-v1'], doubao: ['doubao-pro-32k'], groq: ['llama3-70b','llama3-8b','mixtral-8x7b'], github: ['gh-gpt-4o-mini','gh-gpt-4o','gh-jamba','gh-command-r'] };
   res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>API Proxy</title><meta name="viewport" content="width=device-width"><style>body{font-family:system-ui;background:#0f0d23;color:#fff;padding:24px;max-width:600px;margin:0 auto;}h1{font-size:22px;color:#a78bfa}code{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px;font-size:13px}.ok{color:#34d399}.off{color:rgba(255,255,255,.15)}.card{background:rgba(255,255,255,.03);border-radius:12px;padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,.06)}</style></head><body>
 <h1>✦ API Proxy</h1>
 <p style="color:rgba(255,255,255,.4);margin-bottom:20px;">POST 请求发送到 <code>/v1/chat/completions</code></p>
@@ -344,6 +383,41 @@ ${Object.entries(info).map(([k,v]) => '<div style="display:flex;justify-content:
 ${Object.entries(models).map(([p,ms]) => ms.map(m => '<code style="display:inline-block;margin:3px;">'+m+'</code>').join('')).join('<br>')}</div>
 <p style="color:rgba(255,255,255,.2);font-size:12px;margin-top:20px;"><a href="/dashboard.html" style="color:rgba(167,139,250,.4);">仪表盘 →</a></p>
 </body></html>`);
+});
+
+// ====== Expenses API ======
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const month = req.query.month || new Date().toISOString().slice(0,7);
+    const start = month + '-01';
+    const end = new Date(new Date(start).getTime() + 32*86400000).toISOString().slice(0,7) + '-01';
+    const r = await fetch(SB('expenses?date=gte.'+start+'&date=lt.'+end+'&order=date.desc'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const budget = req.query.budget ? parseFloat(req.query.budget) : 0;
+    const total = data.reduce((s,e) => s + (e.type==='expense' ? parseFloat(e.amount) : 0), 0);
+    res.json({ entries: data, total, budget });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/expenses', express.json(), async (req, res) => {
+  try {
+    const { date, amount, category, note, type } = req.body;
+    if (!amount) return res.status(400).json({ error: 'amount required' });
+    const r = await fetch(SB('expenses'), {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ date: date||new Date().toISOString().slice(0,10), amount: parseFloat(amount), category: category||'其他', note: note||'', type: type||'expense' })
+    });
+    const text = await r.text();
+    res.json(text ? JSON.parse(text) : { ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/expenses/:id', async (req, res) => {
+  try {
+    await fetch(SB('expenses?id=eq.'+req.params.id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 const PORT = process.env.PORT || 3456;
