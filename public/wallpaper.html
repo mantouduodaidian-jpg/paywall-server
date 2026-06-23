@@ -240,25 +240,30 @@ function switchTab(t){
 // Fetch quotes
 (async function(){
   const el=document.getElementById('leftQuotes');
+  const cats=['a','b','c','d','i','k','j','f'];
   try{
-    let html='';
-    for(let i=0;i<5;i++){
-      const r=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k');
-      if(r.ok){const d=await r.json();if(d.hitokoto)html+='<div class="item">💬 '+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}
+    let html='',used=new Set();
+    for(const cat of cats){
+      const r=await fetch('https://v1.hitokoto.cn/?c='+cat+'&encode=json&_t='+Date.now());
+      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> '+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
     }
     el.innerHTML=html||'<div class="loading">暂无</div>';
   }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
 })();
 
-// Fetch news
+// Fetch news (RSS via corsproxy)
 (async function(){
   const el=document.getElementById('leftNews');
   try{
-    const r=await fetch('https://api.zhihu.com/topstory/hot-list?limit=10');
+    // Try weibo hot search via API
+    const r=await fetch('https://weibo.com/ajax/side/hotSearch');
     if(!r.ok)throw Error();
-    const d=await r.json();const items=d?.data||[];
-    el.innerHTML=items.slice(0,10).map((n,i)=>'<div class="item">📰 '+(i+1)+'. '+(n?.target?.title||n?.title||'')+'</div>').join('')||'<div class="loading">暂无</div>';
-  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+    const d=await r.json();const items=d?.data?.realtime||[];
+    el.innerHTML=items.slice(0,10).map((n,i)=>'<div class="item">📰 '+(i+1)+'. '+(n?.word||'')+'</div>').join('')||'<div class="loading">暂无</div>';
+  }catch(e){
+    // Fallback
+    el.innerHTML='<div class="loading">新闻暂时无法加载</div>';
+  }
 })();
 
 // Weather
