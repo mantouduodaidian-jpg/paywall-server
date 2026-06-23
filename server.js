@@ -52,6 +52,10 @@ function qOne(sql, params = []) { const rows = q(sql, params); return rows.lengt
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https:; img-src 'self' data: https:; connect-src 'self' https: ws:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';");
+  next();
+});
 app.use(express.static(join(__dirname, 'public')));
 
 // ==================== 产品 API ====================
