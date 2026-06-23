@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>校园严选 · 管理后台</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#08080e;color:#c8c8d8;min-height:100vh}
+
+/* ===== Login Gate ===== */
+.login-gate{position:fixed;inset:0;background:#08080e;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#111124;border:1px solid #1e1e3a;border-radius:20px;padding:40px;width:360px;text-align:center}
+.login-box h1{font-size:22px;color:#c0b0ff;margin-bottom:4px}
+.login-box .sub{color:#555;font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:12px 16px;border-radius:12px;border:1px solid #1e1e3a;background:#0a0a16;color:#c8c8d8;font-size:15px;outline:none;font-family:inherit;margin-bottom:12px}
+.login-box input:focus{border-color:#8b5cf6}
+.login-box .btn{width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-box .btn:hover{opacity:.9}
+.login-box .error{color:#ef4444;font-size:12px;margin-top:8px;display:none}
+
+/* ===== App ===== */
+.app{display:none;max-width:1200px;margin:0 auto;padding:24px}
+.app.show{display:block}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header h1{font-size:22px;background:linear-gradient(135deg,#c0b0ff,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header .sub{font-size:12px;color:#555;margin-top:2px}
+.header .actions{display:flex;gap:8px}
+.header .actions a{padding:8px 20px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;transition:all.15s;cursor:pointer;border:none;font-family:inherit}
+.header .actions .btn-market{background:rgba(52,211,153,.1);color:#34d399}
+.header .actions .btn-market:hover{background:rgba(52,211,153,.2)}
+.header .actions .btn-logout{background:#1e1e3a;color:#888}
+.header .actions .btn-logout:hover{background:#2e2e5a}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #14142a;padding-bottom:0;flex-wrap:wrap}
+.tab{padding:10px 20px;border-radius:10px 10px 0 0;cursor:pointer;font-size:13px;font-weight:500;color:#666;transition:all.15s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:#aaa;background:rgba(139,92,246,.03)}
+.tab.active{color:#a78bfa;border-bottom-color:#8b5cf6;background:rgba(139,92,246,.06)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:#111124;border:1px solid #1e1e3a;border-radius:12px;padding:16px}
+.stat-card .num{font-size:26px;font-weight:700}
+.stat-card .num.purple{color:#a78bfa}
+.stat-card .num.green{color:#34d399}
+.stat-card .num.yellow{color:#fbbf24}
+.stat-card .num.red{color:#ef4444}
+.stat-card .num.blue{color:#60a5fa}
+.stat-card .label{font-size:11px;color:#555;margin-top:4px}
+
+/* Section */
+.section{background:#111124;border:1px solid #1e1e3a;border-radius:14px;padding:20px;margin-bottom:16px}
+
+/* Toolbar */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.toolbar input{padding:8px 14px;border-radius:8px;border:1px solid #1e1e3a;background:#0a0a16;color:#c8c8d8;font-size:13px;outline:none;flex:1;min-width:120px}
+.toolbar input:focus{border-color:#8b5cf6}
+.toolbar select{padding:8px 14px;border-radius:8px;border:1px solid #1e1e3a;background:#0a0a16;color:#c8c8d8;font-size:13px;outline:none;font-family:inherit}
+.toolbar select:focus{border-color:#8b5cf6}
+
+/* Buttons */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all.15s;display:inline-flex;align-items:center;gap:4px;font-family:inherit}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff}
+.btn-primary:hover{box-shadow:0 4px 16px rgba(139,92,246,.2)}
+.btn-ghost{background:#1e1e3a;color:#888}
+.btn-ghost:hover{background:#2e2e5a}
+.btn-green{background:rgba(52,211,153,.12);color:#34d399}
+.btn-green:hover{background:rgba(52,211,153,.2)}
+.btn-red{background:rgba(239,68,68,.12);color:#ef4444}
+.btn-red:hover{background:rgba(239,68,68,.2)}
+.btn-sm{padding:5px 10px;font-size:11px;border-radius:6px}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:#555;font-weight:400;padding:8px 6px;border-bottom:1px solid #1e1e3a;font-size:11px;white-space:nowrap}
+td{padding:8px 6px;border-bottom:1px solid #0d0d1a;vertical-align:middle}
+tr:hover td{background:rgba(139,92,246,.02)}
+.empty{padding:40px;text-align:center;color:#444;font-size:13px}
+
+/* Badges */
+.badge{font-size:11px;padding:2px 10px;border-radius:6px;display:inline-block}
+.badge-green{background:rgba(52,211,153,.1);color:#34d399}
+.badge-yellow{background:rgba(251,191,36,.1);color:#fbbf24}
+.badge-red{background:rgba(239,68,68,.1);color:#ef4444}
+.badge-gray{background:rgba(255,255,255,.04);color:#666}
+
+/* Toast */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1e1e3a;padding:12px 24px;border-radius:12px;font-size:13px;border:1px solid #2e2e5a;transition:all.4s;z-index:100;opacity:0}
+.toast.show{opacity:1}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;overflow-y:auto;padding:20px}
+.modal-overlay.show{display:block}
+.modal{background:#111124;border-radius:16px;max-width:500px;margin:60px auto;border:1px solid #1e1e3a;padding:24px}
+.modal h2{font-size:18px;color:rgba(255,255,255,.6);margin-bottom:16px}
+.modal input,.modal select,.modal textarea{width:100%;padding:10px 14px;border-radius:8px;border:1px solid #1e1e3a;background:#0a0a16;color:#c8c8d8;font-size:13px;outline:none;font-family:inherit;margin-bottom:10px}
+.modal input:focus,.modal textarea:focus{border-color:#8b5cf6}
+.modal textarea{min-height:80px;resize:vertical}
+.modal .btns{display:flex;gap:8px;margin-top:4px}
+.modal .btns button{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;cursor:pointer;font-weight:600;font-family:inherit}
+
+@media(max-width:600px){
+  .app{padding:16px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .tabs{overflow-x:auto;flex-wrap:nowrap}
+  .tab{white-space:nowrap;flex-shrink:0}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Gate -->
+<div class="login-gate" id="loginGate">
+  <div class="login-box">
+    <h1>🛂 管理后台</h1>
+    <div class="sub">校园严选 · 二手集市</div>
+    <input type="password" id="loginPwd" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn" onclick="login()">进入后台</button>
+    <div class="error" id="loginError">密码错误</div>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <div class="header">
+    <div>
+      <h1>🛂 管理后台</h1>
+      <div class="sub"><span id="headerTime"></span> · <a href="/market.html" style="color:#555" target="_blank">查看前台 →</a></div>
+    </div>
+    <div class="actions">
+      <a class="btn-market" href="/market.html" target="_blank">🏪 前台</a>
+      <a class="btn-logout" onclick="logout()">退出</a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabBar">
+    <div class="tab active" data-tab="overview" onclick="switchTab('overview')">📊 概览</div>
+    <div class="tab" data-tab="products" onclick="switchTab('products')">📦 商品管理</div>
+    <div class="tab" data-tab="verifications" onclick="switchTab('verifications')">🪪 认证审核</div>
+  </div>
+
+  <!-- Tab: 概览 -->
+  <div class="tab-content" id="tabOverview">
+    <div class="stats" id="statsContainer">
+      <div class="stat-card"><div class="num purple" id="sTotal">-</div><div class="label">总商品</div></div>
+      <div class="stat-card"><div class="num yellow" id="sPending">-</div><div class="label">待审核商品</div></div>
+      <div class="stat-card"><div class="num green" id="sVerified">-</div><div class="label">已认证商品</div></div>
+      <div class="stat-card"><div class="num blue" id="sVerTotal">-</div><div class="label">认证申请</div></div>
+      <div class="stat-card"><div class="num yellow" id="sVerPending">-</div><div class="label">待审核认证</div></div>
+      <div class="stat-card"><div class="num green" id="sVerApproved">-</div><div class="label">已通过认证</div></div>
+    </div>
+    <div class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.5)">最近发布</span>
+        <span style="font-size:11px;color:#444"><a href="#" onclick="switchTab('products');return false" style="color:#666">查看全部 →</a></span>
+      </div>
+      <div id="recentList"><div class="empty">加载中...</div></div>
+    </div>
+  </div>
+
+  <!-- Tab: 商品管理 -->
+  <div class="tab-content" id="tabProducts" style="display:none">
+    <div class="section">
+      <div class="toolbar">
+        <input type="text" id="prodSearch" placeholder="搜索商品名称..." onkeydown="if(event.key==='Enter')loadProducts()">
+        <select id="prodFilterCat" onchange="loadProducts()">
+          <option value="">全部分类</option>
+          <option>教材笔记</option>
+          <option>数码配件</option>
+          <option>宿舍神器</option>
+          <option>生活百货</option>
+          <option>其他</option>
+        </select>
+        <select id="prodFilterStatus" onchange="loadProducts()">
+          <option value="">全部状态</option>
+          <option value="pending">待审核</option>
+          <option value="verified">已认证</option>
+        </select>
+        <button class="btn btn-ghost" onclick="loadProducts()">🔄 刷新</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>商品</th><th>价格</th><th>分类</th><th>卖家</th><th>状态</th><th>发布时间</th><th style="text-align:center">操作</th></tr></thead>
+          <tbody id="productTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: 认证审核 -->
+  <div class="tab-content" id="tabVerifications" style="display:none">
+    <div class="section">
+      <div class="toolbar">
+        <span style="font-size:13px;color:#666">管理用户实名认证申请</span>
+        <span style="margin-left:auto;display:flex;gap:8px">
+          <select id="verFilterStatus" onchange="loadVerifications()">
+            <option value="">全部状态</option>
+            <option value="pending">待审核</option>
+            <option value="approved">已通过</option>
+            <option value="rejected">已拒绝</option>
+          </select>
+          <button class="btn btn-ghost" onclick="loadVerifications()">🔄 刷新</button>
+        </span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>姓名</th><th>学号</th><th>手机号</th><th>状态</th><th>申请时间</th><th style="text-align:center">操作</th></tr></thead>
+          <tbody id="verificationTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <h2>📝 编辑商品</h2>
+    <input type="text" id="eTitle" placeholder="商品名称">
+    <input type="number" id="ePrice" placeholder="价格" step="0.01">
+    <select id="eCat"><option value="">分类</option><option>教材笔记</option><option>数码配件</option><option>宿舍神器</option><option>生活百货</option><option>其他</option></select>
+    <input type="text" id="eContact" placeholder="联系方式">
+    <input type="text" id="eQuality" placeholder="新旧程度">
+    <textarea id="eDesc" placeholder="描述"></textarea>
+    <div class="btns">
+      <button class="btn-green" onclick="saveEdit()">💾 保存</button>
+      <button class="btn-ghost" onclick="closeEdit()">取消</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_PWD = 'admin888';
+let token = sessionStorage.getItem('marketAdminToken');
+let currentTab = 'overview';
+
+function toast(msg, dur) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), dur||2000);
+}
+
+function login() {
+  const pwd = document.getElementById('loginPwd').value;
+  if (pwd === ADMIN_PWD) {
+    token = 'ok';
+    sessionStorage.setItem('marketAdminToken', 'ok');
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    init();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('marketAdminToken');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginGate').style.display = 'flex';
+}
+
+// Auto-login check
+if (token === 'ok') {
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  init();
+}
+
+function switchTab(name) {
+  currentTab = name;
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1)).style.display = '';
+  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
+  if (name === 'overview') loadOverview();
+  if (name === 'products') loadProducts();
+  if (name === 'verifications') loadVerifications();
+}
+
+function getBase() { return location.origin; }
+
+// ====== Overview ======
+async function loadOverview() {
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/admin/stats');
+    const d = await r.json();
+    document.getElementById('sTotal').textContent = d.total;
+    document.getElementById('sPending').textContent = d.pending;
+    document.getElementById('sVerified').textContent = d.verified;
+    document.getElementById('sVerTotal').textContent = d.verTotal;
+    document.getElementById('sVerPending').textContent = d.verPending;
+    document.getElementById('sVerApproved').textContent = d.verApproved;
+  } catch(e) { toast('加载统计失败'); }
+  // Recent products
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products?limit=5');
+    const data = await r.json();
+    const list = document.getElementById('recentList');
+    const arr = Array.isArray(data) ? data : [];
+    if (!arr.length) { list.innerHTML = '<div class="empty">暂无商品</div>'; return; }
+    list.innerHTML = '<div style="display:grid;gap:6px">' + arr.slice(0,5).map(p =>
+      '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.02);border-radius:8px;font-size:12px">' +
+      '<span>' + p.title + '</span>' +
+      '<span style="display:flex;gap:10px;align-items:center">' +
+      '<span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price).toFixed(0) + '</span>' +
+      '<span class="badge ' + (p.verified?'badge-green':'badge-yellow') + '">' + (p.verified?'已认证':'待审核') + '</span>' +
+      '</span></div>'
+    ).join('') + '</div>';
+  } catch(e) {}
+}
+
+// ====== Products ======
+async function loadProducts() {
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products');
+    let data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    const search = document.getElementById('prodSearch').value.trim().toLowerCase();
+    const cat = document.getElementById('prodFilterCat').value;
+    const status = document.getElementById('prodFilterStatus').value;
+    let filtered = arr;
+    if (search) filtered = filtered.filter(p => p.title?.toLowerCase().includes(search));
+    if (cat) filtered = filtered.filter(p => p.category === cat);
+    if (status === 'pending') filtered = filtered.filter(p => !p.verified);
+    if (status === 'verified') filtered = filtered.filter(p => p.verified);
+    const tbody = document.getElementById('productTableBody');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty">无匹配商品</div></td></tr>'; return; }
+    tbody.innerHTML = filtered.map(p => {
+      const isVerified = p.verified;
+      return '<tr>' +
+        '<td style="color:#555;font-size:11px">' + p.id + '</td>' +
+        '<td><strong style="color:rgba(255,255,255,.6)">' + esc(p.title) + '</strong></td>' +
+        '<td style="color:#34d399;font-weight:600">¥' + parseFloat(p.price).toFixed(2) + '</td>' +
+        '<td style="color:#666;font-size:11px">' + esc(p.category||'-') + '</td>' +
+        '<td style="color:#888;font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis">' + esc(p.contact||'-') + '</td>' +
+        '<td><span class="badge ' + (isVerified?'badge-green':'badge-yellow') + '">' + (isVerified?'已认证':'待审核') + '</span></td>' +
+        '<td style="color:#555;font-size:10px">' + fmtDate(p.created_at) + '</td>' +
+        '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap">' +
+          (isVerified
+            ? '<button class="btn btn-green btn-sm" onclick="unverifyProduct('+p.id+')">取消认证</button>'
+            : '<button class="btn btn-green btn-sm" onclick="verifyProduct('+p.id+')">✅ 通过</button>'
+          ) +
+          '<button class="btn btn-ghost btn-sm" onclick="editProduct('+p.id+')">✏️ 编辑</button>' +
+          '<button class="btn btn-red btn-sm" onclick="deleteProduct('+p.id+',\''+esc(p.title)+'\')">🗑️ 删除</button>' +
+        '</span></td>' +
+      '</tr>';
+    }).join('');
+  } catch(e) { toast('加载商品失败'); }
+}
+
+async function verifyProduct(id) {
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products/' + id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({verified: true})
+    });
+    const d = await r.json();
+    if (d.ok) { toast('✅ 已通过认证'); loadProducts(); loadOverview(); }
+    else toast('操作失败');
+  } catch(e) { toast('操作失败'); }
+}
+
+async function unverifyProduct(id) {
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products/' + id, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({verified: false})
+    });
+    const d = await r.json();
+    if (d.ok) { toast('已取消认证'); loadProducts(); loadOverview(); }
+  } catch(e) {}
+}
+
+let editingProductId = null;
+function editProduct(id) {
+  editingProductId = id;
+  fetch(getBase() + '/api/marketplace/products/' + id)
+    .then(r => r.json())
+    .then(p => {
+      if (!p) return;
+      document.getElementById('eTitle').value = p.title || '';
+      document.getElementById('ePrice').value = p.price || '';
+      document.getElementById('eCat').value = p.category || '';
+      document.getElementById('eContact').value = p.contact || '';
+      document.getElementById('eQuality').value = p.quality || '';
+      document.getElementById('eDesc').value = p.desc || '';
+      document.getElementById('editModal').classList.add('show');
+    }).catch(() => toast('加载失败'));
+}
+function closeEdit() { document.getElementById('editModal').classList.remove('show'); editingProductId = null; }
+async function saveEdit() {
+  if (!editingProductId) return;
+  const body = {
+    title: document.getElementById('eTitle').value.trim(),
+    price: parseFloat(document.getElementById('ePrice').value) || 0,
+    category: document.getElementById('eCat').value || '其他',
+    contact: document.getElementById('eContact').value.trim(),
+    quality: document.getElementById('eQuality').value.trim(),
+    desc: document.getElementById('eDesc').value.trim(),
+  };
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products/' + editingProductId, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) { toast('✅ 已保存'); closeEdit(); loadProducts(); }
+    else toast('保存失败');
+  } catch(e) { toast('保存失败'); }
+}
+
+async function deleteProduct(id, title) {
+  if (!confirm('确认删除「' + title + '」？此操作不可恢复。')) return;
+  try {
+    const r = await fetch(getBase() + '/api/marketplace/products/' + id, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.ok) { toast('🗑️ 已删除'); loadProducts(); loadOverview(); }
+  } catch(e) { toast('删除失败'); }
+}
+
+// ====== Verifications ======
+async function loadVerifications() {
+  try {
+    const r = await fetch(getBase() + '/api/verify/list');
+    let data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    const filter = document.getElementById('verFilterStatus').value;
+    let filtered = filter ? arr.filter(v => v.status === filter) : arr;
+    const tbody = document.getElementById('verificationTableBody');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty">暂无认证申请</div></td></tr>'; return; }
+    tbody.innerHTML = filtered.map(v => {
+      const statusMap = {pending: ['待审核','badge-yellow'], approved: ['已通过','badge-green'], rejected: ['已拒绝','badge-red']};
+      const [sLabel, sClass] = statusMap[v.status] || [v.status, 'badge-gray'];
+      return '<tr>' +
+        '<td style="color:#555;font-size:11px">' + v.id + '</td>' +
+        '<td><strong style="color:rgba(255,255,255,.6)">' + esc(v.name) + '</strong></td>' +
+        '<td style="color:#888;font-size:12px">' + esc(v.student_id) + '</td>' +
+        '<td style="color:#555;font-size:11px">' + esc(v.phone||'-') + '</td>' +
+        '<td><span class="badge ' + sClass + '">' + sLabel + '</span></td>' +
+        '<td style="color:#555;font-size:10px">' + fmtDate(v.created_at) + '</td>' +
+        '<td style="text-align:center">' +
+          (v.status === 'pending'
+            ? '<span style="display:flex;gap:4px;justify-content:center">' +
+              '<button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button>' +
+              '<button class="btn btn-red btn-sm" onclick="rejectVer('+v.id+')">✕ 拒绝</button>' +
+              '</span>'
+            : '<span style="color:#444;font-size:11px">—</span>'
+          ) +
+        '</td></tr>';
+    }).join('');
+  } catch(e) { toast('加载认证列表失败'); }
+}
+
+async function approveVer(id) {
+  try {
+    await fetch(getBase() + '/api/verify/approve', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id, productIds: []})
+    });
+    toast('✅ 认证已通过');
+    loadVerifications();
+    loadOverview();
+  } catch(e) {}
+}
+
+async function rejectVer(id) {
+  if (!confirm('确认拒绝此认证申请？')) return;
+  try {
+    await fetch(getBase() + '/api/verify/reject', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id})
+    });
+    toast('已拒绝');
+    loadVerifications();
+    loadOverview();
+  } catch(e) {}
+}
+
+// ====== Utils ======
+function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtDate(t) {
+  if (!t) return '-';
+  const d = new Date(t);
+  return (d.getMonth()+1)+'月'+d.getDate()+'日 ' + String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+// ====== Init ======
+function init() {
+  loadOverview();
+}
+</script>
+</body>
+</html>

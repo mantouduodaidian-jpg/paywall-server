@@ -448,6 +448,67 @@ app.post('/api/verify/approve', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Marketplace Admin API ======
+app.get('/api/marketplace/admin/stats', async (req, res) => {
+  try {
+    const [prodR, verR] = await Promise.all([
+      fetch(SB('products?select=id,verified'), { headers: SB_HEADERS }),
+      fetch(SB('verifications?select=id,status'), { headers: SB_HEADERS })
+    ]);
+    const products = await prodR.json();
+    const verifications = await verR.json();
+    const arr = p => Array.isArray(p) ? p : [];
+    res.json({
+      total: arr(products).length,
+      verified: arr(products).filter(p => p.verified).length,
+      pending: arr(products).filter(p => !p.verified).length,
+      verTotal: arr(verifications).length,
+      verPending: arr(verifications).filter(v => v.status === 'pending').length,
+      verApproved: arr(verifications).filter(v => v.status === 'approved').length,
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/marketplace/products/:id', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const { verified, title, price, category, desc, quality, contact } = req.body;
+    const fields = {};
+    if (verified !== undefined) fields.verified = verified;
+    if (title !== undefined) fields.title = title;
+    if (price !== undefined) fields.price = parseFloat(price);
+    if (category !== undefined) fields.category = category;
+    if (desc !== undefined) fields.desc = desc;
+    if (quality !== undefined) fields.quality = quality;
+    if (contact !== undefined) fields.contact = contact;
+    if (!Object.keys(fields).length) return res.status(400).json({ error: 'no fields to update' });
+    await fetch(SB('products?id=eq.'+id), {
+      method: 'PATCH', headers: SB_HEADERS2,
+      body: JSON.stringify(fields)
+    });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/products/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('products?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/verify/reject', express.json(), async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'rejected' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Marketplace API ======
 app.post('/api/marketplace/products', express.json(), async (req, res) => {
   try {
