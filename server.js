@@ -529,6 +529,27 @@ app.delete('/api/marketplace/products/:id', async (req, res) => {
 app.post('/api/marketplace/login', express.json(), async (req, res) => {
   try {
     const { student_id, phone, name } = req.body;
+
+    // Register first (has name) - avoid collision with login
+    if (name && student_id && phone) {
+      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id,status"), { headers: SB_HEADERS });
+      const chkData = await chk.json();
+      if (Array.isArray(chkData) && chkData.length > 0) {
+        const existing = chkData[0];
+        if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，请登录' });
+        if (existing.status === 'pending') return res.json({ ok: false, msg: '认证审核中，请等待' });
+        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'' }) });
+        addLog('user_register', 'verification', student_id, name);
+        return res.json({ ok: true, msg: '✅ 认证已重新提交，等待审核' });
+      }
+      await fetch(SB('verifications'), {
+        method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
+      });
+      addLog('user_register', 'verification', student_id, name);
+      return res.json({ ok: true, msg: '✅ 认证已提交，等待管理员审核' });
+    }
+
     // Login with student_id + phone
     if (student_id && phone) {
       const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&phone=eq."+encodeURIComponent(phone)+"&select=*"), { headers: SB_HEADERS });
@@ -538,32 +559,10 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       if (approved.length) {
         return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone } });
       }
-      // Check if exists but not approved
       const pending = arr.filter(v => v.status === 'pending');
       if (pending.length) return res.json({ ok: false, msg: '认证审核中，请等待' });
       if (arr.length) return res.json({ ok: false, msg: '认证未通过' });
       return res.json({ ok: false, msg: '学号或电话错误' });
-    }
-    // Register new user - submit for review
-    if (name && student_id && phone) {
-      // Check duplicate
-      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id,status"), { headers: SB_HEADERS });
-      const chkData = await chk.json();
-      if (Array.isArray(chkData) && chkData.length > 0) {
-        const existing = chkData[0];
-        if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，请登录' });
-        if (existing.status === 'pending') return res.json({ ok: false, msg: '认证审核中，请等待' });
-        // Re-submit rejected
-        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'' }) });
-        addLog('user_register', 'verification', student_id, name);
-        return res.json({ ok: true, msg: '✅ 认证已重新提交，等待审核' });
-      }
-      const r = await fetch(SB('verifications'), {
-        method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
-      });
-      addLog('user_register', 'verification', student_id, name);
-      return res.json({ ok: true, msg: '✅ 认证已提交，等待管理员审核' });
     }
     res.status(400).json({ error: '参数不足' });
   } catch(e) { res.status(500).json({ error: e.message }); }
