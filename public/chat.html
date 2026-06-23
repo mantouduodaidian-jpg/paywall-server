@@ -103,10 +103,9 @@
   .upload-btn {
     width: 36px; height: 36px; border-radius: 10px; border: none; flex-shrink: 0;
     background: transparent; color: rgba(255,255,255,.2); cursor: pointer;
-  .upload-btn svg { width: 20px; height: 20px; }
     display: flex; align-items: center; justify-content: center; transition: all .15s;
-    font-size: 18px;
   }
+  .upload-btn svg { width: 20px; height: 20px; }
   .upload-btn:hover { background: rgba(255,255,255,.04); color: rgba(255,255,255,.4); }
 
   .crop-overlay {
@@ -303,6 +302,7 @@
 
 <script>
 let CONV_ID=Date.now();
+function convKey(){return window.innerWidth<=640?'chat_convs_mob':'chat_convs';}
 const MSGS=[];
 const msgArea=document.getElementById('msgArea');
 const chatInput=document.getElementById('chatInput');
@@ -311,16 +311,16 @@ const modelSelect=document.getElementById('modelSelect');
 
 // Conversation persistence
 function saveConv(){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
   const first=MSGS.find(m=>m.role==='user');
   const existing=list.findIndex(c=>c.id===CONV_ID);
   const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now()};
   if(existing>=0) list[existing]=entry; else list.push(entry);
-  localStorage.setItem('chat_convs',JSON.stringify(list.slice(-20)));
+  localStorage.setItem(convKey(),JSON.stringify(list.slice(-20)));
   renderConvList();
 }
 function loadConv(id){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
   const c=list.find(x=>x.id===id);
   if(!c) return;
   CONV_ID=c.id; MSGS.length=0; MSGS.push(...c.msgs);
@@ -336,14 +336,15 @@ function newChat(){
   chatInput.focus();
 }
 function renderConvList(){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
   const el=document.getElementById('convList');
   const items=document.getElementById('convItems');
   const has=list.length>0;
   el.style.display=has?'block':'none';
   if(!has){document.getElementById('mobHistory')?.classList.remove('show');return;}
-  items.innerHTML='<div style="text-align:right;margin-bottom:4px"><button onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(\'chat_convs\');renderConvList();}" style="padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:10px;cursor:pointer">🗑 全部清除</button></div>'+
-    list.slice().reverse().map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\'chat_convs\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\'chat_convs\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
+  const k=convKey();
+  items.innerHTML='<div style="text-align:right;margin-bottom:4px"><button onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(convKey());renderConvList();}" style="padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:10px;cursor:pointer">🗑 全部清除</button></div>'+
+    list.slice().reverse().map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\''+k+'\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\''+k+'\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
   const mb=document.getElementById('mobHistory');
   if(mb) mb.innerHTML='<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:14px;color:rgba(255,255,255,.4)">💬 对话</span><span onclick="toggleMobHist()" style="cursor:pointer;color:rgba(255,255,255,.2);font-size:18px">✕</span></div><div style="padding:8px 16px;overflow-y:auto;flex:1">'+
     list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+'</div>').join('')+
