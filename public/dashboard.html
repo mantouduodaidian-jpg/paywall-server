@@ -246,51 +246,17 @@
 <div class="wrap">
   <!-- Header -->
   <div class="header">
-    <h1>🌲 <span>Dashboard</span></h1>
+    <div style="display:flex;align-items:center;gap:16px">
+      <h1>🌲 <span>仪表盘</span></h1>
+      <span style="font-size:15px;color:rgba(255,255,255,.3);font-variant-numeric:tabular-nums;letter-spacing:1px" id="clockDisplay">--:--:--</span>
+    </div>
     <div class="header-right">
-      <span><span class="dot"></span> 服务器在线</span>
-      <span id="dateDisplay"></span>
-    </div>
-  </div>
-
-  <!-- ===== Section 1: 复习进度 ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-book"/></svg> 复习进度</span>
-      <span class="badge" id="reviewBadge">---</span>
-    </div>
-    <div class="section-content open" id="reviewSection">
-      <div class="grid grid-4">
-        <div class="card">
-          <div class="card-title">总览</div>
-          <div class="stat-row">
-            <div class="stat"><div class="num g1" id="qTotal">--</div><div class="lbl">总题量</div></div>
-            <div class="stat"><div class="num g2" id="qCorrect">--</div><div class="lbl">正确</div></div>
-            <div class="stat"><div class="num g3" id="qWrong">--</div><div class="lbl">错题</div></div>
-            <div class="stat"><div class="num g4" id="qAcc">--</div><div class="lbl">正确率</div></div>
-          </div>
-          <div class="pbar-bg"><div class="pbar-fill" id="progBar" style="width:0%"></div></div>
-        </div>
-        <div class="card"><div class="card-title">各板块</div>
-          <div id="topicBars">
-            <div class="topic-row"><div class="name">基础</div><div class="bar"><div class="fill" style="width:85%;background:linear-gradient(90deg,#059669,#34d399)"></div></div><div class="pct">85%</div></div>
-            <div class="topic-row"><div class="name">系统</div><div class="bar"><div class="fill" style="width:70%;background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div></div><div class="pct">70%</div></div>
-            <div class="topic-row"><div class="name">卷积</div><div class="bar"><div class="fill" style="width:92%;background:linear-gradient(90deg,#34d399,#6ee7b7)"></div></div><div class="pct">92%</div></div>
-            <div class="topic-row"><div class="name">DFT</div><div class="bar"><div class="fill" style="width:55%;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div></div><div class="pct">55%</div></div>
-            <div class="topic-row"><div class="name">Z变换</div><div class="bar"><div class="fill" style="width:68%;background:linear-gradient(90deg,#34d399,#059669)"></div></div><div class="pct">68%</div></div>
-            <div class="topic-row"><div class="name">滤波</div><div class="bar"><div class="fill" style="width:72%;background:linear-gradient(90deg,#f87171,#ef4444)"></div></div><div class="pct">72%</div></div>
-          </div>
-        </div>
-        <div class="card"><div class="card-title"><svg class="ic"><use href="#ic-bulb"/></svg> 天气</div>
-          <div class="weather-main"><div style="font-size:32px" id="weatherIcon">☀️</div><div class="temp" id="weatherTemp">--°</div><div class="desc" id="weatherDesc">加载中</div></div>
-          <div class="weather-details"><span>💧 <span id="weatherHumidity">--</span></span><span>🌬 <span id="weatherWind">--</span></span></div>
-        </div>
-        <div class="card"><div class="card-title"><svg class="ic"><use href="#ic-clock"/></svg> 倒计时</div>
-          <div id="countdownList"><div class="empty-msg">暂无</div></div>
-          <div class="quick-input"><input id="cdInput" placeholder="考试, YYYY-MM-DD" onkeydown="if(event.key==='Enter')addCD()"><button onclick="addCD()">+</button></div>
-        </div>
-      </div>
+      <span style="display:flex;align-items:center;gap:8px;font-size:14px">
+        <span id="weatherIcon">☀️</span>
+        <span id="weatherTemp" style="font-weight:600;color:rgba(255,255,255,.5)">--°</span>
+        <span id="weatherDesc" style="font-size:12px;color:rgba(255,255,255,.25)">加载中</span>
+        <span id="weatherExtra" style="font-size:11px;color:rgba(255,255,255,.12)"></span>
+      </span>
     </div>
   </div>
 
@@ -429,26 +395,14 @@ function toggle(el) {
   content.classList.toggle('open');
 }
 
-// ====== DSP Review Data ======
-(function(){
-  try {
-    const raw = localStorage.getItem('dsp_review_state');
-    if(!raw) return;
-    const d = JSON.parse(raw);
-    const answers = d.answers || {};
-    const results = d.results || {};
-    const total = 47;
-    const answered = Object.keys(answers).length;
-    const correct = Object.values(results).filter(v=>v===true).length;
-    const wrong = Object.values(results).filter(v=>v===false).length;
-    document.getElementById('qTotal').textContent = total;
-    document.getElementById('qCorrect').textContent = correct;
-    document.getElementById('qWrong').textContent = wrong;
-    document.getElementById('qAcc').textContent = answered ? Math.round(correct/answered*100)+'%' : '0%';
-    document.getElementById('progBar').style.width = (answered/total*100)+'%';
-    document.getElementById('reviewBadge').textContent = answered+'/'+total+' 已完成';
-  } catch(e) {}
-})();
+// ====== Clock ======
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('weatherExtra').textContent = now.toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'});
+}
+setInterval(updateClock, 1000);
+updateClock();
 
 // ====== Weather ======
 (async function(){
@@ -458,16 +412,11 @@ function toggle(el) {
     const c = d.current_condition[0];
     document.getElementById('weatherTemp').textContent = c.temp_C+'°';
     document.getElementById('weatherDesc').textContent = c.weatherDesc[0].value;
-    document.getElementById('weatherHumidity').textContent = c.humidity+'%';
-    document.getElementById('weatherWind').textContent = c.windspeedKmph+'km/h';
     const code = parseInt(c.weatherCode);
     const icons = {113:'☀️',116:'⛅',119:'☁️',176:'🌦',200:'⛈',227:'🌨',248:'🌫',266:'🌦',293:'🌦',296:'🌦',302:'🌧',311:'🌧',317:'🌧',320:'🌨',350:'🌧',353:'🌦',356:'🌧',362:'🌧',368:'🌨',386:'⛈',389:'⛈',392:'⛈'};
     document.getElementById('weatherIcon').textContent = icons[code]||'🌤';
-  } catch(e) { document.getElementById('weatherDesc').textContent='加载失败'; }
+  } catch(e) {}
 })();
-
-// ====== Date ======
-document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 
 // ====== Countdown ======
 function loadCD(){return JSON.parse(localStorage.getItem('dash_cd')||'[]');}
