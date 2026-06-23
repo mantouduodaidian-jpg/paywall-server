@@ -404,12 +404,17 @@ async function doLogin(){
   const student_id = document.getElementById('loginId').value.trim();
   const phone = document.getElementById('loginPhone').value.trim();
   if(!student_id||!phone){alert('请填写学号和电话');return}
+  if(student_id.length!==13){alert('学号应为13位');return}
+  if(phone.length!==11){alert('手机号应为11位');return}
+  const btn=document.querySelector('#loginOverlay .submit');
+  btn.textContent='⏳';btn.disabled=true;
   try{
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
+    btn.textContent='登录';btn.disabled=false;
     if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideLogin();alert('✅ 登录成功');}
     else alert(d.msg||'登录失败');
-  }catch(e){alert('登录失败');}
+  }catch(e){btn.textContent='登录';btn.disabled=false;alert('登录失败');}
 }
 
 function logout(){
@@ -428,11 +433,17 @@ function hideVerify(){document.getElementById('verifyOverlay').classList.remove(
 async function applyVerify(){
   const n=document.getElementById('vName').value.trim(),s=document.getElementById('vStudentId').value.trim(),p=document.getElementById('vPhone').value.trim();
   if(!n||!s||!p){alert('请填写完整信息');return}
+  if(s.length!==13){alert('学号应为13位');return}
+  if(p.length!==11){alert('手机号应为11位');return}
+  const btn=document.querySelector('#verifyOverlay .submit');
+  btn.textContent='⏳';btn.disabled=true;
   try{
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,image:window._cardImage||''})});
     const d=await r.json();
-    if(d.ok){alert('✅ 认证已提交，等待管理员审核');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}else alert(d.msg||'提交失败');
-  }catch(e){alert('提交失败');}
+    btn.textContent='提交认证';btn.disabled=false;
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideVerify();alert('✅ 认证成功，已自动登录');window._cardImage='';document.getElementById('vCardName').textContent='';}
+    else alert(d.msg||'认证失败');
+  }catch(e){btn.textContent='提交认证';btn.disabled=false;alert('认证失败');}
 }
 
 // ====== Utils ======

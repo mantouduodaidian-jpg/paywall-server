@@ -544,19 +544,27 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       if (arr.length) return res.json({ ok: false, msg: '认证未通过' });
       return res.json({ ok: false, msg: '学号或电话错误' });
     }
-    // Register new user
+    // Register new user - auto approve
     if (name && student_id && phone) {
-      // Check duplicate - use a more reliable query
-      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id"), { headers: SB_HEADERS });
+      // Check duplicate
+      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id,status"), { headers: SB_HEADERS });
       const chkData = await chk.json();
-      if (Array.isArray(chkData) && chkData.length > 0) return res.json({ ok: true, msg: '已提交过认证，等待审核或直接登录' });
+      if (Array.isArray(chkData) && chkData.length > 0) {
+        const existing = chkData[0];
+        if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，直接登录' });
+        // Re-approve pending/rejected
+        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'approved', name, phone, image: req.body.image||'' }) });
+        addLog('user_register', 'verification', student_id, name);
+        return res.json({ ok: true, user: { id: existing.id, name, student_id, phone }, msg: '✅ 认证通过' });
+      }
       const r = await fetch(SB('verifications'), {
-        method: 'POST', headers: SB_HEADERS2,
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
+        method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'approved', created_at: new Date().toISOString() })
       });
-      const t = await r.text();
+      const t = await r.json();
+      const newId = Array.isArray(t) ? t[0]?.id : t?.id;
       addLog('user_register', 'verification', student_id, name);
-      return res.json({ ok: true, msg: '认证已提交，等待审核' });
+      return res.json({ ok: true, user: { id: newId, name, student_id, phone }, msg: '✅ 认证成功' });
     }
     res.status(400).json({ error: '参数不足' });
   } catch(e) { res.status(500).json({ error: e.message }); }
