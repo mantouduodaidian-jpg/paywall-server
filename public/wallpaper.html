@@ -244,7 +244,7 @@ function switchTab(t){
     let html='',used=new Set(),tries=0;
     while(used.size<10 && tries<20){
       const r=await fetch('https://v1.hitokoto.cn/?encode=json&_t='+Date.now()+Math.random());
-      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">💬</span>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
+      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:6px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
       tries++;
     }
     el.innerHTML=html||'<div class="loading">暂无</div>';

@@ -161,16 +161,37 @@ const NEWS_CACHE = { data: null, time: 0 };
 app.get('/api/news', async (req, res) => {
   try {
     if (Date.now() - NEWS_CACHE.time < 300000 && NEWS_CACHE.data) return res.json(NEWS_CACHE.data);
-    const r = await fetch('https://weibo.com/ajax/side/hotSearch');
-    if (!r.ok) throw Error('weibo fail');
-    const d = await r.json();
-    const items = (d?.data?.realtime || []).slice(0, 10).map(n => n.word).filter(Boolean);
-    NEWS_CACHE.data = { items, source: '微博热搜' };
-    NEWS_CACHE.time = Date.now();
-    res.json(NEWS_CACHE.data);
+    // Try zhihu daily
+    try {
+      const r = await fetch('https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total?limit=10', {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const items = (d?.data || []).slice(0, 10).map(n => n?.target?.title || '').filter(Boolean);
+        if (items.length) {
+          NEWS_CACHE.data = { items, source: '知乎热榜' };
+          NEWS_CACHE.time = Date.now();
+          return res.json(NEWS_CACHE.data);
+        }
+      }
+    } catch(e) {}
+    // Fallback 2: baidu
+    const r2 = await fetch('https://top.baidu.com/api/board?tab=realtime', {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    if (r2.ok) {
+      const d2 = await r2.json();
+      const items = (d2?.data?.cards || []).map(c => c?.word || c?.title || '').filter(Boolean).slice(0, 10);
+      if (items.length) {
+        NEWS_CACHE.data = { items, source: '百度热搜' };
+        NEWS_CACHE.time = Date.now();
+        return res.json(NEWS_CACHE.data);
+      }
+    }
+    throw Error('all failed');
   } catch(e) {
-    // Fallback
-    res.json({ items: ['加载失败，请稍后再试'], source: 'error' });
+    res.json({ items: ['今日新闻暂时无法获取'], source: 'error' });
   }
 });
 
