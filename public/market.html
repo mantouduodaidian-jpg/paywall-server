@@ -103,7 +103,6 @@
     <div class="sub">学长学姐认证 · 当面交易</div>
   </div>
   <div class="actions">
-    <a href="#" class="dash" onclick="showVerify();return false">🪪 认证</a>
     <a href="#" class="pub" onclick="showPub();return false">+ 发布闲置</a>
     <a href="/admin-market.html" class="dash" style="opacity:.3;font-size:11px" target="_blank">⚙️</a>
   </div>
@@ -120,7 +119,6 @@
     <div class="cats" id="catList"></div>
     <div class="stats">
       <div class="row"><span>收录商品</span><span id="statCount">0</span></div>
-      <div class="row"><span>已认证</span><span id="statVerified">0</span></div>
     </div>
   </div>
 
@@ -130,30 +128,6 @@
       <span style="font-size:13px;color:rgba(255,255,255,.2)" id="resultLabel">全部商品</span>
     </div>
     <div class="grid" id="productList"><div class="empty">加载中...</div></div>
-  </div>
-</div>
-
-<!-- Verify Modal -->
-<div class="pub-overlay" id="verifyOverlay">
-  <div class="pub-box" style="max-width:460px">
-    <h2>🪪 实名认证</h2>
-    <p style="font-size:13px;color:rgba(255,255,255,.25);margin-bottom:16px">认证后商品会显示"✅已认证"标签，买家更放心</p>
-    <input type="text" id="vName" placeholder="真实姓名 *">
-    <input type="text" id="vStudentId" placeholder="学号 *">
-    <input type="text" id="vPhone" placeholder="手机号（选填）">
-    <div style="font-size:12px;color:rgba(255,255,255,.15);margin:8px 0">信息仅用于认证，不会公开</div>
-    <div class="btns">
-      <button class="submit" onclick="applyVerify()">提交认证</button>
-      <button class="cancel" onclick="hideVerify()">取消</button>
-    </div>
-  </div>
-</div>
-
-<!-- Admin Verify (hidden, shown via URL param ?admin=1) -->
-<div class="pub-overlay" id="adminVerify">
-  <div class="pub-box" style="max-width:600px">
-    <h2>🛂 认证审核</h2>
-    <div id="verifyList"><div style="color:rgba(255,255,255,.15);font-size:13px">加载中...</div></div>
   </div>
 </div>
 
@@ -205,12 +179,11 @@ async function load() {
   try {
     const r = await fetch(url); const data = await r.json();
     document.getElementById('statCount').textContent = data.length;
-    document.getElementById('statVerified').textContent = data.filter(p=>p.verified).length;
     document.getElementById('resultLabel').textContent = (selCat||'全部')+(search?' · "'+search+'"':'')+' · '+data.length+' 件';
     const list = document.getElementById('productList');
     if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
     list.innerHTML = data.map(p =>
-      '<div class="card" onclick="showDetail('+p.id+')"><div class="img">📦</div><div class="info"><div class="title">'+p.title+'</div><div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div><div class="meta"><span class="tag">'+p.quality+'</span><span class="tag">'+(p.verified?'✅已认证':'⏳待认证')+'</span><span class="tag">'+p.category+'</span></div></div></div>'
+      '<div class="card" onclick="showDetail('+p.id+')"><div class="img">📦</div><div class="info"><div class="title">'+p.title+'</div><div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div><div class="meta"><span class="tag">'+p.quality+'</span><span class="tag">'+p.category+'</span></div></div></div>'
     ).join('');
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
 }
@@ -222,7 +195,7 @@ async function showDetail(id) {
     document.getElementById('detailBox').innerHTML =
       '<div class="img-big"><span style="font-size:80px">📦</span></div><div class="body">'+
       '<div class="title">'+p.title+'</div><div class="price">¥'+parseFloat(p.price).toFixed(2)+'</div>'+
-      '<div class="tags"><span>'+p.quality+'</span><span>'+p.category+'</span><span>'+(p.verified?'✅ 官方认证':'⏳ 待认证')+'</span></div>'+
+      '<div class="tags"><span>'+p.quality+'</span><span>'+p.category+'</span></div>'+
       (p.desc?'<div class="desc">'+p.desc+'</div>':'')+
       '<div class="btns">'+
       (p.contact?'<a class="contact" href="https://weixin://dl/business/?t='+p.contact+'">📱 联系卖家：'+p.contact+'</a>':'')+
@@ -252,34 +225,7 @@ async function publish(){
   }catch(e){alert('发布失败');}
 }
 
-// ====== Verification ======
-function showVerify(){document.getElementById('verifyOverlay').classList.add('show')}
-function hideVerify(){document.getElementById('verifyOverlay').classList.remove('show')}
-async function applyVerify(){
-  const n=document.getElementById('vName').value.trim(),s=document.getElementById('vStudentId').value.trim();
-  if(!n||!s){alert('请填写姓名和学号');return}
-  try{
-    const r=await fetch('/api/verify/apply',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:document.getElementById('vPhone').value.trim()})});
-    const d=await r.json();
-    if(d.id||d.ok){alert('✅ 认证已提交，等待审核');hideVerify();}else alert('提交失败');
-  }catch(e){alert('提交失败');}
-}
-if(location.search.includes('admin=1')){
-  document.getElementById('adminVerify').classList.add('show');
-  loadVerifyList();
-}
-async function loadVerifyList(){
-  try{
-    const r=await fetch('/api/verify/list');const data=await r.json();
-    const el=document.getElementById('verifyList');
-    if(!data.length){el.innerHTML='<div style="color:rgba(255,255,255,.08);font-size:13px">暂无申请</div>';return;}
-    el.innerHTML=data.map(v=>'<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:13px"><div><strong>'+v.name+'</strong> · '+v.student_id+'<br><span style="font-size:11px;color:rgba(255,255,255,.2)">'+new Date(v.created_at).toLocaleDateString()+'</span></div>'+(v.status==='pending'?'<button onclick="approveVerify('+v.id+')" style="padding:6px 16px;border-radius:8px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:12px;cursor:pointer">✅ 通过</button>':'<span style="color:#34d399;font-size:12px">✅ 已通过</span>')+'</div>').join('');
-  }catch(e){document.getElementById('verifyList').innerHTML='<div style="color:rgba(255,255,255,.08)">加载失败</div>'}
-}
-async function approveVerify(id){
-  try{await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});loadVerifyList();load();}catch(e){}
-}
-
+// ====== Init ======
 load();
 </script>
 </body>
