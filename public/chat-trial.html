@@ -234,10 +234,7 @@
     <option value="mixtral-8x7b-32768">Mixtral 8x7B 🌿</option>
   </select>
 
-  <div id="convList" style="margin-bottom:12px;flex:1;overflow-y:auto;display:none;">
-    <div style="font-size:11px;color:rgba(255,255,255,.15);margin-bottom:6px;">对话历史</div>
-    <div id="convItems"></div>
-  </div>
+  
 
   <div style="margin-top:auto;">
     <div class="stats">
@@ -305,42 +302,20 @@ const sendBtn=document.getElementById('sendBtn');
 const modelSelect=document.getElementById('modelSelect');
 
 // Conversation persistence
-function saveConv(){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
-  const first=MSGS.find(m=>m.role==='user');
-  const existing=list.findIndex(c=>c.id===CONV_ID);
-  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now()};
-  if(existing>=0) list[existing]=entry; else list.push(entry);
-  localStorage.setItem('chat_convs',JSON.stringify(list.slice(-20)));
-  renderConvList();
-}
-function loadConv(id){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
-  const c=list.find(x=>x.id===id);
-  if(!c) return;
-  CONV_ID=c.id; MSGS.length=0; MSGS.push(...c.msgs);
-  modelSelect.value=c.model;
-  document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
-  msgArea.innerHTML='';
-  MSGS.forEach(m=>addMsg(m.role,m.content));
-  if(!MSGS.length) showEmpty();
-}
+function {}
+
 function newChat(){
-  if(MSGS.length) saveConv();
+  if(MSGS.length) 
   CONV_ID=Date.now(); MSGS.length=0; msgArea.innerHTML=''; showEmpty();
   chatInput.focus();
 }
-function renderConvList(){
-  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
-  const el=document.getElementById('convList');
-  const items=document.getElementById('convItems');
-  if(!list.length){el.style.display='none';return;}
+function renderConvList(){}
   el.style.display='block';
   items.innerHTML=list.slice().reverse().map(c=>
     '<div onclick="loadConv('+c.id+')" style="padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .1s;" onmouseover="this.style.background=\'rgba(255,255,255,.04)\';this.style.color=\'rgba(255,255,255,.6)\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'rgba(255,255,255,.4)\'">'+c.title+'</div>'
   ).join('');
 }
-renderConvList();
+
 
 function toggleSidebar(){
   document.querySelector('.side').classList.toggle('open');
@@ -648,12 +623,12 @@ async function send(){
     const r=await fetch('/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,stream:false})});
     const d=await r.json();
     const reply=d?.choices?.[0]?.message?.content||'错误：'+(d?.error?.message||JSON.stringify(d));
-    loadingDiv.remove();addMsg('assistant',reply);MSGS.push({role:'assistant',content:reply});saveConv();
+    loadingDiv.remove();addMsg('assistant',reply);MSGS.push({role:'assistant',content:reply});
     fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();}).catch(()=>{});
   }catch(e){loadingDiv.remove();addMsg('assistant','请求失败：'+e.message);}
   sendBtn.disabled=false;chatInput.focus();
 }
-function clearChat(){MSGS.length=0;msgArea.innerHTML='';showEmpty();saveConv();}
+function clearChat(){MSGS.length=0;msgArea.innerHTML='';showEmpty();}
 
 showEmpty();
 document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
