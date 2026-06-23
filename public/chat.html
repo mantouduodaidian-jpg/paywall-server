@@ -333,6 +333,8 @@ function saveConv(){
   if(existing>=0) list[existing]=entry; else list.push(entry);
   localStorage.setItem(convKey(),JSON.stringify(list.slice(-20)));
   renderConvList();
+  // Sync to server (cross-device)
+  try{fetch('/api/chat/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({convs:list.slice(-20)})});}catch(e){}
 }
 function loadConv(id){
   const list=JSON.parse(localStorage.getItem(convKey())||'[]');
@@ -365,7 +367,21 @@ function renderConvList(){
     list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+'</div>').join('')+
     '</div>';
 }
-renderConvList();
+
+// Load server-side conversations for cross-device sync
+(async function(){
+  try{
+    const r=await fetch('/api/chat/sync');
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.convs&&d.convs.length){
+      const local=JSON.parse(localStorage.getItem(convKey())||'[]');
+      const merged=[...local,...d.convs.filter(s=>!local.find(l=>l.id===s.id))];
+      localStorage.setItem(convKey(),JSON.stringify(merged.slice(-30)));
+    }
+  }catch(e){}
+  renderConvList();
+})();
 
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,120)+'px';});
 modelSelect.addEventListener('change',()=>{
