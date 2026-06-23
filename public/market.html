@@ -172,7 +172,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     </div>
     <div class="row">
       <select id="fQuality"><option value="">新旧程度</option><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>五成新</option></select>
-      <input type="text" id="fContact" placeholder="联系方式 (微信)">
+      <select id="fContactType" style="flex:0.35;min-width:60px"><option value="微信">微信</option><option value="QQ">QQ</option><option value="手机">手机</option></select>
+      <input type="text" id="fContact" placeholder="账号/号码" style="flex:0.65">
     </div>
     <textarea id="fDesc" placeholder="描述（版本、使用情况、面交地点...）"></textarea>
     <div style="margin-bottom:10px">
@@ -284,7 +285,7 @@ async function loadCats() {
     document.getElementById('catList').innerHTML = catHtml;
     // Also populate publish form
     document.getElementById('fCat').innerHTML = '<option value="">分类</option>' +
-      arr.map(c => '<option value="'+esc(c.name)+'">'+(c.icon||'')+' '+esc(c.name)+'</option>').join('');
+      arr.map(c => '<option value="'+esc(c.name)+'">'+(getCatIcon(c.name)||'')+' '+esc(c.name)+'</option>').join('');
   } catch(e) {
     // Fallback hardcoded
     document.getElementById('catList').innerHTML = '<div class="cat active" onclick="setCat(\'\')">🏠 全部</div>' +
@@ -366,7 +367,7 @@ async function publish(){
     title,price:parseFloat(price),category:document.getElementById('fCat').value||'其他',
     quality:document.getElementById('fQuality').value||'八成新',
     desc:document.getElementById('fDesc').value.trim(),
-    contact:document.getElementById('fContact').value.trim(),
+    contact: (document.getElementById('fContactType').value||'微信') + ': ' + document.getElementById('fContact').value.trim(),
     images: window._uploadedImages || []
   };
   try{
