@@ -448,23 +448,42 @@ app.post('/api/verify/approve', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Log Helper ======
+async function addLog(action, targetType, targetId, detail) {
+  try {
+    await fetch(SB('logs'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ action, target_type: targetType, target_id: String(targetId), detail, created_at: new Date().toISOString() })
+    });
+  } catch(e) {}
+}
+
 // ====== Marketplace Admin API ======
 app.get('/api/marketplace/admin/stats', async (req, res) => {
   try {
-    const [prodR, verR] = await Promise.all([
-      fetch(SB('products?select=id,verified'), { headers: SB_HEADERS }),
-      fetch(SB('verifications?select=id,status'), { headers: SB_HEADERS })
+    const [prodR, verR, reportR, annR] = await Promise.all([
+      fetch(SB('products?select=id,verified,status,listed'), { headers: SB_HEADERS }),
+      fetch(SB('verifications?select=id,status'), { headers: SB_HEADERS }),
+      fetch(SB('reports?select=id,status'), { headers: SB_HEADERS }),
+      fetch(SB('announcements?select=id'), { headers: SB_HEADERS }),
     ]);
     const products = await prodR.json();
     const verifications = await verR.json();
+    const reports = await reportR.json();
+    const announcements = await annR.json();
     const arr = p => Array.isArray(p) ? p : [];
     res.json({
       total: arr(products).length,
       verified: arr(products).filter(p => p.verified).length,
-      pending: arr(products).filter(p => !p.verified).length,
+      pending: arr(products).filter(p => p.status === 'pending').length,
+      approved: arr(products).filter(p => p.status === 'approved').length,
+      listed: arr(products).filter(p => p.listed !== false).length,
       verTotal: arr(verifications).length,
       verPending: arr(verifications).filter(v => v.status === 'pending').length,
       verApproved: arr(verifications).filter(v => v.status === 'approved').length,
+      reports: arr(reports).length,
+      reportsPending: arr(reports).filter(r => r.status === 'pending').length,
+      announcements: arr(announcements).length,
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -473,9 +492,13 @@ app.patch('/api/marketplace/products/:id', express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
-    const { verified, title, price, category, desc, quality, contact } = req.body;
+    const { verified, status, listed, sold, reject_reason, title, price, category, desc, quality, contact } = req.body;
     const fields = {};
     if (verified !== undefined) fields.verified = verified;
+    if (status !== undefined) fields.status = status;
+    if (listed !== undefined) fields.listed = listed;
+    if (sold !== undefined) fields.sold = sold;
+    if (reject_reason !== undefined) fields.reject_reason = reject_reason;
     if (title !== undefined) fields.title = title;
     if (price !== undefined) fields.price = parseFloat(price);
     if (category !== undefined) fields.category = category;
@@ -487,6 +510,7 @@ app.patch('/api/marketplace/products/:id', express.json(), async (req, res) => {
       method: 'PATCH', headers: SB_HEADERS2,
       body: JSON.stringify(fields)
     });
+    addLog('product_update', 'product', id, JSON.stringify(fields));
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -496,6 +520,250 @@ app.delete('/api/marketplace/products/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
     await fetch(SB('products?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    addLog('product_delete', 'product', id, '');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Categories API ======
+app.get('/api/marketplace/categories', async (req, res) => {
+  try {
+    const r = await fetch(SB('categories?order=sort_order.asc&select=*'), { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/categories', express.json(), async (req, res) => {
+  try {
+    const { name, icon, sort_order } = req.body;
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const r = await fetch(SB('categories'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ name, icon: icon||'📦', sort_order: sort_order||0 })
+    });
+    const t = await r.json();
+    addLog('category_create', 'category', t.id, name);
+    res.json(t);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/marketplace/categories/:id', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const { name, icon, sort_order } = req.body;
+    const fields = {};
+    if (name !== undefined) fields.name = name;
+    if (icon !== undefined) fields.icon = icon;
+    if (sort_order !== undefined) fields.sort_order = sort_order;
+    await fetch(SB('categories?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/categories/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('categories?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    addLog('category_delete', 'category', id, '');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Reports API ======
+app.post('/api/marketplace/reports', express.json(), async (req, res) => {
+  try {
+    const { product_id, reason, detail, reporter_contact } = req.body;
+    if (!product_id || !reason) return res.status(400).json({ error: 'product_id and reason required' });
+    await fetch(SB('reports'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ product_id, reason, detail: detail||'', reporter_contact: reporter_contact||'', status: 'pending' })
+    });
+    addLog('report_submit', 'report', product_id, reason);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/reports', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let url = SB('reports?order=created_at.desc&select=*');
+    if (status) url = SB('reports?status=eq.'+status+'&order=created_at.desc&select=*');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    let data = await r.json();
+    // Attach product title
+    const products = await (await fetch(SB('products?select=id,title'), { headers: SB_HEADERS })).json();
+    const prodMap = {};
+    if (Array.isArray(products)) products.forEach(p => prodMap[p.id] = p.title);
+    if (Array.isArray(data)) data = data.map(r => ({ ...r, product_title: prodMap[r.product_id] || '(已删除)' }));
+    res.json(data);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/reports/resolve', express.json(), async (req, res) => {
+  try {
+    const { id, action: reportAction } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('reports?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: reportAction||'resolved' }) });
+    addLog('report_resolve', 'report', id, reportAction);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Announcements API ======
+app.get('/api/marketplace/announcements', async (req, res) => {
+  try {
+    const { all } = req.query;
+    let url = all ? SB('announcements?order=created_at.desc&select=*') : SB('announcements?active=eq.true&order=created_at.desc&select=*');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/announcements', express.json(), async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title) return res.status(400).json({ error: 'title required' });
+    const r = await fetch(SB('announcements'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ title, content: content||'', active: true })
+    });
+    const t = await r.json();
+    addLog('announcement_create', 'announcement', t.id, title);
+    res.json(t);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/marketplace/announcements/:id', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, content, active } = req.body;
+    const fields = {};
+    if (title !== undefined) fields.title = title;
+    if (content !== undefined) fields.content = content;
+    if (active !== undefined) fields.active = active;
+    if (!Object.keys(fields).length) return res.status(400).json({ error: 'no fields' });
+    await fetch(SB('announcements?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/announcements/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await fetch(SB('announcements?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    addLog('announcement_delete', 'announcement', id, '');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Logs API ======
+app.get('/api/marketplace/logs', async (req, res) => {
+  try {
+    const { limit: lmt } = req.query;
+    let url = SB('logs?order=created_at.desc&select=*');
+    if (lmt) url = SB('logs?order=created_at.desc&select=*&limit='+lmt);
+    else url = SB('logs?order=created_at.desc&select=*&limit=200');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Blocked Words API ======
+app.get('/api/marketplace/blocked-words', async (req, res) => {
+  try {
+    const r = await fetch(SB('blocked_words?select=*'), { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/blocked-words', express.json(), async (req, res) => {
+  try {
+    const { word } = req.body;
+    if (!word) return res.status(400).json({ error: 'word required' });
+    const r = await fetch(SB('blocked_words'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ word })
+    });
+    const t = await r.json();
+    addLog('blocked_word_add', 'blocked_word', t.id, word);
+    res.json(t);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/blocked-words/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await fetch(SB('blocked_words?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== CSV Export ======
+app.get('/api/marketplace/export/:type', async (req, res) => {
+  try {
+    const type = req.params.type;
+    if (type === 'products') {
+      const r = await fetch(SB('products?order=created_at.desc&select=*'), { headers: SB_HEADERS });
+      const data = await r.json();
+      const rows = Array.isArray(data) ? data : [];
+      const header = 'ID,标题,价格,分类,描述,联系方式,品质,状态,上架,已售,创建时间\n';
+      const csv = header + rows.map(p =>
+        [p.id, `"${(p.title||'').replace(/"/g,'""')}"`, p.price, `"${p.category}"`, `"${(p.desc||'').replace(/"/g,'""')}"`, `"${p.contact}"`, `"${p.quality}"`, p.status||'pending', p.listed!==false?'是':'否', p.sold?'是':'否', p.created_at].join(',')
+      ).join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=products.csv');
+      res.send('﻿' + csv);
+    } else if (type === 'reports') {
+      const r = await fetch(SB('reports?order=created_at.desc&select=*'), { headers: SB_HEADERS });
+      const data = await r.json();
+      const rows = Array.isArray(data) ? data : [];
+      const header = 'ID,商品ID,原因,详情,联系方式,状态,创建时间\n';
+      const csv = header + rows.map(r =>
+        [r.id, r.product_id, `"${r.reason}"`, `"${(r.detail||'').replace(/"/g,'""')}"`, `"${r.reporter_contact}"`, r.status, r.created_at].join(',')
+      ).join('\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename=reports.csv');
+      res.send('﻿' + csv);
+    } else {
+      res.status(400).json({ error: 'unknown export type' });
+    }
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Verify API ======
+app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) => {
+  try {
+    const { name, student_id, phone, image } = req.body;
+    if (!name || !student_id) return res.status(400).json({ error: 'name and student_id required' });
+    const r = await fetch(SB('verifications'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ name, student_id, phone: phone||'', image: image||'', status: 'pending', created_at: new Date().toISOString() })
+    });
+    const t = await r.text();
+    res.json(t ? JSON.parse(t) : { ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/verify/list', async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/verify/approve', express.json(), async (req, res) => {
+  try {
+    const { id, productIds } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'approved' }) });
+    if (productIds && productIds.length) {
+      for (const pid of productIds) {
+        await fetch(SB('products?id=eq.'+pid), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ verified: true }) });
+      }
+    }
+    addLog('verify_approve', 'verification', id, '');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -514,6 +782,7 @@ app.delete('/api/verify/:id', async (req, res) => {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
     await fetch(SB('verifications?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    addLog('verify_delete', 'verification', id, '');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -523,21 +792,36 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
   try {
     const { title, price, category, desc, images, contact, quality } = req.body;
     if (!title || !price) return res.status(400).json({ error: 'title and price required' });
+
+    // Check blocked words
+    try {
+      const bwR = await fetch(SB('blocked_words?select=word'), { headers: SB_HEADERS });
+      const bwData = await bwR.json();
+      const words = Array.isArray(bwData) ? bwData.map(w => w.word.toLowerCase()) : [];
+      const checkText = (title + ' ' + (desc||'')).toLowerCase();
+      const found = words.filter(w => checkText.includes(w));
+      if (found.length) return res.status(400).json({ error: '包含违规词: ' + found.join(', ') });
+    } catch(e) {}
+
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false })
     });
-    const t = await r.text();
-    res.json(t ? JSON.parse(t) : { ok: true });
+    const t = await r.json();
+    addLog('product_create', 'product', t?.id||'?', title);
+    res.json(t ? JSON.parse(JSON.stringify(t)) : { ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search } = req.query;
+    const { category, search, admin } = req.query;
     let url = SB('products?order=created_at.desc&select=*');
-    if (category) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*');
+    // Admin sees all, public sees only approved+listed
+    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=created_at.desc&select=*');
+    if (category && admin) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*');
+    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=created_at.desc&select=*');
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     if (search) data = data.filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
