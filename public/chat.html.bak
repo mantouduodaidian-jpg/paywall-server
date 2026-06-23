@@ -602,8 +602,6 @@ function confirmCrop() {
   tmp.src = cropDataUrl;
 }
 
-}
-
 function toggleSidebar(){
   document.querySelector('.side').classList.toggle('open');
   document.getElementById('mobileOverlay').classList.toggle('show');
