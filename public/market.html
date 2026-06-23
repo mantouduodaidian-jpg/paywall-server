@@ -233,6 +233,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <input type="text" id="vName" placeholder="真实姓名 *">
     <input type="text" id="vStudentId" placeholder="学号 *">
     <input type="text" id="vPhone" placeholder="手机号 *">
+    <div style="margin-bottom:10px">
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 上传学生证照片
+        <input type="file" id="vStudentCard" accept="image/*" style="display:none" onchange="previewStudentCard(this)">
+      </label>
+      <span id="vCardName" style="font-size:11px;color:rgba(255,255,255,.2);margin-left:8px"></span>
+    </div>
     <div style="font-size:12px;color:rgba(255,255,255,.15);margin:8px 0">信息仅用于认证，不会公开</div>
     <div class="btns">
       <button class="submit" onclick="applyVerify()">提交认证</button>
@@ -422,14 +428,26 @@ async function applyVerify(){
   const n=document.getElementById('vName').value.trim(),s=document.getElementById('vStudentId').value.trim(),p=document.getElementById('vPhone').value.trim();
   if(!n||!s||!p){alert('请填写完整信息');return}
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,image:window._cardImage||''})});
     const d=await r.json();
-    if(d.ok){alert('✅ 认证已提交，等待管理员审核');hideVerify();}else alert(d.msg||'提交失败');
+    if(d.ok){alert('✅ 认证已提交，等待管理员审核');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}else alert(d.msg||'提交失败');
   }catch(e){alert('提交失败');}
 }
 
 // ====== Utils ======
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ====== Student Card Upload ======
+window._cardImage = '';
+function previewStudentCard(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { alert('图片不能超过5MB'); return; }
+  document.getElementById('vCardName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) { window._cardImage = e.target.result; };
+  reader.readAsDataURL(file);
+}
 
 // ====== Image Upload ======
 window._uploadedImages = [];

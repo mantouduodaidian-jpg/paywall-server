@@ -552,7 +552,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       if (Array.isArray(chkData) && chkData.length) return res.json({ ok: false, msg: '该学号已注册，请直接登录' });
       const r = await fetch(SB('verifications'), {
         method: 'POST', headers: SB_HEADERS2,
-        body: JSON.stringify({ name, student_id, phone, image: '', status: 'pending', created_at: new Date().toISOString() })
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
       });
       const t = await r.text();
       addLog('user_register', 'verification', student_id, name);

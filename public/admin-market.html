@@ -179,7 +179,7 @@ tr:hover td{background:rgba(52,211,153,.02)}
         <button class="btn btn-ghost" onclick="loadVers()">🔄</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
+        <table><thead><tr><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -463,8 +463,9 @@ async function loadVers() {
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
-    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="7"><div class="empty">暂无</div></td></tr>' :
+    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
       filtered.map(v => '<tr><td style="color:rgba(255,255,255,.15)">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:rgba(255,255,255,.3)">'+esc(v.student_id)+'</td><td style="color:rgba(255,255,255,.2)">'+esc(v.phone||'-')+'</td>'+
+        '<td>'+(v.image?'<a href="#" onclick="window.open(\''+v.image+'\');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:rgba(255,255,255,.15);font-size:10px">无</span>')+'</td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status||'pending')+'</span></td>'+
         '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(v.created_at)+'</td>'+
         '<td style="text-align:center">'+(v.status==='pending'
