@@ -441,9 +441,9 @@ async function applyVerify(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,image:window._cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideVerify();alert('✅ 认证成功，已自动登录');window._cardImage='';document.getElementById('vCardName').textContent='';}
-    else alert(d.msg||'认证失败');
-  }catch(e){btn.textContent='提交认证';btn.disabled=false;alert('认证失败');}
+    if(d.ok){alert('✅ '+d.msg);hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
+    else alert(d.msg||'提交失败');
+  }catch(e){btn.textContent='提交认证';btn.disabled=false;alert('提交失败');}
 }
 
 // ====== Utils ======
