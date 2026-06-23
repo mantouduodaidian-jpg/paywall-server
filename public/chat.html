@@ -362,8 +362,8 @@ function renderConvList(){
   if(!has){document.getElementById('mobHistory')?.classList.remove('show');return;}
   const k=convKey();
   const allItems=list.slice().reverse();
-  const localItems=allItems.filter(c=>c.device!=='mobile');
-  const mobItems=allItems.filter(c=>c.device==='mobile');
+  const localItems=allItems.filter(c=>(c.device||'pc')!=='mobile');
+  const mobItems=allItems.filter(c=>(c.device||'pc')==='mobile');
   const activeTab=localStorage.getItem('conv_tab')||'all';
   const tabHtml='<div style="display:flex;gap:4px;margin-bottom:6px">'+
     '<span onclick="localStorage.setItem(\'conv_tab\',\'all\');renderConvList();msgArea.scrollTop=msgArea.scrollHeight" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='all'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='all'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">全部('+allItems.length+')</span>'+
@@ -374,7 +374,7 @@ function renderConvList(){
   items.innerHTML=tabHtml+filtered.map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\''+k+'\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\''+k+'\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
   const mb=document.getElementById('mobHistory');
   if(mb) mb.innerHTML='<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:14px;color:rgba(255,255,255,.4)">💬 对话</span><span onclick="toggleMobHist()" style="cursor:pointer;color:rgba(255,255,255,.2);font-size:18px">✕</span></div><div style="padding:8px 16px;overflow-y:auto;flex:1">'+
-    list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+'</div>').join('')+
+    list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+' <span style="font-size:10px;color:rgba(255,255,255,.15)">['+((c.device||'pc')==='mobile'?'📱':'💻')+']</span></div>').join('')+
     '</div>';
 }
 
