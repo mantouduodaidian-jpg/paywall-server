@@ -524,11 +524,11 @@ document.addEventListener('click', function(e) {
   if (w && !w.contains(e.target)) document.getElementById('fCatDropdown').classList.remove('show');
 });
 function selectCat(name, el) {
-  document.getElementById("fCatTrigger").innerHTML = (getCatIcon(name)||CAT_ICONS_EMOJI[name]||'') + ' ' + name;
-  document.getElementById('fCat').value = name;
-  document.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
-  if (el) el.classList.add('selected');
   document.getElementById('fCatDropdown').classList.remove('show');
+  document.getElementById('fCatTrigger').innerHTML = (getCatIcon(name)||CAT_ICONS_EMOJI[name]||'') + ' ' + name;
+  document.getElementById('fCat').value = name;
+  document.querySelectorAll('.cs-option').forEach(function(o) { o.classList.remove('selected'); });
+  if (el) el.classList.add('selected');
 }
 
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
