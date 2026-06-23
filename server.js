@@ -594,7 +594,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       }
       const pending = arr.filter(v => v.status === 'pending');
       if (pending.length) return res.json({ ok: false, msg: '认证审核中，请等待' });
-      if (arr.length) return res.json({ ok: false, msg: '认证未通过' });
+      if (arr.length) return res.json({ ok: false, msg: '认证未通过' + (arr[0]?.reject_reason ? '：' + arr[0].reject_reason : '') });
       return res.json({ ok: false, msg: '学号或电话错误' });
     }
     res.status(400).json({ error: '参数不足' });
@@ -846,9 +846,11 @@ app.post('/api/verify/approve', express.json(), async (req, res) => {
 
 app.post('/api/verify/reject', express.json(), async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id, reason } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
-    await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'rejected' }) });
+    const fields = { status: 'rejected' };
+    if (reason) fields.reject_reason = reason;
+    await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
