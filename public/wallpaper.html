@@ -237,30 +237,32 @@ function switchTab(t){
   document.getElementById('leftNews').style.display=t==='news'?'block':'none';
 }
 
-// Fetch quotes (10条)
-(async function(){
+// Fetch quotes (10条) — 异步不阻塞
+setTimeout(async ()=>{
   const el=document.getElementById('leftQuotes');
   try{
-    let html='',used=new Set(),tries=0;
-    while(used.size<10 && tries<20){
-      const r=await fetch('https://v1.hitokoto.cn/?encode=json&_t='+Date.now()+Math.random());
-      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:6px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
-      tries++;
+    let html='',used=new Set();
+    const cats=['a','b','c','d','i','k','j','f','l'];
+    for(const cat of cats){
+      try{
+        const r=await fetch('https://v1.hitokoto.cn/?c='+cat+'&encode=json&_t='+Date.now(),{signal:AbortSignal.timeout(3000)});
+        if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:6px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
+      }catch(e){}
     }
     el.innerHTML=html||'<div class="loading">暂无</div>';
-  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
-})();
+  }catch(e){}
+},100);
 
-// Fetch news (via server proxy)
-(async function(){
+// Fetch news (via server proxy) — 异步不阻塞
+setTimeout(async ()=>{
   const el=document.getElementById('leftNews');
   try{
-    const r=await fetch('/api/news');
+    const r=await fetch('/api/news',{signal:AbortSignal.timeout(8000)});
     if(!r.ok)throw Error();
     const d=await r.json();
     el.innerHTML=(d.items||[]).map((item,i)=>'<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">📰</span>'+(i+1)+'. '+item+'</div>').join('')||'<div class="loading">暂无</div>';
   }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
-})();
+},200);
 
 // Weather
 (async function(){
