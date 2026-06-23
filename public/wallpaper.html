@@ -37,6 +37,7 @@
   }
   .top-bar .greeting { font-size: 28px; font-weight: 300; color: rgba(255,255,255,.15); }
   .top-bar .greeting strong { font-weight: 600; background: linear-gradient(135deg,#6ee7b7,#059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .top-bar .greeting .weather{font-size:13px;color:rgba(255,255,255,.1);margin-top:4px;display:flex;align-items:center;gap:6px}
   .top-bar .time {
     text-align: right; font-size: 48px; font-weight: 200; color: rgba(255,255,255,.1);
     font-variant-numeric: tabular-nums; letter-spacing: 2px; line-height: 1;
@@ -108,7 +109,7 @@
 <div class="container">
   <!-- Top -->
   <div class="top-bar">
-    <div class="greeting">Hey, <strong id="greetingName">mantou</strong><br><span style="font-size:14px;color:rgba(255,255,255,.08)" id="greetingMsg">又是新的一天</span></div>
+    <div class="greeting">Hey, <strong id="greetingName">mantou</strong><br><span style="font-size:14px;color:rgba(255,255,255,.08)" id="greetingMsg">又是新的一天</span><div class="weather" id="weatherDisplay"><span id="weatherIcon">☀️</span><span id="weatherTemp">--°</span><span id="weatherDesc" style="font-size:12px;color:rgba(255,255,255,.08)">加载中</span></div></div>
     <div class="time">
       <div id="clockDisplay">--:--</div>
       <div class="date" id="dateDisplay">----</div>
@@ -137,13 +138,9 @@
   <div class="dash-overlay" id="dashOverlay" onclick="toggleDashPanel()"></div>
   <div class="dash-panel" id="dashPanel">
     <button class="close" onclick="toggleDashPanel()">✕</button>
-    <h2 style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:16px">📊 仪表盘</h2>
-
-    <div class="sec">快速入口</div>
-    <div class="links">
-      <a href="/chat.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><circle cx="12" cy="12" r="9"/><path d="M9 13.5c0 1.5 1.3 2.5 3 2.5s3-1 3-2.5" stroke-linecap="round"/></svg>林间小语 <span class="tag">AI</span></a>
-      <a href="/expense.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8 10h6a2 2 0 1 0 0-4H8" stroke-linecap="round"/></svg>记账本 <span class="tag">钱</span></a>
-      <a href="/market.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:18px;height:18px"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0" stroke-linecap="round"/></svg>校园严选 <span class="tag">二手</span></a>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4)">📊 仪表盘</h2>
+      <span style="font-size:20px;font-weight:200;color:rgba(255,255,255,.15);font-variant-numeric:tabular-nums" id="dashClock">--:--:--</span>
     </div>
 
     <div class="sec">AI 用量</div>
@@ -184,7 +181,21 @@ const h = new Date().getHours();
 const msgs = ['早起的鸟儿有虫吃','上午好','下午好','夜深了'];
 document.getElementById('greetingMsg').textContent = h<6?msgs[3]:h<9?msgs[0]:h<12?msgs[1]:h<18?msgs[2]:msgs[3];
 
-// Dashboard sidebar
+// Weather
+(async function(){
+  try{
+    const r=await fetch('https://wttr.in/Nanning?format=j1');
+    if(!r.ok)return;const d=await r.json();const c=d.current_condition[0];
+    document.getElementById('weatherTemp').textContent=c.temp_C+'°';
+    document.getElementById('weatherDesc').textContent=c.weatherDesc[0].value;
+    const icons={113:'☀️',116:'⛅',119:'☁️',176:'🌦',200:'⛈',227:'🌨',248:'🌫',266:'🌦',293:'🌦',296:'🌦',302:'🌧',311:'🌧',317:'🌧',320:'🌨',350:'🌧',353:'🌦',356:'🌧',362:'🌧',368:'🌨',386:'⛈',389:'⛈',392:'⛈'};
+    document.getElementById('weatherIcon').textContent=icons[parseInt(c.weatherCode)]||'🌤';
+  }catch(e){}
+})();
+
+// Dashboard sidebar clock
+setInterval(()=>{document.getElementById('dashClock').textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
+
 function toggleDashPanel(){
   document.getElementById('dashPanel').classList.toggle('open');
   document.getElementById('dashOverlay').classList.toggle('show');
