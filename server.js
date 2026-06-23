@@ -525,6 +525,43 @@ app.delete('/api/marketplace/products/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Login API ======
+app.post('/api/marketplace/login', express.json(), async (req, res) => {
+  try {
+    const { student_id, phone, name } = req.body;
+    // Login with student_id + phone
+    if (student_id && phone) {
+      const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&phone=eq."+encodeURIComponent(phone)+"&select=*"), { headers: SB_HEADERS });
+      const data = await r.json();
+      const arr = Array.isArray(data) ? data : [];
+      const approved = arr.filter(v => v.status === 'approved');
+      if (approved.length) {
+        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone } });
+      }
+      // Check if exists but not approved
+      const pending = arr.filter(v => v.status === 'pending');
+      if (pending.length) return res.json({ ok: false, msg: '认证审核中，请等待' });
+      if (arr.length) return res.json({ ok: false, msg: '认证未通过' });
+      return res.json({ ok: false, msg: '学号或电话错误' });
+    }
+    // Register new user
+    if (name && student_id && phone) {
+      // Check duplicate
+      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id"), { headers: SB_HEADERS });
+      const chkData = await chk.json();
+      if (Array.isArray(chkData) && chkData.length) return res.json({ ok: false, msg: '该学号已注册，请直接登录' });
+      const r = await fetch(SB('verifications'), {
+        method: 'POST', headers: SB_HEADERS2,
+        body: JSON.stringify({ name, student_id, phone, image: '', status: 'pending', created_at: new Date().toISOString() })
+      });
+      const t = await r.text();
+      addLog('user_register', 'verification', student_id, name);
+      return res.json({ ok: true, msg: '认证已提交，等待审核' });
+    }
+    res.status(400).json({ error: '参数不足' });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Categories API ======
 app.get('/api/marketplace/categories', async (req, res) => {
   try {
