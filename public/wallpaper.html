@@ -66,6 +66,25 @@
   .icon-link .lbl { font-size: 11px; color: rgba(255,255,255,.2); font-weight: 500; }
   .icon-link:hover .lbl { color: rgba(255,255,255,.4); }
 
+  /* Left panel */
+  .left-btn{position:fixed;bottom:20px;left:20px;z-index:10;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.06);background:rgba(10,26,15,.8);color:rgba(255,255,255,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);transition:.2s}
+  .left-btn:hover{border-color:rgba(52,211,153,.2);color:rgba(255,255,255,.5)}
+  .left-btn svg{width:18px;height:18px}
+  .left-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:20}
+  .left-overlay.show{display:block}
+  .left-panel{position:fixed;top:0;left:-340px;width:320px;height:100%;background:#0a1a0f;z-index:30;transition:left .35s;padding:24px;border-right:1px solid rgba(255,255,255,.04);overflow-y:auto}
+  .left-panel.open{left:0}
+  .left-panel .close{position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(255,255,255,.2);font-size:18px;cursor:pointer}
+  .left-panel .sec{font-size:10px;color:rgba(255,255,255,.15);text-transform:uppercase;letter-spacing:1px;margin:0 0 10px}
+  .left-panel .item{font-size:14px;color:rgba(255,255,255,.35);line-height:1.7;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+  .left-panel .item:last-child{border:none}
+  .left-panel .item .src{font-size:11px;color:rgba(255,255,255,.1)}
+  .left-panel .loading{text-align:center;padding:20px;color:rgba(255,255,255,.06);font-size:13px}
+  .left-panel .tab-bar{display:flex;gap:6px;margin-bottom:14px}
+  .left-panel .tab-bar button{padding:5px 12px;border-radius:100px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.2);font-size:11px;cursor:pointer;font-family:inherit}
+  .left-panel .tab-bar button:hover{border-color:rgba(52,211,153,.15);color:rgba(255,255,255,.4)}
+  .left-panel .tab-bar button.active{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);color:rgba(52,211,153,.5);font-weight:600}
+
   /* Bottom bar */
   .dash-btn{position:fixed;top:20px;right:20px;z-index:10;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.06);background:rgba(10,26,15,.8);color:rgba(255,255,255,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);transition:.2s}
   .dash-btn:hover{border-color:rgba(52,211,153,.2);color:rgba(255,255,255,.5)}
@@ -145,6 +164,19 @@
   </div>
 
   <!-- Bottom -->
+  <!-- Left Panel Button -->
+  <button class="left-btn" onclick="toggleLeft()">💬</button>
+  <div class="left-overlay" id="leftOverlay" onclick="toggleLeft()"></div>
+  <div class="left-panel" id="leftPanel">
+    <button class="close" onclick="toggleLeft()">✕</button>
+    <div class="tab-bar">
+      <button class="active" id="tabQuotes" onclick="switchTab('quotes')">💬 十言</button>
+      <button id="tabNews" onclick="switchTab('news')">📰 新闻</button>
+    </div>
+    <div id="leftQuotes"><div class="loading">加载中...</div></div>
+    <div id="leftNews" style="display:none"><div class="loading">加载中...</div></div>
+  </div>
+
   <!-- Dashboard Sidebar Button -->
   <button class="dash-btn" onclick="toggleDashPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="16" width="5" height="5" rx="1" fill="currentColor" opacity=".6"/><rect x="10" y="11" width="5" height="10" rx="1" fill="currentColor"/><rect x="16" y="6" width="5" height="15" rx="1" fill="currentColor" opacity=".8"/></svg></button>
   <div class="dash-overlay" id="dashOverlay" onclick="toggleDashPanel()"></div>
@@ -172,16 +204,6 @@
     </div>
   </div>
 
-  <!-- Daily -->
-  <div class="daily-section">
-    <div class="daily-toggle">
-      <button class="active" id="tabQuotes" onclick="showDaily('quotes')">💬 每日十言</button>
-      <button id="tabNews" onclick="showDaily('news')">📰 每日新闻</button>
-    </div>
-    <div class="daily-content show" id="dailyQuotes"><div class="loading">加载中...</div></div>
-    <div class="daily-content" id="dailyNews"><div class="loading">加载中...</div></div>
-  </div>
-
   <div class="bottom-bar">
     <a href="/admin-market.html">后台</a>
     <span>·</span>
@@ -203,8 +225,41 @@ const h = new Date().getHours();
 const msgs = ['早起的鸟儿有虫吃','上午好','下午好','夜深了'];
 document.getElementById('greetingMsg').textContent = h<6?msgs[3]:h<9?msgs[0]:h<12?msgs[1]:h<18?msgs[2]:msgs[3];
 
-// Daily: quotes & news
-async function fetchQuotes(){
+// Left panel
+function toggleLeft(){
+  document.getElementById('leftPanel').classList.toggle('open');
+  document.getElementById('leftOverlay').classList.toggle('show');
+}
+function switchTab(t){
+  document.querySelectorAll('#leftPanel .tab-bar button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');
+  document.getElementById('leftQuotes').style.display=t==='quotes'?'block':'none';
+  document.getElementById('leftNews').style.display=t==='news'?'block':'none';
+}
+
+// Fetch quotes
+(async function(){
+  const el=document.getElementById('leftQuotes');
+  try{
+    let html='';
+    for(let i=0;i<5;i++){
+      const r=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k');
+      if(r.ok){const d=await r.json();if(d.hitokoto)html+='<div class="item">💬 '+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}
+    }
+    el.innerHTML=html||'<div class="loading">暂无</div>';
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+})();
+
+// Fetch news
+(async function(){
+  const el=document.getElementById('leftNews');
+  try{
+    const r=await fetch('https://api.zhihu.com/topstory/hot-list?limit=10');
+    if(!r.ok)throw Error();
+    const d=await r.json();const items=d?.data||[];
+    el.innerHTML=items.slice(0,10).map((n,i)=>'<div class="item">📰 '+(i+1)+'. '+(n?.target?.title||n?.title||'')+'</div>').join('')||'<div class="loading">暂无</div>';
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+})();
   const el=document.getElementById('dailyQuotes');
   try{
     const res=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k&encode=json');
