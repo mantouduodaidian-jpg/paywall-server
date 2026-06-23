@@ -357,8 +357,10 @@ async function loadOverview() {
       '<div class="stat-card"><div class="num yellow">'+d.pending+'</div><div class="label">待审核</div></div>'+
       '<div class="stat-card"><div class="num green">'+d.approved+'</div><div class="label">已通过</div></div>'+
       '<div class="stat-card"><div class="num blue">'+d.listed+'</div><div class="label">已上架</div></div>'+
-      '<div class="stat-card"><div class="num blue">'+d.verTotal+'</div><div class="label">认证申请</div></div>'+
-      '<div class="stat-card"><div class="num yellow">'+d.verPending+'</div><div class="label">待审核认证</div></div>'+
+      '<div class="stat-card"><div class="num blue">'+d.verTotal+'</div><div class="label">认证总申请</div></div>'+
+      '<div class="stat-card"><div class="num yellow">'+d.verPending+'</div><div class="label">待审核</div></div>'+
+      '<div class="stat-card"><div class="num green">'+d.verApproved+'</div><div class="label">已通过</div></div>'+
+      '<div class="stat-card"><div class="num red">'+(d.verTotal-d.verPending-d.verApproved)+'</div><div class="label">已拒绝</div></div>'+
       '<div class="stat-card"><div class="num red">'+d.reportsPending+'</div><div class="label">待处理举报</div></div>'+
       '<div class="stat-card"><div class="num green">'+d.announcements+'</div><div class="label">公告</div></div>';
     // Badges
