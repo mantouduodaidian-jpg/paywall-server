@@ -2,553 +2,111 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>仪表盘</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="manifest" href="/manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    background: #0a1a0f; color: #c8e6c9; min-height: 100vh; padding: 24px;
-    background-image:
-      radial-gradient(ellipse at 10% 20%, rgba(22,120,50,.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 80%, rgba(16,185,80,.04) 0%, transparent 50%);
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    background:#0a1a0f;color:#c8e6c9;min-height:100vh;display:flex;
+    align-items:center;justify-content:center;padding:20px;
+    background-image:radial-gradient(ellipse at 10% 20%,rgba(22,120,50,.04) 0%,transparent 50%);
   }
-  .wrap { max-width: 1000px; margin: 0 auto; }
-
-  /* Header */
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
-  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
-  .header h1 span { background: linear-gradient(135deg,#6ee7b7,#059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .header-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: rgba(255,255,255,.3); }
-  .header-right .dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; display: inline-block; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-  /* ===== Collapsible Section ===== */
-  .section { margin-bottom: 12px; }
-  .section-header {
-    display: flex; align-items: center; gap: 10px; padding: 10px 16px;
-    border-radius: 14px; cursor: pointer; user-select: none;
-    background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04);
-    transition: all .2s;
+  .panel{
+    width:320px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);
+    border-radius:20px;padding:24px;backdrop-filter:blur(16px);
+    background-image:radial-gradient(ellipse at 50% 0%,rgba(52,211,153,.03) 0%,transparent 60%);
   }
-  .section-header:hover { background: rgba(52,211,153,.04); border-color: rgba(52,211,153,.1); }
-  .section-header .arrow { font-size: 12px; color: rgba(255,255,255,.2); transition: transform .3s; }
-  .section-header .arrow.open { transform: rotate(90deg); }
-  .section-header .label { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.4); letter-spacing: .3px; }
-  .section-header .badge {
-    margin-left: auto; font-size: 11px; padding: 2px 10px; border-radius: 10px;
-    background: rgba(52,211,153,.08); color: rgba(52,211,153,.5); font-weight: 500;
-  }
-  .section-content { padding: 8px 0 0 0; display: none; }
-  .section-content.open { display: block; }
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .header h2{font-size:16px;font-weight:600}
+  .header h2 span{background:linear-gradient(135deg,#6ee7b7,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .header .time{font-size:13px;color:rgba(255,255,255,.25);font-variant-numeric:tabular-nums}
 
-  /* ===== Card Grid ===== */
-  .grid { display: grid; gap: 12px; }
-  .grid-2 { grid-template-columns: 1fr 1fr; }
-  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .grid-4 { grid-template-columns: 2fr 1fr 1fr; }
-  .grid-models { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
-  @media (max-width: 700px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+  .sec{font-size:10px;color:rgba(255,255,255,.15);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
 
-  .card {
-    background: rgba(255,255,255,.02); border: 1px solid rgba(255,255,255,.04);
-    border-radius: 14px; padding: 18px; position: relative; overflow: hidden;
-    backdrop-filter: blur(8px);
-  }
-  .card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, rgba(52,211,153,.2), transparent);
-  }
-  .card-title {
-    font-size: 11px; font-weight: 600; color: rgba(255,255,255,.25); text-transform: uppercase;
-    letter-spacing: .5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
-  }
+  .links{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+  .link{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;text-decoration:none;color:rgba(255,255,255,.4);font-size:13px;transition:all .15s}
+  .link:hover{background:rgba(52,211,153,.04);color:rgba(255,255,255,.6)}
+  .link svg{width:18px;height:18px;flex-shrink:0}
+  .link .tag{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.15)}
 
-  /* Stats */
-  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .stat { flex: 1; min-width: 70px; }
-  .stat .num { font-size: 24px; font-weight: 700; line-height: 1.2; }
-  .stat .num.g1 { color: #34d399; }
-  .stat .num.g2 { color: #6ee7b7; }
-  .stat .num.g3 { color: #fbbf24; }
-  .stat .num.g4 { color: #f87171; }
-  .stat .num.g5 { color: #60a5fa; }
-  .stat .lbl { font-size: 11px; color: rgba(255,255,255,.2); margin-top: 2px; }
+  .sr{display:flex;gap:8px;margin-bottom:14px}
+  .st{flex:1;background:rgba(255,255,255,.02);border-radius:10px;padding:10px;text-align:center;border:1px solid rgba(255,255,255,.03)}
+  .st .n{font-size:18px;font-weight:700;line-height:1.2}
+  .st .l{font-size:10px;color:rgba(255,255,255,.2);margin-top:2px}
 
-  .pbar-bg { height: 4px; background: rgba(255,255,255,.04); border-radius: 4px; margin-top: 8px; overflow: hidden; }
-  .pbar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#059669,#34d399); transition: width .8s; }
+  .svr{display:flex;gap:8px}
+  .sv{flex:1;text-align:center;padding:6px;background:rgba(255,255,255,.02);border-radius:8px}
+  .sv .v{font-size:14px;font-weight:600}
+  .sv .l{font-size:10px;color:rgba(255,255,255,.15);margin-top:2px}
 
-  .topic-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
-  .topic-row .name { width: 50px; font-size: 11px; color: rgba(255,255,255,.3); flex-shrink: 0; }
-  .topic-row .bar { flex: 1; height: 3px; background: rgba(255,255,255,.03); border-radius: 3px; overflow: hidden; }
-  .topic-row .bar .fill { height: 100%; border-radius: 3px; }
-  .topic-row .pct { width: 30px; text-align: right; font-size: 11px; color: rgba(255,255,255,.2); }
-
-  .weather-main { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-  .weather-main .temp { font-size: 30px; font-weight: 700; }
-  .weather-main .desc { font-size: 13px; color: rgba(255,255,255,.3); }
-  .weather-details { display: flex; gap: 16px; font-size: 12px; color: rgba(255,255,255,.2); }
-
-  .cd-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
-  .cd-item:last-child { border: none; }
-  .cd-item .name { font-size: 13px; color: rgba(255,255,255,.5); }
-  .cd-item .days { font-size: 16px; font-weight: 700; }
-  .cd-item .days.urgent { color: #f87171; }
-  .cd-item .days.soon { color: #fbbf24; }
-  .cd-item .days.far { color: #34d399; }
-
-  .todo-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.03); }
-  .todo-item:last-child { border: none; }
-  .todo-item .cb {
-    width: 18px; height: 18px; border-radius: 6px; border: 2px solid rgba(255,255,255,.1);
-    cursor: pointer; flex-shrink: 0; position: relative;
-  }
-  .todo-item .cb:hover { border-color: rgba(52,211,153,.3); }
-  .todo-item .cb.done { background: #059669; border-color: #059669; }
-  .todo-item .cb.done::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; }
-  .todo-item .txt { font-size: 13px; color: rgba(255,255,255,.5); }
-  .todo-item .txt.done { text-decoration: line-through; color: rgba(255,255,255,.15); }
-
-  .ai-stat { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; }
-  .ai-stat .lbl { color: rgba(255,255,255,.3); }
-  .ai-stat .val { font-weight: 600; }
-
-  .quick-input { display: flex; gap: 8px; margin-top: 8px; }
-  .quick-input input {
-    flex: 1; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06);
-    background: rgba(255,255,255,.03); color: #c8e6c9; font-size: 13px; outline: none; font-family: inherit;
-  }
-  .quick-input input::placeholder { color: rgba(255,255,255,.1); }
-  .quick-input input:focus { border-color: rgba(52,211,153,.2); }
-  .quick-input button {
-    padding: 8px 14px; border-radius: 10px; border: none;
-    background: linear-gradient(135deg,#059669,#34d399); color: #fff;
-    font-size: 13px; cursor: pointer; font-weight: 600;
-  }
-  .quick-input button:hover { opacity: .9; }
-
-  .empty-msg { color: rgba(255,255,255,.1); font-size: 13px; }
-
-  .model-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.04);
-    font-size: 12px;
-  }
-  .model-item .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .model-item .mname { color: rgba(255,255,255,.5); }
-  .model-item .mtag { font-size: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,.03); color: rgba(255,255,255,.15); }
-  .model-item .cpy { padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,.06); background: transparent; color: rgba(255,255,255,.2); font-size: 10px; cursor: pointer; }
-  .model-item .cpy:hover { border-color: rgba(52,211,153,.2); color: rgba(52,211,153,.4); }
-
-  .sv-row { display: flex; gap: 16px; flex-wrap: wrap; }
-  .sv-item .val { font-size: 20px; font-weight: 700; }
-  .sv-item .lbl { font-size: 11px; color: rgba(255,255,255,.2); }
-
-  .note-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
-  .note-item .nt { font-size: 13px; color: rgba(255,255,255,.4); flex: 1; }
-  .note-item .ntm { font-size: 10px; color: rgba(255,255,255,.1); }
-
-  .link-btn {
-    display: inline-block; padding: 5px 12px; border-radius: 8px;
-    border: 1px solid rgba(255,255,255,.04); color: rgba(255,255,255,.3);
-    text-decoration: none; font-size: 12px; transition: all .15s;
-  }
-  .link-btn:hover { border-color: rgba(52,211,153,.15); color: rgba(52,211,153,.4); }
-  .ic { width: 1em; height: 1em; display: inline-block; vertical-align: -.125em; }
-  .ic-lg { width: 1.3em; height: 1.3em; vertical-align: -.2em; }
+  .bb{height:3px;background:rgba(255,255,255,.04);border-radius:3px;margin:6px 0;overflow:hidden}
+  .bf{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .8s;width:0%}
+  .qt{font-size:10px;color:rgba(255,255,255,.1);margin-bottom:14px;text-align:right}
 </style>
 </head>
 <body>
-<svg style="display:none">
-  <defs>
-    <!-- 文件夹 — 带折角和细节 -->
-    <symbol id="ic-folder" viewBox="0 0 24 24">
-      <path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" fill="rgba(52,211,153,.08)" stroke="#34d399" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M3 10h18" stroke="#34d399" stroke-width="1.2" stroke-linecap="round"/>
-      <path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v1H3V7z" fill="rgba(52,211,153,.04)" stroke="none"/>
-    </symbol>
-    <!-- 书 — 书脊 + 书签线 -->
-    <symbol id="ic-book" viewBox="0 0 24 24">
-      <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5z" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.5" rx="1"/>
-      <path d="M12 4v16" stroke="#34d399" stroke-width="1.5"/>
-      <path d="M8 7.5h3M8 10.5h3" stroke="#34d399" stroke-width="1.4" stroke-linecap="round"/>
-      <path d="M16 7.5h-2M16 10.5h-2" stroke="#34d399" stroke-width="1.4" stroke-linecap="round" opacity=".5"/>
-    </symbol>
-    <!-- 图表 — 带坐标轴的柱状图 -->
-    <symbol id="ic-chart" viewBox="0 0 24 24">
-      <line x1="3" y1="20" x2="21" y2="20" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".4"/>
-      <rect x="5" y="14" width="3.5" height="6" rx=".8" fill="#34d399" opacity=".6"/>
-      <rect x="10.5" y="9" width="3.5" height="11" rx=".8" fill="#34d399"/>
-      <rect x="16" y="4" width="3.5" height="16" rx=".8" fill="#34d399" opacity=".8"/>
-    </symbol>
-    <!-- 灯泡 — 带光晕细节 -->
-    <symbol id="ic-bulb" viewBox="0 0 24 24">
-      <path d="M12 3a6.5 6.5 0 0 0-4 11.7c1.2.9 2 2.3 2 3.3h4c0-1 .8-2.4 2-3.3A6.5 6.5 0 0 0 12 3z" fill="rgba(52,211,153,.08)" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M9.5 18h5" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M10.5 21h3" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M12 6v2" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M8.5 8.5l1 1" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
-      <path d="M15.5 8.5l-1 1" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".5"/>
-    </symbol>
-    <!-- 魔方/模型 — 3D 立方体堆叠 -->
-    <symbol id="ic-box" viewBox="0 0 24 24">
-      <polygon points="12 2 21 6.5 21 15.5 12 20 3 15.5 3 6.5 12 2" fill="rgba(52,211,153,.04)" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
-      <polygon points="12 2 21 6.5 12 11 3 6.5 12 2" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.3" stroke-linejoin="round"/>
-      <line x1="12" y1="11" x2="12" y2="20" stroke="#34d399" stroke-width="1.5"/>
-      <line x1="3" y1="6.5" x2="12" y2="11" stroke="#34d399" stroke-width="1.3"/>
-      <line x1="21" y1="6.5" x2="12" y2="11" stroke="#34d399" stroke-width="1.3"/>
-    </symbol>
-    <!-- 钱币 — 带货币符号 -->
-    <symbol id="ic-coin" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.5"/>
-      <circle cx="12" cy="12" r="6" fill="none" stroke="#34d399" stroke-width=".8" opacity=".3"/>
-      <path d="M12 8v8" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M8.5 10.5h5a2 2 0 1 0 0-4h-3" stroke="#34d399" stroke-width="1.4" stroke-linecap="round"/>
-    </symbol>
-    <!-- 时钟 — 带刻度和指针 -->
-    <symbol id="ic-clock" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="9" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.5"/>
-      <circle cx="12" cy="12" r="2" fill="rgba(52,211,153,.15)" stroke="none"/>
-      <path d="M12 8v4l3 2" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M7.5 12h1M12 7.5v1" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".4"/>
-    </symbol>
-    <!-- 服务器 — 带指示灯 -->
-    <symbol id="ic-sv" viewBox="0 0 24 24">
-      <rect x="3" y="3" width="18" height="7" rx="1.5" fill="rgba(52,211,153,.04)" stroke="#34d399" stroke-width="1.5"/>
-      <rect x="3" y="14" width="18" height="7" rx="1.5" fill="rgba(52,211,153,.04)" stroke="#34d399" stroke-width="1.5"/>
-      <circle cx="6.5" cy="6.5" r="1" fill="#34d399"/>
-      <circle cx="10" cy="6.5" r="1" fill="#34d399"/>
-      <circle cx="6.5" cy="17.5" r="1" fill="#34d399"/>
-      <circle cx="10" cy="17.5" r="1" fill="#34d399"/>
-      <line x1="15" y1="6.5" x2="19" y2="6.5" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".3"/>
-      <line x1="15" y1="17.5" x2="19" y2="17.5" stroke="#34d399" stroke-width="1.2" stroke-linecap="round" opacity=".3"/>
-    </symbol>
-    <!-- 列表 — 带圆点和分割线 -->
-    <symbol id="ic-list" viewBox="0 0 24 24">
-      <rect x="3" y="4" width="18" height="16" rx="2" fill="rgba(52,211,153,.04)" stroke="#34d399" stroke-width="1.4"/>
-      <circle cx="6.5" cy="8" r="1" fill="#34d399"/>
-      <line x1="10" y1="8" x2="19" y2="8" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="6.5" cy="12" r="1" fill="#34d399"/>
-      <line x1="10" y1="12" x2="19" y2="12" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-      <circle cx="6.5" cy="16" r="1" fill="#34d399"/>
-      <line x1="10" y1="16" x2="17" y2="16" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
-    </symbol>
-    <!-- 铅笔 — 带笔头细节 -->
-    <symbol id="ic-pencil" viewBox="0 0 24 24">
-      <path d="M16.5 3.5a2.83 2.83 0 1 1 4 4L7.5 20.3 2 22l1.7-5.5L16.5 3.5z" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.4" stroke-linejoin="round"/>
-      <line x1="18.5" y1="5.5" x2="14" y2="10" stroke="#34d399" stroke-width="1" stroke-linecap="round" opacity=".4"/>
-    </symbol>
-  </defs>
-</svg>
-<div class="wrap">
-  <!-- Header -->
+<div class="panel">
   <div class="header">
-    <div style="display:flex;align-items:center;gap:16px">
-      <h1>🌲 <span>仪表盘</span></h1>
-      <span style="font-size:15px;color:rgba(255,255,255,.3);font-variant-numeric:tabular-nums;letter-spacing:1px" id="clockDisplay">--:--:--</span>
-    </div>
-    <div class="header-right">
-      <span style="display:flex;align-items:center;gap:8px;font-size:14px">
-        <span id="weatherIcon">☀️</span>
-        <span id="weatherTemp" style="font-weight:600;color:rgba(255,255,255,.5)">--°</span>
-        <span id="weatherDesc" style="font-size:12px;color:rgba(255,255,255,.25)">加载中</span>
-        <span id="weatherExtra" style="font-size:11px;color:rgba(255,255,255,.12)"></span>
-      </span>
-    </div>
+    <h2>🌲 <span>仪表盘</span></h2>
+    <div class="time" id="clock">--:--</div>
   </div>
 
-  <!-- ===== Section 2: AI & API ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-model"/></svg> AI 中转 & 用量</span>
-      <span class="badge" id="aiBadge">0 today</span>
-    </div>
-    <div class="section-content" id="aiSection">
-      <div class="grid grid-3">
-        <div class="card"><div class="card-title">用量</div>
-          <div class="ai-stat"><span class="lbl">今日请求</span><span class="val" id="aiToday">--</span></div>
-          <div class="ai-stat"><span class="lbl">今日 Token</span><span class="val" id="aiTokens">--</span></div>
-          <div class="ai-stat"><span class="lbl">本月 Token</span><span class="val" id="aiMonth">--</span></div>
-          <div class="pbar-bg"><div class="pbar-fill" style="width:0%" id="aiBar"></div></div>
-          <div style="margin-top:5px;font-size:10px;color:rgba(255,255,255,.12);">配额: <span id="aiQuota">--</span></div>
-        </div>
-        <div class="card"><div class="card-title">Codex & 连接</div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <div><div style="font-size:16px;font-weight:700;" id="cxStatus">检测中</div><div style="font-size:10px;color:rgba(255,255,255,.2);">状态</div></div>
-            <div><div style="font-size:14px;font-weight:600;" id="cxAccount">--</div><div style="font-size:10px;color:rgba(255,255,255,.2);">账号</div></div>
-            <div><div style="font-size:14px;font-weight:600;" id="cxPlan">--</div><div style="font-size:10px;color:rgba(255,255,255,.2);">套餐</div></div>
-          </div>
-          <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.15);">端点: <code style="color:rgba(52,211,153,.3);">/v1/chat/completions</code></div>
-        </div>
-        <div class="card"><div class="card-title">快捷</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            <a href="/chat.html" class="link-btn">🌲 林间小语</a>
-            <a href="/v1" class="link-btn">⚡ API</a>
-            <a href="https://console.groq.com" target="_blank" class="link-btn">🔑 Groq</a>
-            <a href="https://platform.deepseek.com" target="_blank" class="link-btn">🔑 DeepSeek</a>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="sec">快速入口</div>
+  <div class="links">
+    <a href="/chat.html" class="link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 13.5c0 1.5 1.3 2.5 3 2.5s3-1 3-2.5" stroke-linecap="round"/></svg>
+      林间小语 <span class="tag">AI</span>
+    </a>
+    <a href="/expense.html" class="link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M8 10h6a2 2 0 1 0 0-4H8" stroke-linecap="round"/></svg>
+      记账本 <span class="tag">钱</span>
+    </a>
+    <a href="/market.html" class="link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0" stroke-linecap="round"/></svg>
+      校园严选 <span class="tag">二手</span>
+    </a>
+    <a href="/wallpaper.html" class="link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      林间壁纸 <span class="tag">桌面</span>
+    </a>
   </div>
 
-  <!-- ===== Section 3: 模型速查 ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-box"/></svg> 可用模型</span>
-      <span class="badge" id="modelBadge">0 已配置</span>
-    </div>
-    <div class="section-content" id="modelSection">
-      <div class="card">
-        <div class="grid grid-models" id="modelList"><div class="empty-msg">加载中...</div></div>
-      </div>
-    </div>
+  <div class="sec">AI 用量</div>
+  <div class="sr">
+    <div class="st"><div class="n" style="color:#34d399" id="aiToday">--</div><div class="l">今日</div></div>
+    <div class="st"><div class="n" style="color:#6ee7b7" id="aiTokens">--</div><div class="l">Tokens</div></div>
+    <div class="st"><div class="n" style="color:#fbbf24" id="aiMonth">--</div><div class="l">本月</div></div>
   </div>
+  <div class="bb"><div class="bf" id="aiBar"></div></div>
+  <div class="qt" id="aiQuota">--</div>
 
-  <!-- ===== Section 4: 待办 & 笔记 ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-list"/></svg> 待办 & 随手记</span>
-      <span class="badge" id="todoBadge">0</span>
-    </div>
-    <div class="section-content" id="todoSection">
-      <div class="grid grid-2">
-        <div class="card"><div class="card-title">今日目标</div>
-          <div id="todoList"><div class="empty-msg">暂无</div></div>
-          <div class="quick-input"><input id="todoInput" placeholder="写一个目标..." onkeydown="if(event.key==='Enter')addTodo()"><button onclick="addTodo()">+</button></div>
-        </div>
-        <div class="card"><div class="card-title">随手记</div>
-          <div id="noteList"><div class="empty-msg">暂无</div></div>
-          <div class="quick-input"><input id="noteInput" placeholder="记点什么..." onkeydown="if(event.key==='Enter')addNote()"><button onclick="addNote()">记下</button></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== Section 5: 记账本 ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-coin"/></svg> 记账本</span>
-      <span class="badge" id="moneyBadge">--</span>
-    </div>
-    <div class="section-content" id="moneySection">
-      <div class="grid grid-2">
-        <div class="card"><div class="card-title"><svg class="ic"><use href="#ic-coin"/></svg> 本月概况</div>
-          <div id="moneySummary">
-            <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px;">
-              <div><div style="font-size:22px;font-weight:700;color:#34d399;" id="mBudget">--</div><div style="font-size:11px;color:rgba(255,255,255,.2);">预算</div></div>
-              <div><div style="font-size:22px;font-weight:700;color:#f87171;" id="mSpent">--</div><div style="font-size:11px;color:rgba(255,255,255,.2);">已支出</div></div>
-              <div><div style="font-size:22px;font-weight:700;color:#fbbf24;" id="mRemain">--</div><div style="font-size:11px;color:rgba(255,255,255,.2);">剩余</div></div>
-            </div>
-            <div class="pbar-bg"><div class="pbar-fill" id="mBar" style="width:0%"></div></div>
-            <div style="margin-top:8px;" id="mRecent"><div class="empty-msg">暂无数据</div></div>
-          </div>
-        </div>
-        <div class="card"><div class="card-title"><svg class="ic"><use href="#ic-pencil"/></svg> 快捷记账</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;gap:8px;">
-              <input id="eaAmount" type="number" placeholder="金额" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:#c8e6c9;font-size:13px;outline:none;font-family:inherit;">
-              <select id="eaCat" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);color:rgba(255,255,255,.6);font-size:13px;outline:none;">
-                <option value="餐饮">餐饮</option><option value="交通">交通</option><option value="日用">日用</option><option value="学习">学习</option><option value="娱乐">娱乐</option><option value="其他">其他</option>
-              </select>
-            </div>
-            <button onclick="addExpense()" style="padding:8px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;cursor:pointer;font-weight:600;">记录支出</button>
-          </div>
-          <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,.1);"><a href="/expense.html" style="color:rgba(52,211,153,.3);">打开完整记账本 →</a></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== Section 6: 服务器 ===== -->
-  <div class="section">
-    <div class="section-header" onclick="toggle(this)">
-      <span class="arrow">▶</span>
-      <span class="label"><svg class="ic"><use href="#ic-sv"/></svg> 服务器</span>
-    </div>
-    <div class="section-content" id="svSection">
-      <div class="card">
-        <div class="sv-row">
-          <div class="sv-item"><div class="val" style="color:#34d399;" id="svStatus">● 在线</div><div class="lbl">状态</div></div>
-          <div class="sv-item"><div class="val" id="svUptime">--</div><div class="lbl">运行</div></div>
-          <div class="sv-item"><div class="val" id="svRAM">--</div><div class="lbl">内存</div></div>
-          <div class="sv-item"><div class="val" id="svCPU">--</div><div class="lbl">CPU</div></div>
-        </div>
-      </div>
-    </div>
+  <div class="sec">服务器</div>
+  <div class="svr">
+    <div class="sv"><div class="v" style="color:#34d399" id="svStatus">●</div><div class="l">状态</div></div>
+    <div class="sv"><div class="v" id="svUptime">--</div><div class="l">运行</div></div>
+    <div class="sv"><div class="v" id="svRAM">--</div><div class="l">内存</div></div>
   </div>
 </div>
 
 <script>
-// ====== Toggle sections ======
-function toggle(el) {
-  const arrow = el.querySelector('.arrow');
-  const content = el.nextElementSibling;
-  arrow.classList.toggle('open');
-  content.classList.toggle('open');
-}
-
-// ====== Clock ======
-function updateClock(){
-  const now = new Date();
-  document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  document.getElementById('weatherExtra').textContent = now.toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'});
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ====== Weather ======
-(async function(){
-  try {
-    const r = await fetch('https://wttr.in/Nanning?format=j1');
-    const d = await r.json();
-    const c = d.current_condition[0];
-    document.getElementById('weatherTemp').textContent = c.temp_C+'°';
-    document.getElementById('weatherDesc').textContent = c.weatherDesc[0].value;
-    const code = parseInt(c.weatherCode);
-    const icons = {113:'☀️',116:'⛅',119:'☁️',176:'🌦',200:'⛈',227:'🌨',248:'🌫',266:'🌦',293:'🌦',296:'🌦',302:'🌧',311:'🌧',317:'🌧',320:'🌨',350:'🌧',353:'🌦',356:'🌧',362:'🌧',368:'🌨',386:'⛈',389:'⛈',392:'⛈'};
-    document.getElementById('weatherIcon').textContent = icons[code]||'🌤';
-  } catch(e) {}
-})();
-
-// ====== Countdown ======
-function loadCD(){return JSON.parse(localStorage.getItem('dash_cd')||'[]');}
-function saveCD(d){localStorage.setItem('dash_cd',JSON.stringify(d));renderCD();}
-function addCD(){
-  const v=document.getElementById('cdInput').value.trim().split(',');
-  if(v.length<2) return;
-  const list=loadCD();list.push({name:v[0].trim(),date:v[1].trim()});saveCD(list);
-  document.getElementById('cdInput').value='';
-}
-function renderCD(){
-  const list=loadCD();const el=document.getElementById('countdownList');
-  if(!list.length){el.innerHTML='<div class="empty-msg">暂无</div>';return;}
-  const now=new Date();
-  list.sort((a,b)=>new Date(a.date)-new Date(b.date));
-  el.innerHTML=list.map(i=>{const d=Math.ceil((new Date(i.date)-now)/86400000);return '<div class="cd-item"><span class="name">'+i.name+'</span><span class="days '+(d<7?'urgent':d<30?'soon':'far')+'">'+(d>0?d+'天':'今天')+'</span></div>';}).join('');
-}
-renderCD();
-
-// ====== Todo ======
-function loadTD(){return JSON.parse(localStorage.getItem('dash_todo')||'[]');}
-function saveTD(d){localStorage.setItem('dash_todo',JSON.stringify(d));renderTD();}
-function addTodo(){
-  const v=document.getElementById('todoInput').value.trim();
-  if(!v) return;
-  const list=loadTD();list.push({text:v,done:false});saveTD(list);
-  document.getElementById('todoInput').value='';
-}
-function toggleTodo(i){
-  const list=loadTD();list[i].done=!list[i].done;saveTD(list);
-}
-function renderTD(){
-  const list=loadTD();const el=document.getElementById('todoList');
-  const undone=list.filter(i=>!i.done).length;
-  document.getElementById('todoBadge').textContent=undone;
-  if(!list.length){el.innerHTML='<div class="empty-msg">暂无</div>';return;}
-  el.innerHTML=list.map((i,idx)=>'<div class="todo-item"><div class="cb'+(i.done?' done':'')+'" onclick="toggleTodo('+idx+')"></div><span class="txt'+(i.done?' done':'')+'">'+i.text+'</span></div>').join('');
-}
-renderTD();
-
-// ====== Notes ======
-function loadNT(){return JSON.parse(localStorage.getItem('dash_notes')||'[]');}
-function saveNT(d){localStorage.setItem('dash_notes',JSON.stringify(d));renderNT();}
-function addNote(){
-  const v=document.getElementById('noteInput').value.trim();
-  if(!v) return;
-  const list=loadNT();list.push({text:v,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});saveNT(list);
-  document.getElementById('noteInput').value='';
-}
-function renderNT(){
-  const list=loadNT();const el=document.getElementById('noteList');
-  if(!list.length){el.innerHTML='<div class="empty-msg">暂无</div>';return;}
-  el.innerHTML=list.slice(-5).reverse().map(i=>'<div class="note-item"><span class="nt">'+i.text+'</span><span class="ntm">'+i.time+'</span></div>').join('');
-}
-renderNT();
-
-// ====== Expense Tracker ======
-function loadEA(){try{return JSON.parse(localStorage.getItem('student_account_book'))}catch(e){return null}}
-function renderMoney(){
-  const d=loadEA();
-  if(!d||!d.entries||!d.entries.length){
-    document.getElementById('mBudget').textContent='--';
-    document.getElementById('mSpent').textContent='--';
-    document.getElementById('mRemain').textContent='--';
-    document.getElementById('moneyBadge').textContent='未同步';
-    return;
-  }
-  const now=new Date();const ym=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
-  const monthEntries=d.entries.filter(e=>e.date&&e.date.startsWith(ym)&&e.type==='expense');
-  const total=monthEntries.reduce((s,e)=>s+Number(e.amount||0),0);
-  const budget=d.budget||0;
-  const remain=budget-total;
-  document.getElementById('mBudget').textContent='¥'+budget.toFixed(0);
-  document.getElementById('mSpent').textContent='¥'+total.toFixed(0);
-  document.getElementById('mRemain').textContent=(remain>=0?'¥':'+¥')+Math.abs(remain).toFixed(0);
-  document.getElementById('mRemain').style.color=remain>=0?'rgba(255,255,255,.5)':'#fbbf24';
-  document.getElementById('mBar').style.width=budget?Math.min(100,total/budget*100)+'%':'0%';
-  document.getElementById('moneyBadge').textContent='¥'+total.toFixed(0);
-
-  const recent=monthEntries.slice(-5).reverse();
-  document.getElementById('mRecent').innerHTML=recent.map(e=>
-    '<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;color:rgba(255,255,255,.3);"><span>'+e.date.slice(5)+' '+e.category+'</span><span style="color:rgba(248,113,113,.6);">-¥'+Number(e.amount).toFixed(1)+'</span></div>'
-  ).join('');
-}
-function addExpense(){
-  const amt=document.getElementById('eaAmount').value;
-  if(!amt||amt<=0) return;
-  const cat=document.getElementById('eaCat').value;
-  let d=loadEA()||{entries:[],budget:0};
-  d.entries.push({id:Date.now(),date:new Date().toISOString().slice(0,10),type:'expense',amount:Number(amt),category:cat,note:''});
-  localStorage.setItem('student_account_book',JSON.stringify(d));
-  document.getElementById('eaAmount').value='';
-  renderMoney();
-}
-renderMoney();
-
-// ====== API Data ======
-(async function(){
-  try {
-    const r = await fetch('/api/dashboard');
-    if(!r.ok) throw new Error();
-    const d = await r.json();
-    document.getElementById('svUptime').textContent = d.server.uptime;
-    document.getElementById('svRAM').textContent = d.server.ram;
-    document.getElementById('svCPU').textContent = d.server.cpu;
-    document.getElementById('svStatus').innerHTML = '● 在线';
-    document.getElementById('aiToday').textContent = d.ai.today;
-    document.getElementById('aiTokens').textContent = (d.ai.tokens||0).toLocaleString();
-    document.getElementById('aiMonth').textContent = (d.ai.month||0).toLocaleString();
-    const pct = Math.min(100, (d.ai.tokens||0)/5000000*100);
-    document.getElementById('aiBar').style.width = pct+'%';
-    document.getElementById('aiQuota').textContent = ((d.ai.tokens||0)/1000000).toFixed(1)+'M / 5M';
-    document.getElementById('aiBadge').textContent = d.ai.today+' today';
-  } catch(e) {
-    document.getElementById('svStatus').innerHTML = '○ 离线';
-  }
-})();
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})},1000);
 
 (async function(){
-  try {
-    const r = await fetch('/api/keys');
-    if(!r.ok) throw new Error();
-    const d = await r.json();
-    const el = document.getElementById('modelList');
-    const configured = Object.entries(d.configured).filter(([,v])=>v).length;
-    document.getElementById('modelBadge').textContent = configured+' 已配置';
-    const allModels = [];
-    Object.entries(d.models).forEach(([p,ms]) => ms.forEach(m => allModels.push({provider:p,model:m,on:d.configured[p]})));
-    if(!allModels.length) { el.innerHTML='<div class="empty-msg">暂无</div>'; return; }
-    const colors = { deepseek:'#4f46e5', openai:'#059669', dashscope:'#d97706', kimi:'#ec4899', doubao:'#ef4444', groq:'#06b6d4', siliconflow:'#dc2626' };
-    el.innerHTML = allModels.map(m => '<div class="model-item"><span class="dot" style="background:'+(m.on?colors[m.provider]||'#888':'rgba(255,255,255,.05)')+'"></span><span class="mname" style="color:'+(m.on?'rgba(255,255,255,.5)':'rgba(255,255,255,.15)')+'">'+m.model+'</span><span class="mtag">'+m.provider+'</span></div>').join('');
-  } catch(e) {}
+  try{
+    const r=await fetch('/api/dashboard');if(!r.ok)throw Error();
+    const d=await r.json();
+    document.getElementById('svUptime').textContent=d.server.uptime;
+    document.getElementById('svRAM').textContent=d.server.ram;
+    document.getElementById('aiToday').textContent=d.ai.today;
+    document.getElementById('aiTokens').textContent=(d.ai.tokens||0).toLocaleString();
+    document.getElementById('aiMonth').textContent=(d.ai.month||0).toLocaleString();
+    const p=Math.min(100,(d.ai.tokens||0)/5000000*100);
+    document.getElementById('aiBar').style.width=p+'%';
+    document.getElementById('aiQuota').textContent=((d.ai.tokens||0)/1000000).toFixed(1)+'M / 5M';
+  }catch(e){document.getElementById('svStatus').style.color='rgba(255,255,255,.15)'}
 })();
 </script>
 </body>
