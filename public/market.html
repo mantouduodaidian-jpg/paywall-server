@@ -165,6 +165,15 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <input type="text" id="fContact" placeholder="联系方式 (微信)">
     </div>
     <textarea id="fDesc" placeholder="描述（版本、使用情况、面交地点...）"></textarea>
+    <div style="margin-bottom:10px">
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 添加照片
+        <input type="file" id="fImage" accept="image/*" style="display:none" onchange="previewImg(this)">
+      </label>
+      <span id="fImageName" style="font-size:11px;color:rgba(255,255,255,.2);margin-left:8px"></span>
+    </div>
+    <div id="fImagePreview" style="margin-bottom:10px;display:none">
+      <img id="fImagePreviewImg" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.06)">
+    </div>
     <div class="btns">
       <button class="submit" onclick="publish()">✅ 确认发布</button>
       <button class="cancel" onclick="hidePub()">取消</button>
@@ -283,7 +292,7 @@ async function showDetail(id) {
     if(!p) return;
     reportingProductId = p.id;
     document.getElementById('detailBox').innerHTML =
-      '<div class="img-big"><span style="font-size:80px">📦</span></div><div class="body">'+
+      '<div class="img-big">'+(p.images && p.images[0] && p.images[0].startsWith('data:') ? '<img src="'+p.images[0]+'">' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
       '<div class="price">¥'+parseFloat(p.price).toFixed(2)+'</div>'+
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
@@ -311,13 +320,14 @@ async function publish(){
     title,price:parseFloat(price),category:document.getElementById('fCat').value||'其他',
     quality:document.getElementById('fQuality').value||'八成新',
     desc:document.getElementById('fDesc').value.trim(),
-    contact:document.getElementById('fContact').value.trim(),images:[]
+    contact:document.getElementById('fContact').value.trim(),
+    images: window._uploadedImages || []
   };
   try{
     const r=await fetch('/api/marketplace/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     const d=await r.json();
     btn.textContent='✅ 确认发布'; btn.disabled=false;
-    if(d.id||d.ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';load();}
+    if(d.id||d.ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
     else alert(d.error || '发布失败');
   }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; alert('发布失败');}
 }
@@ -360,6 +370,22 @@ async function applyVerify(){
 
 // ====== Utils ======
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ====== Image Upload ======
+window._uploadedImages = [];
+function previewImg(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { alert('图片不能超过5MB'); return; }
+  document.getElementById('fImageName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    window._uploadedImages = [e.target.result];
+    document.getElementById('fImagePreviewImg').src = e.target.result;
+    document.getElementById('fImagePreview').style.display = '';
+  };
+  reader.readAsDataURL(file);
+}
 
 // ====== Init ======
 loadCats();
