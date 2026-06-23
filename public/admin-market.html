@@ -276,6 +276,14 @@ tr:hover td{background:rgba(52,211,153,.02)}
   </div>
 </div>
 
+<!-- Image Preview Modal -->
+<div class="modal-overlay" id="imgPreviewModal" onclick="if(event.target===this)closeImgPreview()">
+  <div class="modal" style="max-width:500px;text-align:center">
+    <img id="imgPreviewContent" style="max-width:100%;max-height:70vh;border-radius:8px">
+    <div class="btns" style="margin-top:12px"><button class="btn-ghost" onclick="closeImgPreview()">关闭</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -465,7 +473,7 @@ async function loadVers() {
     const filtered = f ? arr.filter(v => v.status === f) : arr;
     document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
       filtered.map(v => '<tr><td style="color:rgba(255,255,255,.15)">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:rgba(255,255,255,.3)">'+esc(v.student_id)+'</td><td style="color:rgba(255,255,255,.2)">'+esc(v.phone||'-')+'</td>'+
-        '<td>'+(v.image?'<a href="#" onclick="window.open(\''+v.image+'\');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:rgba(255,255,255,.15);font-size:10px">无</span>')+'</td>'+
+        '<td>'+(v.image?'<a href="#" onclick="showCard(\''+v.image+'\');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:rgba(255,255,255,.15);font-size:10px">无</span>')+'</td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status||'pending')+'</span></td>'+
         '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(v.created_at)+'</td>'+
         '<td style="text-align:center">'+(v.status==='pending'
@@ -481,6 +489,16 @@ async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
   await fetch('/api/verify/'+id, {method:'DELETE'});
   toast('🗑️ 已删除'); loadVers(); loadOverview();
+}
+
+// Image Preview
+function showCard(src) {
+  document.getElementById('imgPreviewContent').src = src;
+  document.getElementById('imgPreviewModal').classList.add('show');
+}
+function closeImgPreview() {
+  document.getElementById('imgPreviewModal').classList.remove('show');
+  document.getElementById('imgPreviewContent').src = '';
 }
 
 // ====== CATEGORIES ======
