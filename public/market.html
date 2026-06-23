@@ -303,7 +303,7 @@ async function loadCats() {
     document.getElementById('fCat').innerHTML = '<option value="">分类</option>' +
       arr.map(c => '<option value="'+esc(c.name)+'">'+(CAT_ICONS_EMOJI[c.name]||'')+' '+esc(c.name)+'</option>').join('');
     document.getElementById('fCatDropdown').innerHTML = arr.map(c =>
-      '<div class="cs-option" onclick="selectCat(\''+esc(c.name)+'\',this)">'+(getCatIcon(c.name)||'')+' '+esc(c.name)+'</div>'
+      '<div class="cs-option" data-cat="'+esc(c.name)+'">'+(getCatIcon(c.name)||'')+' '+esc(c.name)+'</div>'
     ).join('');
   } catch(e) {
     // Fallback hardcoded
@@ -513,12 +513,18 @@ function toggleCatDropdown() {
   const d = document.getElementById('fCatDropdown');
   d.classList.toggle('show');
 }
+document.getElementById('fCatDropdown').addEventListener('click', function(e) {
+  const opt = e.target.closest('.cs-option');
+  if (opt && opt.dataset.cat) {
+    selectCat(opt.dataset.cat, opt);
+  }
+});
 document.addEventListener('click', function(e) {
   const w = document.getElementById('fCatWrap');
   if (w && !w.contains(e.target)) document.getElementById('fCatDropdown').classList.remove('show');
 });
 function selectCat(name, el) {
-  document.getElementById('fCatTrigger').innerHTML = (getCatIcon(name)||CAT_ICONS_EMOJI[name]||'') + ' ' + name;
+  document.getElementById("fCatTrigger").innerHTML = (getCatIcon(name)||CAT_ICONS_EMOJI[name]||'') + ' ' + name;
   document.getElementById('fCat').value = name;
   document.querySelectorAll('.cs-option').forEach(o => o.classList.remove('selected'));
   if (el) el.classList.add('selected');
