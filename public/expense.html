@@ -197,6 +197,7 @@
 <script>
 let CUR_MONTH = new Date();
 let CUR_WEEK = 0; // 0=全月, 1-5=周
+let _dateChanging = false;
 const CATS = { 餐饮:'🍜',交通:'🚌',日用:'🧴',学习:'📚',娱乐:'🎮',医疗:'💊',其他:'📦' };
 const COLORS = { 餐饮:'#34d399',交通:'#60a5fa',日用:'#fbbf24',学习:'#a78bfa',娱乐:'#f87171',医疗:'#f59e0b',其他:'rgba(255,255,255,.2)' };
 
@@ -254,7 +255,6 @@ async function load(){
   document.getElementById('monthLabel').textContent=CUR_MONTH.getFullYear()+'年'+(CUR_MONTH.getMonth()+1)+'月';
   document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
   // Date input change → navigate to that date's week
-  let _dateChanging = false;
   const _dateChangeDone = () => setTimeout(() => _dateChanging = false, 300);
   document.getElementById('fDate').onchange=function(){
     if(_dateChanging) return;

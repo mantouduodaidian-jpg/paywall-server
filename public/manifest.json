@@ -1,0 +1,13 @@
+{
+  "name": "林间小语",
+  "short_name": "林间小语",
+  "description": "AI Chat · 记账 · 仪表盘",
+  "start_url": "/chat.html",
+  "display": "standalone",
+  "background_color": "#0a1a0f",
+  "theme_color": "#0a1a0f",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
