@@ -509,6 +509,15 @@ app.post('/api/verify/reject', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete('/api/verify/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('verifications?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Marketplace API ======
 app.post('/api/marketplace/products', express.json(), async (req, res) => {
   try {
