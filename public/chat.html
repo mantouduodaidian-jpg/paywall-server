@@ -302,7 +302,20 @@
 
 <script>
 let CONV_ID=Date.now();
-function convKey(){return 'chat_convs';}
+function convKey(){
+  // Merge old mobile data into shared key on first call
+  try{
+    const mob=localStorage.getItem('chat_convs_mob');
+    if(mob){
+      const shared=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+      const mobData=JSON.parse(mob);
+      const merged=[...shared,...mobData.filter(m=>!shared.find(s=>s.id===m.id))];
+      localStorage.setItem('chat_convs',JSON.stringify(merged.slice(-30)));
+      localStorage.removeItem('chat_convs_mob');
+    }
+  }catch(e){}
+  return 'chat_convs';
+}
 const MSGS=[];
 const msgArea=document.getElementById('msgArea');
 const chatInput=document.getElementById('chatInput');
