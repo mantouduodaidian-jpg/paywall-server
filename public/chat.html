@@ -239,13 +239,19 @@
   </div>
 
   <div style="margin-top:auto;">
-    <div class="stats">
-      <div class="row"><span>🌱 今日</span><span class="v" id="sToday">--</span></div>
-      <div class="row"><span>🍃 本月 tokens</span><span class="v" id="sMonth">--</span></div>
+    <div class="row" onclick="toggleDash()" style="cursor:pointer;display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.2);padding:6px 0;border-top:1px solid rgba(255,255,255,.04)">
+      <span>📊 仪表盘</span>
+      <span id="dashArrow" style="transition:transform .3s">▸</span>
     </div>
-    <div class="nav-links">
-      <a href="/dashboard.html">📊 仪表盘</a>
-      <a href="/v1">⚡ API</a>
+    <div id="dashPanel" style="display:none;padding:4px 0">
+      <div class="row" style="font-size:11px;color:rgba(255,255,255,.15);padding:2px 0"><span>🌱 今日</span><span style="color:rgba(255,255,255,.4)" id="sToday">--</span></div>
+      <div class="row" style="font-size:11px;color:rgba(255,255,255,.15);padding:2px 0"><span>🍃 本月</span><span style="color:rgba(255,255,255,.4)" id="sMonth">--</span></div>
+      <div class="row" style="font-size:11px;color:rgba(255,255,255,.15);padding:2px 0"><span>🖥 运行</span><span style="color:rgba(255,255,255,.4)" id="sUptime">--</span></div>
+      <div class="row" style="font-size:11px;color:rgba(255,255,255,.15);padding:2px 0"><span>💾 内存</span><span style="color:rgba(255,255,255,.4)" id="sRAM">--</span></div>
+      <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+        <a href="/expense.html" style="font-size:10px;color:rgba(52,211,153,.3);text-decoration:none;padding:2px 8px;border-radius:4px">💰 记账</a>
+        <a href="/market.html" style="font-size:10px;color:rgba(52,211,153,.3);text-decoration:none;padding:2px 8px;border-radius:4px">🛒 严选</a>
+      </div>
     </div>
   </div>
 </div>
@@ -602,6 +608,12 @@ function confirmCrop() {
   tmp.src = cropDataUrl;
 }
 
+function toggleDash(){
+  const p=document.getElementById('dashPanel');
+  const a=document.getElementById('dashArrow');
+  if(p.style.display==='block'){p.style.display='none';a.textContent='▸';}else{p.style.display='block';a.textContent='▾';}
+}
+
 function toggleSidebar(){
   document.querySelector('.side').classList.toggle('open');
   document.getElementById('mobileOverlay').classList.toggle('show');
@@ -639,7 +651,7 @@ async function send(){
     const d=await r.json();
     const reply=d?.choices?.[0]?.message?.content||'错误：'+(d?.error?.message||JSON.stringify(d));
     loadingDiv.remove();addMsg('assistant',reply);MSGS.push({role:'assistant',content:reply});saveConv();
-    fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();}).catch(()=>{});
+    fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();document.getElementById('sUptime').textContent=d.server.uptime;document.getElementById('sRAM').textContent=d.server.ram;}).catch(()=>{});
   }catch(e){loadingDiv.remove();addMsg('assistant','请求失败：'+e.message);}
   sendBtn.disabled=false;chatInput.focus();
 }
@@ -648,7 +660,7 @@ function clearChat(){MSGS.length=0;msgArea.innerHTML='';showEmpty();saveConv();}
 showEmpty();
 document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
 chatInput.focus();
-fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();}).catch(()=>{});
+fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();document.getElementById('sUptime').textContent=d.server.uptime;document.getElementById('sRAM').textContent=d.server.ram;}).catch(()=>{});
 </script>
 </body>
 </html>
