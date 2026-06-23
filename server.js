@@ -593,3 +593,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ 付费验证服务已启动: http://0.0.0.0:${PORT}`);
   console.log(`📊 管理后台: http://localhost:${PORT}/admin.html`);
 });
+// force redeploy Tue Jun 23 15:09:58     2026
