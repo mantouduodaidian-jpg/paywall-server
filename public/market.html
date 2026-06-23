@@ -85,8 +85,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .pub-box h2{font-size:20px;color:rgba(255,255,255,.5);margin-bottom:20px}
 .pub-box .row{display:flex;gap:10px;margin-bottom:10px}
 .pub-box .row input,.pub-box .row select{flex:1}
-.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
-.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.3);background:rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
+.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:0;font-family:inherit;-webkit-tap-highlight-color:transparent;box-shadow:none}
+.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.4);background:rgba(0,0,0,.35);outline:0;-webkit-tap-highlight-color:transparent;box-shadow:0 0 0 2px rgba(52,211,153,.08)}
 .pub-box textarea{min-height:100px;resize:vertical}
 .pub-box .btns{display:flex;gap:8px;margin-top:16px}
 .pub-box .btns button{flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit}
@@ -98,6 +98,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .report-modal select,.report-modal textarea,.report-modal input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
 .report-modal select:focus,.report-modal textarea:focus,.report-modal input:focus{border-color:rgba(52,211,153,.3);background:rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
 .report-modal textarea{min-height:80px;resize:vertical}
+
+.toast-notif{position:fixed;top:-60px;left:50%;transform:translateX(-50%);background:rgba(10,26,15,.95);border:1px solid rgba(52,211,153,.2);border-radius:14px;padding:14px 24px;display:flex;align-items:center;gap:10px;z-index:200;transition:top .4s cubic-bezier(.34,1.56,.64,1);backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,.4);font-size:14px;white-space:nowrap;max-width:90vw}
+.toast-notif.show{top:24px}
+.toast-icon{font-size:18px}
+.toast-msg{color:#c8e6c9;font-weight:500}
 
 @media(max-width:768px){
   .main{flex-direction:column;padding:16px}
@@ -212,6 +217,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   </div>
 </div>
 
+<!-- Toast Notification -->
+<div class="toast-notif" id="toastNotif">
+  <span class="toast-icon" id="toastIcon">✅</span>
+  <span class="toast-msg" id="toastMsg"></span>
+</div>
+
 <!-- Login Modal -->
 <div class="pub-overlay" id="loginOverlay">
   <div class="pub-box" style="max-width:400px">
@@ -251,6 +262,16 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <script>
 let selCat = '';
 let reportingProductId = null;
+
+// ====== Toast Notification ======
+function notify(msg, icon) {
+  document.getElementById('toastMsg').textContent = msg;
+  document.getElementById('toastIcon').textContent = icon||'✅';
+  const el = document.getElementById('toastNotif');
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
 
 // ====== Categories ======
 async function loadCats() {
@@ -338,7 +359,7 @@ function hidePub(){document.getElementById('pubOverlay').classList.remove('show'
 async function publish(){
   const title=document.getElementById('fTitle').value.trim();
   const price=document.getElementById('fPrice').value;
-  if(!title||!price){alert('请填写名称和价格');return}
+  if(!title||!price){notify('请填写名称和价格', '⚠️');return}
   const btn = document.querySelector('.pub-box .submit');
   btn.textContent='⏳ 发布中...'; btn.disabled=true;
   const data={
@@ -354,8 +375,8 @@ async function publish(){
     btn.textContent='✅ 确认发布'; btn.disabled=false;
     const ok = d?.id || d?.[0]?.id || d?.ok;
     if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
-    else alert(d.error || '发布失败');
-  }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; alert('发布失败');}
+    else notify(d.error || '发布失败', '❌');
+  }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; notify('发布失败', '❌');}
 }
 
 // ====== Report ======
@@ -369,16 +390,16 @@ function hideReport() {
 }
 async function submitReport(){
   const reason = document.getElementById('rReason').value;
-  if (!reason || !reportingProductId) { alert('请选择举报原因'); return; }
+  if (!reason || !reportingProductId) { notify('请选择举报原因', '⚠️'); return; }
   try {
     const r = await fetch('/api/marketplace/reports', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({product_id: reportingProductId, reason, detail: document.getElementById('rDetail').value.trim(), reporter_contact: document.getElementById('rContact').value.trim()})
     });
     const d = await r.json();
-    if (d.ok) { alert('✅ 举报已提交，管理员会尽快处理'); hideReport(); }
-    else alert('提交失败');
-  } catch(e) { alert('提交失败'); }
+    if (d.ok) { notify('举报已提交，管理员会尽快处理', '✅'); hideReport(); }
+    else notify('提交失败', '❌');
+  } catch(e) { notify('提交失败', '❌'); }
 }
 
 // ====== Login / Auth ======
@@ -403,18 +424,18 @@ function hideLogin(){document.getElementById('loginOverlay').classList.remove('s
 async function doLogin(){
   const student_id = document.getElementById('loginId').value.trim();
   const phone = document.getElementById('loginPhone').value.trim();
-  if(!student_id||!phone){alert('请填写学号和电话');return}
-  if(student_id.length!==13){alert('学号应为13位');return}
-  if(phone.length!==11){alert('手机号应为11位');return}
+  if(!student_id||!phone){notify('请填写学号和电话', '⚠️');return}
+  if(student_id.length!==13){notify('学号应为13位', '⚠️');return}
+  if(phone.length!==11){notify('手机号应为11位', '⚠️');return}
   const btn=document.querySelector('#loginOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideLogin();alert('✅ 登录成功');}
-    else alert(d.msg||'登录失败');
-  }catch(e){btn.textContent='登录';btn.disabled=false;alert('登录失败');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideLogin();notify('登录成功', '✅');}
+    else notify(d.msg||'登录失败', '❌');
+  }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
 
 function logout(){
@@ -423,7 +444,7 @@ function logout(){
 }
 
 function showLoginForPub() {
-  if (!currentUser) { alert('请先登录再发布'); showLogin(); return false; }
+  if (!currentUser) { notify('请先登录再发布', '⚠️'); showLogin(); return false; }
   return true;
 }
 
@@ -432,18 +453,18 @@ function showVerify(){document.getElementById('verifyOverlay').classList.add('sh
 function hideVerify(){document.getElementById('verifyOverlay').classList.remove('show')}
 async function applyVerify(){
   const n=document.getElementById('vName').value.trim(),s=document.getElementById('vStudentId').value.trim(),p=document.getElementById('vPhone').value.trim();
-  if(!n||!s||!p){alert('请填写完整信息');return}
-  if(s.length!==13){alert('学号应为13位');return}
-  if(p.length!==11){alert('手机号应为11位');return}
+  if(!n||!s||!p){notify('请填写完整信息', '⚠️');return}
+  if(s.length!==13){notify('学号应为13位', '⚠️');return}
+  if(p.length!==11){notify('手机号应为11位', '⚠️');return}
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,image:window._cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
-    if(d.ok){alert('✅ '+d.msg);hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
-    else alert(d.msg||'提交失败');
-  }catch(e){btn.textContent='提交认证';btn.disabled=false;alert('提交失败');}
+    if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
+    else notify(d.msg||'提交失败', '❌');
+  }catch(e){btn.textContent='提交认证';btn.disabled=false;notify('提交失败', '❌');}
 }
 
 // ====== Utils ======
@@ -465,7 +486,7 @@ window._cardImage = '';
 function previewStudentCard(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5*1024*1024) { alert('图片不能超过5MB'); return; }
+  if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('vCardName').textContent = file.name;
   const reader = new FileReader();
   reader.onload = function(e) { window._cardImage = e.target.result; };
@@ -477,7 +498,7 @@ window._uploadedImages = [];
 function previewImg(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 5*1024*1024) { alert('图片不能超过5MB'); return; }
+  if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('fImageName').textContent = file.name;
   const reader = new FileReader();
   reader.onload = function(e) {
