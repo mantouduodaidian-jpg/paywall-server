@@ -156,42 +156,38 @@ app.get('/api/stats', (req, res) => {
   res.json({ totalPwd: t, usedPwd: u, revenue: u * 0.99 });
 });
 
-// ====== News API (proxy to bypass CORS) ======
+// ====== News API ======
 const NEWS_CACHE = { data: null, time: 0 };
 app.get('/api/news', async (req, res) => {
   try {
     if (Date.now() - NEWS_CACHE.time < 300000 && NEWS_CACHE.data) return res.json(NEWS_CACHE.data);
-    // Try zhihu daily
-    try {
-      const r = await fetch('https://www.zhihu.com/api/v3/feed/topstory/hot-lists/total?limit=10', {
-        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }
-      });
-      if (r.ok) {
-        const d = await r.json();
-        const items = (d?.data || []).slice(0, 10).map(n => n?.target?.title || '').filter(Boolean);
-        if (items.length) {
-          NEWS_CACHE.data = { items, source: '知乎热榜' };
-          NEWS_CACHE.time = Date.now();
-          return res.json(NEWS_CACHE.data);
-        }
-      }
-    } catch(e) {}
-    // Fallback 2: baidu
-    const r2 = await fetch('https://top.baidu.com/api/board?tab=realtime', {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    });
-    if (r2.ok) {
-      const d2 = await r2.json();
-      const items = (d2?.data?.cards || []).map(c => c?.word || c?.title || '').filter(Boolean).slice(0, 10);
-      if (items.length) {
-        NEWS_CACHE.data = { items, source: '百度热搜' };
-        NEWS_CACHE.time = Date.now();
-        return res.json(NEWS_CACHE.data);
-      }
+    // RSS via rss2json
+    const feeds = [
+      'https://rsshub.app/weibo/keyword/热搜',
+      'https://rsshub.app/zhihu/hotlist',
+      'https://rsshub.app/toutiao/hot'
+    ];
+    let items = [];
+    for (const url of feeds) {
+      try {
+        const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(5000) });
+        if (!r.ok) continue;
+        const text = await r.text();
+        // Simple RSS XML parse
+        const titles = [...text.matchAll(/<title[^>]*><!\[CDATA\[(.*?)\]\]><\/title>/g)].slice(0, 10).map(m => m[1]);
+        if (titles.length > 3) { items = titles; break; }
+        const titles2 = [...text.matchAll(/<title[^>]*>(.*?)<\/title>/g)].slice(1, 11).map(m => m[1]);
+        if (titles2.length > 3) { items = titles2; break; }
+      } catch(e) { continue; }
+    }
+    if (items.length) {
+      NEWS_CACHE.data = { items: items.slice(0, 10), source: '热搜' };
+      NEWS_CACHE.time = Date.now();
+      return res.json(NEWS_CACHE.data);
     }
     throw Error('all failed');
   } catch(e) {
-    res.json({ items: ['今日新闻暂时无法获取'], source: 'error' });
+    res.json({ items: ['今日新闻暂无'], source: '' });
   }
 });
 
