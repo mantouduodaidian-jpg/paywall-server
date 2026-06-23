@@ -85,8 +85,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .pub-box h2{font-size:20px;color:rgba(255,255,255,.5);margin-bottom:20px}
 .pub-box .row{display:flex;gap:10px;margin-bottom:10px}
 .pub-box .row input,.pub-box .row select{flex:1}
-.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit}
-.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.2)}
+.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.3);background:rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
 .pub-box textarea{min-height:100px;resize:vertical}
 .pub-box .btns{display:flex;gap:8px;margin-top:16px}
 .pub-box .btns button{flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit}
@@ -95,7 +95,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 
 /* Report Modal */
 .report-modal .pub-box{max-width:460px}
-.report-modal select,.report-modal textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px}
+.report-modal select,.report-modal textarea,.report-modal input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
+.report-modal select:focus,.report-modal textarea:focus,.report-modal input:focus{border-color:rgba(52,211,153,.3);background:rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
 .report-modal textarea{min-height:80px;resize:vertical}
 
 @media(max-width:768px){

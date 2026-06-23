@@ -546,10 +546,10 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
     }
     // Register new user
     if (name && student_id && phone) {
-      // Check duplicate
-      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id"), { headers: SB_HEADERS });
+      // Check duplicate - use a more reliable query
+      const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id"), { headers: SB_HEADERS });
       const chkData = await chk.json();
-      if (Array.isArray(chkData) && chkData.length) return res.json({ ok: false, msg: '该学号已注册，请直接登录' });
+      if (Array.isArray(chkData) && chkData.length > 0) return res.json({ ok: true, msg: '已提交过认证，等待审核或直接登录' });
       const r = await fetch(SB('verifications'), {
         method: 'POST', headers: SB_HEADERS2,
         body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
