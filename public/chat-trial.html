@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>林间小语 · AI Chat</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<script>if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js');</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #0a1a0f; color: #c8e6c9; height: 100vh; display: flex;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(22,120,50,.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(16,185,80,.04) 0%, transparent 50%);
+  }
+
+  /* ===== SIDEBAR ===== */
+  .side {
+    width: 240px; background: rgba(10,26,15,.95);
+    border-right: 1px solid rgba(255,255,255,.04);
+    padding: 20px 16px; display: flex; flex-direction: column;
+    backdrop-filter: blur(12px); flex-shrink: 0;
+  }
+  .side .logo { font-size: 17px; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+  .side .logo span { background: linear-gradient(135deg,#6ee7b7,#059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+  .side label { font-size: 11px; color: rgba(255,255,255,.25); letter-spacing: .5px; margin-bottom: 6px; text-transform: uppercase; }
+  .side select {
+    width: 100%; padding: 10px 12px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.7); font-size: 13px; font-family: inherit; outline: none;
+    appearance: none; cursor: pointer; margin-bottom: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,.3)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .side select:hover { border-color: rgba(16,185,100,.2); }
+  .side select:focus { border-color: rgba(16,185,100,.3); }
+  .side select option { background: #0f2015; color: #c8e6c9; }
+
+  .side .stats { margin-top: auto; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.04); }
+  .side .stats .row { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,.2); padding: 2px 0; }
+  .side .stats .row .v { color: rgba(255,255,255,.4); }
+  .side .nav-links { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .side .nav-links a { font-size: 11px; color: rgba(52,211,153,.3); text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+  .side .nav-links a:hover { color: rgba(52,211,153,.5); background: rgba(52,211,153,.06); }
+
+  /* ===== MAIN ===== */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .menu-btn { display: none; width: 34px; height: 34px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06); background: transparent; color: rgba(255,255,255,.3); cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; }
+  .menu-btn:hover { border-color: rgba(52,211,153,.15); color: rgba(255,255,255,.5); }
+  .menu-btn svg { width: 20px; height: 20px; }
+  .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 90; }
+  .mobile-overlay.show { display: block; }
+
+  .header {
+    padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,.04);
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .header .model-name { font-size: 14px; font-weight: 600; color: rgba(255,255,255,.5); display: flex; align-items: center; gap: 8px; }
+  .header .model-name .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; background: #34d399; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .header .actions button {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.06);
+    background: transparent; color: rgba(255,255,255,.3); font-size: 12px; cursor: pointer;
+  }
+  .header .actions button:hover { border-color: rgba(52,211,153,.2); color: rgba(255,255,255,.5); }
+
+  .msgs { flex: 1; overflow-y: auto; padding: 24px; scroll-behavior: smooth; }
+  .msg { margin-bottom: 20px; display: flex; gap: 12px; animation: msgIn .3s ease; }
+  @keyframes msgIn { 0%{opacity:0;transform:translateY(8px)} 100%{opacity:1;transform:translateY(0)} }
+
+  .msg .av { width: 34px; height: 34px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-top: 2px; overflow: hidden; }
+  .msg.user .av { background: rgba(16,185,100,.1); }
+  .msg.ai .av { background: rgba(52,211,153,.08); }
+  .msg.user .av svg { width: 22px; height: 22px; }
+  .msg.ai .av svg { width: 22px; height: 22px; }
+
+  .msg .content {
+    padding: 14px 18px; border-radius: 16px; font-size: 14px; line-height: 1.75;
+    max-width: 75%; word-break: break-word;
+  }
+  .msg.user { flex-direction: row-reverse; }
+  .msg.user .content { background: rgba(16,185,100,.06); border: 1px solid rgba(16,185,100,.08); color: rgba(255,255,255,.85); border-bottom-right-radius: 4px; }
+  .msg.ai .content { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-bottom-left-radius: 4px; }
+  .msg.loading .content::after { content: '▊'; animation: blink .8s steps(1) infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .empty-state { text-align: center; padding: 40px 20px; }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; display: block; }
+  .empty-state h3 { font-size: 16px; font-weight: 500; color: rgba(255,255,255,.15); }
+  .empty-state p { font-size: 13px; color: rgba(255,255,255,.08); margin-bottom: 20px; }
+
+  .suggests { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 500px; margin: 0 auto; }
+  .suggest-chip {
+    padding: 10px 18px; border-radius: 100px; border: 1px solid rgba(255,255,255,.06);
+    background: rgba(255,255,255,.02); color: rgba(255,255,255,.4);
+    cursor: pointer; font-size: 13px; transition: all .2s; font-family: inherit;
+  }
+  .suggest-chip:hover { border-color: rgba(52,211,153,.2); background: rgba(52,211,153,.04); color: rgba(255,255,255,.6); transform: translateY(-2px); }
+  .suggest-chip:active { transform: scale(.96); }
+
+  .upload-area { display: flex; align-items: center; gap: 6px; }
+  .upload-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: none; flex-shrink: 0;
+    background: transparent; color: rgba(255,255,255,.2); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+    font-size: 18px;
+  }
+  .upload-btn:hover { background: rgba(255,255,255,.04); color: rgba(255,255,255,.4); }
+
+  .crop-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 1000;
+    display: none; align-items: center; justify-content: center; flex-direction: column;
+  }
+  .crop-overlay.show { display: flex; }
+  .crop-wrap { position: relative; max-width: 90vw; max-height: 80vh; overflow: hidden; }
+  .crop-wrap img { display: block; max-width: 90vw; max-height: 80vh; object-fit: contain; }
+  .crop-box {
+    position: absolute; border: 2px dashed rgba(52,211,153,.8); cursor: move;
+    background: rgba(52,211,153,.06); z-index: 10; display: none;
+  }
+  .crop-box .handles { position: absolute; inset: -4px; }
+  .crop-box .handles::before, .crop-box .handles::after,
+  .crop-box .handles span:nth-child(1), .crop-box .handles span:nth-child(2),
+  .crop-box .handles span:nth-child(3), .crop-box .handles span:nth-child(4) {
+    content: ''; position: absolute; width: 8px; height: 8px; background: #34d399;
+    border-radius: 50%; border: 2px solid #0a1a0f;
+  }
+  .crop-box .handles::before { top: -4px; left: -4px; }
+  .crop-box .handles::after { top: -4px; right: -4px; }
+  .crop-box .handles span:nth-child(1) { bottom: -4px; left: -4px; }
+  .crop-box .handles span:nth-child(2) { bottom: -4px; right: -4px; }
+  .crop-box .handles span:nth-child(3) { top: 50%; left: -4px; margin-top: -4px; }
+  .crop-box .handles span:nth-child(4) { top: 50%; right: -4px; margin-top: -4px; }
+  .crop-size {
+    position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: rgba(255,255,255,.5); white-space: nowrap;
+  }
+  .crop-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .crop-actions button {
+    padding: 10px 24px; border-radius: 12px; border: none; font-size: 14px;
+    cursor: pointer; font-weight: 600; font-family: inherit;
+  }
+  .crop-actions .confirm { background: linear-gradient(135deg,#059669,#34d399); color: #fff; }
+  .crop-actions .cancel { background: rgba(255,255,255,.06); color: rgba(255,255,255,.4); }
+  .img-preview { display: none; padding: 8px 18px 0; max-width: 800px; margin: 0 auto; }
+  .img-preview.show { display: flex; align-items: center; gap: 10px; }
+  .img-preview img { height: 60px; border-radius: 8px; border: 1px solid rgba(255,255,255,.08); }
+  .img-preview .name { font-size: 12px; color: rgba(255,255,255,.3); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .img-preview .rm { cursor: pointer; color: rgba(255,255,255,.2); font-size: 16px; padding: 4px; }
+  .img-preview .rm:hover { color: #f87171; }
+
+  /* ===== INPUT ===== */
+  .input-area { padding: 16px 24px 24px; flex-shrink: 0; }
+  .input-wrap {
+    display: flex; gap: 10px; align-items: flex-end;
+    background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+    border-radius: 16px; padding: 6px 6px 6px 18px;
+    transition: border-color .2s; max-width: 800px; margin: 0 auto;
+  }
+  .input-wrap:focus-within { border-color: rgba(52,211,153,.15); }
+  .input-wrap textarea {
+    flex: 1; background: transparent; border: none; color: rgba(255,255,255,.8);
+    font-size: 14px; font-family: inherit; outline: none; resize: none;
+    padding: 8px 0; min-height: 24px; max-height: 120px; line-height: 1.5;
+  }
+  .input-wrap textarea::placeholder { color: rgba(255,255,255,.12); }
+  .input-wrap button {
+    width: 40px; height: 40px; border-radius: 12px; border: none; flex-shrink: 0;
+    background: linear-gradient(135deg,#059669,#34d399); color: #fff;
+    cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center;
+  }
+  .input-wrap button:hover { opacity: .85; transform: scale(1.03); }
+  .input-wrap button:active { transform: scale(.95); }
+  .input-wrap button:disabled { opacity: .2; cursor: not-allowed; transform: none; }
+  .input-wrap button svg { width: 18px; height: 18px; }
+  .input-hint { text-align: center; font-size: 11px; color: rgba(255,255,255,.06); margin-top: 8px; }
+
+  @media (max-width:640px) {
+    .side { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 100; transition: left .3s; height: 100%; }
+    .side.open { left: 0; }
+    .menu-btn { display: flex; }
+    .msg .content { max-width: 90%; }
+    .input-area { padding: 12px 12px 16px; }
+    .header .model-name { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<svg style="display:none">
+  <defs>
+    <symbol id="ic-leaf" viewBox="0 0 24 24">
+      <path d="M17 3C11 3 3 8 3 15c0 4 2 6 5 6 3 0 6-2 9-6s6-8 5-12c-1 0-3 0-5 0z" fill="rgba(52,211,153,.08)" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M12 12l5-5" stroke="#34d399" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+    </symbol>
+    <symbol id="ic-send" viewBox="0 0 24 24">
+      <path d="M22 2l-8 20-4-10L2 8l20-6z" fill="rgba(52,211,153,.08)" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M22 2L10 13" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="ic-trash" viewBox="0 0 24 24">
+      <path d="M4 6h16" stroke="#34d399" stroke-width="1.6" stroke-linecap="round"/>
+      <path d="M18 6v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" fill="rgba(52,211,153,.06)" stroke="#34d399" stroke-width="1.5"/>
+      <line x1="10" y1="10" x2="10" y2="16" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="14" y1="10" x2="14" y2="16" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="side">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2">
+      <path d="M12 3c-4 0-7 3-7 7 0 3.5 2.5 5.5 4 7h6c1.5-1.5 4-3.5 4-7 0-4-3-7-7-7z"/>
+      <path d="M9 18h6"/><path d="M10.5 21h3"/>
+    </svg>
+    <span>林间小语</span>
+  </div>
+
+  <label>🌲 模型</label>
+  <select id="modelSelect">
+    <option value="agnes-2.0-flash" selected>Agnes 2.0 Flash 👁️</option>
+    <option value="gh-gpt-4o-mini">GPT-4o-mini 🆓</option>
+    <option value="gh-gpt-4o">GPT-4o 🆓</option>
+    <option value="deepseek-chat">DeepSeek Chat</option>
+    <option value="deepseek-v4-flash">DeepSeek V4 Flash</option>
+    <option value="qwen-plus">通义千问 Plus</option>
+    <option value="kimi-k2">Kimi K2</option>
+    <option value="llama3-70b-8192">Llama 3 70B 🌿</option>
+    <option value="mixtral-8x7b-32768">Mixtral 8x7B 🌿</option>
+  </select>
+
+  <div id="convList" style="margin-bottom:12px;flex:1;overflow-y:auto;display:none;">
+    <div style="font-size:11px;color:rgba(255,255,255,.15);margin-bottom:6px;">对话历史</div>
+    <div id="convItems"></div>
+  </div>
+
+  <div style="margin-top:auto;">
+    <div class="stats">
+      <div class="row"><span>🌱 今日</span><span class="v" id="sToday">--</span></div>
+      <div class="row"><span>🍃 本月 tokens</span><span class="v" id="sMonth">--</span></div>
+    </div>
+    <div class="nav-links">
+      <a href="/dashboard.html">📊 仪表盘</a>
+      <a href="/v1">⚡ API</a>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="header">
+    <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+    <div class="model-name"><span class="dot"></span><span id="currentModel">DeepSeek Chat</span></div>
+    <div class="actions">
+      <button onclick="newChat()">✚ 新对话</button>
+      <button onclick="clearChat()">✕ 清空</button>
+    </div>
+  </div>
+  <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="msgs" id="msgArea"></div>
+
+  <!-- Crop Modal -->
+  <div class="crop-overlay" id="cropModal">
+    <div class="crop-wrap" id="cropWrap">
+      <img id="cropImage" style="user-select:none;-webkit-user-drag:none;">
+      <div class="crop-box" id="cropBox"><div class="handles"><span></span><span></span><span></span><span></span></div><div class="crop-size" id="cropSize">--</div></div>
+    </div>
+    <div class="crop-actions">
+      <button class="confirm" onclick="confirmCrop()">✓ 确定</button>
+      <button class="cancel" onclick="closeCrop()">✕ 取消</button>
+    </div>
+  </div>
+
+  <div class="img-preview" id="imgPreview"><img id="previewImg"><span class="name" id="previewName"></span><span class="rm" onclick="removeImg()">✕</span></div>
+  <div class="input-area">
+    <div class="input-wrap">
+      <textarea id="chatInput" rows="1" placeholder="提问、贴图(Ctrl+V)..."
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}"
+        onpaste="handlePaste(event)"></textarea>
+      <div class="upload-area">
+        <button class="upload-btn" id="micBtn" onclick="toggleMic()" title="语音输入">🎤</button>
+        <button class="upload-btn" onclick="captureScreen()" title="截图">📷</button>
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()" title="上传图片">🖼</button>
+        <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this)">
+        <button id="sendBtn" onclick="send()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="input-hint">Enter 发送 · Shift+Enter 换行 · Ctrl+V 贴图</div>
+  </div>
+</div>
+
+<script>
+let CONV_ID=Date.now();
+const MSGS=[];
+const msgArea=document.getElementById('msgArea');
+const chatInput=document.getElementById('chatInput');
+const sendBtn=document.getElementById('sendBtn');
+const modelSelect=document.getElementById('modelSelect');
+
+// Conversation persistence
+function saveConv(){
+  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const first=MSGS.find(m=>m.role==='user');
+  const existing=list.findIndex(c=>c.id===CONV_ID);
+  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now()};
+  if(existing>=0) list[existing]=entry; else list.push(entry);
+  localStorage.setItem('chat_convs',JSON.stringify(list.slice(-20)));
+  renderConvList();
+}
+function loadConv(id){
+  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const c=list.find(x=>x.id===id);
+  if(!c) return;
+  CONV_ID=c.id; MSGS.length=0; MSGS.push(...c.msgs);
+  modelSelect.value=c.model;
+  document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
+  msgArea.innerHTML='';
+  MSGS.forEach(m=>addMsg(m.role,m.content));
+  if(!MSGS.length) showEmpty();
+}
+function newChat(){
+  if(MSGS.length) saveConv();
+  CONV_ID=Date.now(); MSGS.length=0; msgArea.innerHTML=''; showEmpty();
+  chatInput.focus();
+}
+function renderConvList(){
+  const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+  const el=document.getElementById('convList');
+  const items=document.getElementById('convItems');
+  if(!list.length){el.style.display='none';return;}
+  el.style.display='block';
+  items.innerHTML=list.slice().reverse().map(c=>
+    '<div onclick="loadConv('+c.id+')" style="padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .1s;" onmouseover="this.style.background=\'rgba(255,255,255,.04)\';this.style.color=\'rgba(255,255,255,.6)\'" onmouseout="this.style.background=\'transparent\';this.style.color=\'rgba(255,255,255,.4)\'">'+c.title+'</div>'
+  ).join('');
+}
+renderConvList();
+
+function toggleSidebar(){
+  document.querySelector('.side').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('show');
+}
+// Auto-close sidebar on mobile when selecting model or history
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('modelSelect').addEventListener('change',()=>{if(window.innerWidth<=640)toggleSidebar();});
+  document.getElementById('convItems').addEventListener('click',()=>{if(window.innerWidth<=640)toggleSidebar();});
+});
+
+chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,120)+'px';});
+modelSelect.addEventListener('change',()=>{document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;});
+
+function addMsg(role,content,loading){
+  const empty=msgArea.querySelector('.empty-state'); if(empty) empty.remove();
+  const div=document.createElement('div');
+  div.className='msg'+(role==='assistant'?' ai':' user')+(loading?' loading':'');
+  const avatar=role==='assistant'
+    ? '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="rgba(52,211,153,.12)" stroke="#34d399" stroke-width="1.3"/><path d="M9 14c0 1 1.5 2 3 2s3-1 3-2" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="9" cy="10" rx="1.2" ry="1.2" fill="#34d399"/><ellipse cx="15" cy="10" rx="1.2" ry="1.2" fill="#34d399"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="rgba(167,139,250,.08)" stroke="#a78bfa" stroke-width="1.2"/><path d="M9 13.5c0 1.5 1.3 2.5 3 2.5s3-1 3-2.5" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/><ellipse cx="8.5" cy="9.5" rx="1" ry="1.2" fill="#a78bfa"/><ellipse cx="15.5" cy="9.5" rx="1" ry="1.2" fill="#a78bfa"/></svg>';
+  let html='<div class="av">'+avatar+'</div><div class="content">';
+  if(typeof content==='object' && content !== null){
+    // OpenAI content array format (text + image)
+    for(const part of content){
+      if(part.type==='text') html+=part.text.replace(/</g,'&lt;').replace(/\n/g,'<br>');
+      if(part.type==='image_url' && part.image_url?.url){
+        html+='<br><img src="'+part.image_url.url+'" style="max-width:200px;border-radius:10px;margin-top:6px;" loading="lazy">';
+      }
+    }
+  } else if(typeof content==='string' && content.startsWith('data:image')){
+    html+='<img src="'+content+'" style="max-width:200px;border-radius:10px;" loading="lazy">';
+  } else {
+    html+=String(content||'').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+  }
+  // Also check for image in loading state via MSGS
+  if(loading){
+    const lastMsg=MSGS[MSGS.length-1];
+    if(lastMsg && typeof lastMsg.content==='object'){
+      lastMsg.content.forEach(p=>{
+        if(p.type==='image_url' && p.image_url?.url && !html.includes('img src')){
+          html+='<img src="'+p.image_url.url+'" style="max-width:200px;border-radius:10px;margin-top:6px;" loading="lazy">';
+        }
+      });
+    }
+  }
+  html+='</div>';
+  div.innerHTML=html;
+  msgArea.appendChild(div); msgArea.scrollTop=msgArea.scrollHeight;
+  return div;
+}
+function showEmpty(){
+  const chips = [
+    {label:'📝 帮我写个文案',txt:'帮我写一个推广文案'},
+    {label:'💡 给个创意',txt:'给我一个创意点子'},
+    {label:'🔧 翻译一下',txt:'把这段话翻译成英文'},
+    {label:'📖 总结这个',txt:'帮我总结一下要点'},
+  ];
+  msgArea.innerHTML='<div class="empty-state"><span class="icon">🌲</span><h3>林间小语</h3><p>向森林诉说，或点个方向</p><div class="suggests">'+chips.map(c=>'<div class="suggest-chip" onclick="sendSuggest(\''+c.txt+'\')">'+c.label+'</div>').join('')+'</div></div>';
+}
+function sendSuggest(txt){
+  document.getElementById('chatInput').value=txt;
+  send();
+}
+
+// ====== Image Upload ======
+let pendingImg = null;
+
+function handlePaste(e) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type?.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (file) loadImage(file);
+      return;
+    }
+  }
+}
+function handleFile(input) {
+  if (input.files?.[0]) loadImage(input.files[0]);
+  input.value = '';
+}
+function loadImage(file) {
+  if (file.size > 10 * 1024 * 1024) { alert('图片太大，请小于10MB'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingImg = { data: e.target.result, name: file.name };
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('imgPreview').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+function removeImg() {
+  pendingImg = null;
+  document.getElementById('imgPreview').classList.remove('show');
+}
+
+let cropDataUrl = null;
+let cropState = { dragging: false, resizing: false, startX: 0, startY: 0, origW: 0, origH: 0 };
+
+async function captureScreen() {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia();
+    const video = document.createElement('video');
+    video.srcObject = stream; video.muted = true;
+    await video.play();
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    stream.getTracks().forEach(t => t.stop());
+    cropDataUrl = c.toDataURL('image/jpeg', 0.85);
+    openCrop(cropDataUrl);
+  } catch(e) {
+    if (e.name !== 'AbortError' && e.name !== 'NotAllowedError') console.error('截图:', e);
+  }
+}
+
+function openCrop(url) {
+  const img = document.getElementById('cropImage');
+  const modal = document.getElementById('cropModal');
+  const box = document.getElementById('cropBox');
+  img.onload = () => {
+    const wrap = document.getElementById('cropWrap');
+    const maxW = window.innerWidth * 0.9;
+    const maxH = window.innerHeight * 0.8;
+    const scale = Math.min(1, maxW / img.naturalWidth, maxH / img.naturalHeight);
+    img.style.width = img.naturalWidth * scale + 'px';
+    img.style.height = img.naturalHeight * scale + 'px';
+    // Default selection: middle 80%
+    const w = img.width * 0.8, h = img.height * 0.8;
+    const l = (img.width - w) / 2, t = (img.height - h) / 2;
+    box.style.left = l + 'px'; box.style.top = t + 'px';
+    box.style.width = w + 'px'; box.style.height = h + 'px';
+    box.style.display = 'block';
+    document.getElementById('cropSize').textContent = Math.round(w/scale) + '×' + Math.round(h/scale);
+    cropState.origW = img.naturalWidth; cropState.origH = img.naturalHeight;
+    initCropDrag(scale);
+  };
+  img.src = url;
+  modal.classList.add('show');
+}
+
+function initCropDrag(scale) {
+  const box = document.getElementById('cropBox');
+  const wrap = document.getElementById('cropWrap');
+  let sx, sy, sw, sh, mx, my;
+
+  const onDown = (e) => {
+    const r = box.getBoundingClientRect();
+    const wr = wrap.getBoundingClientRect();
+    sx = r.left - wr.left; sy = r.top - wr.top;
+    sw = r.width; sh = r.height;
+    mx = e.clientX; my = e.clientY;
+    cropState.dragging = true;
+  };
+  const onMove = (e) => {
+    if (!cropState.dragging) return;
+    const dx = e.clientX - mx, dy = e.clientY - my;
+    let nl = sx + dx, nt = sy + dy;
+    nl = Math.max(0, Math.min(nl, wrap.clientWidth - sw));
+    nt = Math.max(0, Math.min(nt, wrap.clientHeight - sh));
+    box.style.left = nl + 'px'; box.style.top = nt + 'px';
+    updateCropSize();
+  };
+  const onUp = () => { cropState.dragging = false; };
+
+  box.addEventListener('mousedown', onDown);
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+
+  // Resize handles
+  const handles = box.querySelectorAll('.handles span');
+  handles.forEach((h, i) => {
+    h.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      const r = box.getBoundingClientRect();
+      const wr = wrap.getBoundingClientRect();
+      let init = { l: r.left-wr.left, t: r.top-wr.top, w: r.width, h: r.height, mx: e.clientX, my: e.clientY };
+      const dirs = [[-1,-1],[1,-1],[-1,1],[1,1]];
+      const dir = dirs[i] || [1,1];
+      const onResize = (ev) => {
+        let dw = (ev.clientX - init.mx) * dir[0];
+        let dh = (ev.clientY - init.my) * dir[1];
+        let nl = init.l - (dir[0]===-1 ? dw : 0);
+        let nt = init.t - (dir[1]===-1 ? dh : 0);
+        let nw = Math.max(60, init.w + dw * dir[0]);
+        let nh = Math.max(40, init.h + dh * dir[1]);
+        if (nl + nw > wr.width) nw = wr.width - nl;
+        if (nt + nh > wr.height) nh = wr.height - nt;
+        if (nl < 0) { nw += nl; nl = 0; }
+        if (nt < 0) { nh += nt; nt = 0; }
+        nw = Math.max(60, nw); nh = Math.max(40, nh);
+        box.style.left = nl + 'px'; box.style.top = nt + 'px';
+        box.style.width = nw + 'px'; box.style.height = nh + 'px';
+        updateCropSize();
+      };
+      const onUpResize = () => { document.removeEventListener('mousemove', onResize); document.removeEventListener('mouseup', onUpResize); };
+      document.addEventListener('mousemove', onResize);
+      document.addEventListener('mouseup', onUpResize);
+    });
+  });
+}
+
+function updateCropSize() {
+  const box = document.getElementById('cropBox');
+  const img = document.getElementById('cropImage');
+  const scale = img.naturalWidth / img.width;
+  const w = Math.round(parseFloat(box.style.width) * scale);
+  const h = Math.round(parseFloat(box.style.height) * scale);
+  document.getElementById('cropSize').textContent = w + '×' + h;
+}
+
+function closeCrop() {
+  document.getElementById('cropModal').classList.remove('show');
+  cropDataUrl = null;
+}
+
+function confirmCrop() {
+  const box = document.getElementById('cropBox');
+  const img = document.getElementById('cropImage');
+  const scale = img.naturalWidth / img.width;
+  const sx = Math.round(parseFloat(box.style.left) * scale);
+  const sy = Math.round(parseFloat(box.style.top) * scale);
+  const sw = Math.round(parseFloat(box.style.width) * scale);
+  const sh = Math.round(parseFloat(box.style.height) * scale);
+  const c = document.createElement('canvas');
+  c.width = sw; c.height = sh;
+  const ctx = c.getContext('2d');
+  const tmp = new Image();
+  tmp.onload = () => {
+    ctx.drawImage(tmp, sx, sy, sw, sh, 0, 0, sw, sh);
+    const cropped = c.toDataURL('image/jpeg', 0.9);
+    pendingImg = { data: cropped, name: '截图_裁剪后.jpg' };
+    document.getElementById('previewImg').src = cropped;
+    document.getElementById('previewName').textContent = '截图_裁剪后.jpg';
+    document.getElementById('imgPreview').classList.add('show');
+    closeCrop();
+  };
+  tmp.src = cropDataUrl;
+}
+
+// ====== Voice Input ======
+let recognition = null;
+let isListening = false;
+
+function toggleMic() {
+  const btn = document.getElementById('micBtn');
+  if (isListening) {
+    if (recognition) recognition.stop();
+    btn.textContent = '🎤';
+    btn.style.color = 'rgba(255,255,255,.2)';
+    isListening = false;
+    return;
+  }
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    btn.textContent = '❌';
+    setTimeout(() => btn.textContent = '🎤', 1500);
+    return;
+  }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    chatInput.value += text;
+    chatInput.dispatchEvent(new Event('input'));
+    btn.textContent = '🎤';
+    btn.style.color = 'rgba(255,255,255,.2)';
+    isListening = false;
+  };
+  recognition.onerror = () => {
+    btn.textContent = '🎤';
+    btn.style.color = 'rgba(255,255,255,.2)';
+    isListening = false;
+  };
+  recognition.onend = () => {
+    btn.textContent = '🎤';
+    btn.style.color = 'rgba(255,255,255,.2)';
+    isListening = false;
+  };
+  recognition.start();
+  btn.textContent = '🔴';
+  btn.style.color = '#f87171';
+  isListening = true;
+}
+
+async function send(){
+  const text=chatInput.value.trim(); if(!text||sendBtn.disabled) return;
+  chatInput.value='';chatInput.style.height='auto';sendBtn.disabled=true;
+  let userContent = text;
+  if(pendingImg){
+    userContent = [{type:'text',text},{type:'image_url',image_url:{url:pendingImg.data}}];
+    removeImg();
+  }
+  MSGS.push({role:'user',content:userContent});addMsg('user',userContent);
+  const loadingDiv=addMsg('assistant','▊',true);
+  const model=modelSelect.value;
+  let msgs=MSGS.slice(-30);
+  try{
+    const r=await fetch('/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,stream:false})});
+    const d=await r.json();
+    const reply=d?.choices?.[0]?.message?.content||'错误：'+(d?.error?.message||JSON.stringify(d));
+    loadingDiv.remove();addMsg('assistant',reply);MSGS.push({role:'assistant',content:reply});saveConv();
+    fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();}).catch(()=>{});
+  }catch(e){loadingDiv.remove();addMsg('assistant','请求失败：'+e.message);}
+  sendBtn.disabled=false;chatInput.focus();
+}
+function clearChat(){MSGS.length=0;msgArea.innerHTML='';showEmpty();saveConv();}
+
+showEmpty();
+document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
+chatInput.focus();
+fetch('/api/dashboard').then(r=>r.json()).then(d=>{document.getElementById('sToday').textContent=d.ai.today;document.getElementById('sMonth').textContent=(d.ai.month||0).toLocaleString();}).catch(()=>{});
+</script>
+</body>
+</html>
