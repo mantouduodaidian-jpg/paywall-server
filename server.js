@@ -156,6 +156,24 @@ app.get('/api/stats', (req, res) => {
   res.json({ totalPwd: t, usedPwd: u, revenue: u * 0.99 });
 });
 
+// ====== News API (proxy to bypass CORS) ======
+const NEWS_CACHE = { data: null, time: 0 };
+app.get('/api/news', async (req, res) => {
+  try {
+    if (Date.now() - NEWS_CACHE.time < 300000 && NEWS_CACHE.data) return res.json(NEWS_CACHE.data);
+    const r = await fetch('https://weibo.com/ajax/side/hotSearch');
+    if (!r.ok) throw Error('weibo fail');
+    const d = await r.json();
+    const items = (d?.data?.realtime || []).slice(0, 10).map(n => n.word).filter(Boolean);
+    NEWS_CACHE.data = { items, source: '微博热搜' };
+    NEWS_CACHE.time = Date.now();
+    res.json(NEWS_CACHE.data);
+  } catch(e) {
+    // Fallback
+    res.json({ items: ['加载失败，请稍后再试'], source: 'error' });
+  }
+});
+
 // ====== Chat Sync ======
 const CONVS_FILE = join(DATA_DIR, 'chat-convs.json');
 

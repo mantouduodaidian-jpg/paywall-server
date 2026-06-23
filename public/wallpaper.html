@@ -165,7 +165,7 @@
 
   <!-- Bottom -->
   <!-- Left Panel Button -->
-  <button class="left-btn" onclick="toggleLeft()">💬</button>
+  <button class="left-btn" onclick="toggleLeft()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
   <div class="left-overlay" id="leftOverlay" onclick="toggleLeft()"></div>
   <div class="left-panel" id="leftPanel">
     <button class="close" onclick="toggleLeft()">✕</button>
@@ -237,33 +237,29 @@ function switchTab(t){
   document.getElementById('leftNews').style.display=t==='news'?'block':'none';
 }
 
-// Fetch quotes
+// Fetch quotes (10条)
 (async function(){
   const el=document.getElementById('leftQuotes');
-  const cats=['a','b','c','d','i','k','j','f'];
   try{
-    let html='',used=new Set();
-    for(const cat of cats){
-      const r=await fetch('https://v1.hitokoto.cn/?c='+cat+'&encode=json&_t='+Date.now());
-      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> '+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
+    let html='',used=new Set(),tries=0;
+    while(used.size<10 && tries<20){
+      const r=await fetch('https://v1.hitokoto.cn/?encode=json&_t='+Date.now()+Math.random());
+      if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">💬</span>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
+      tries++;
     }
     el.innerHTML=html||'<div class="loading">暂无</div>';
   }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
 })();
 
-// Fetch news (RSS via corsproxy)
+// Fetch news (via server proxy)
 (async function(){
   const el=document.getElementById('leftNews');
   try{
-    // Try weibo hot search via API
-    const r=await fetch('https://weibo.com/ajax/side/hotSearch');
+    const r=await fetch('/api/news');
     if(!r.ok)throw Error();
-    const d=await r.json();const items=d?.data?.realtime||[];
-    el.innerHTML=items.slice(0,10).map((n,i)=>'<div class="item">📰 '+(i+1)+'. '+(n?.word||'')+'</div>').join('')||'<div class="loading">暂无</div>';
-  }catch(e){
-    // Fallback
-    el.innerHTML='<div class="loading">新闻暂时无法加载</div>';
-  }
+    const d=await r.json();
+    el.innerHTML=(d.items||[]).map((item,i)=>'<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">📰</span>'+(i+1)+'. '+item+'</div>').join('')||'<div class="loading">暂无</div>';
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
 })();
 
 // Weather
