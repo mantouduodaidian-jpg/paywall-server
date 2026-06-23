@@ -260,44 +260,6 @@ function switchTab(t){
     el.innerHTML=items.slice(0,10).map((n,i)=>'<div class="item">📰 '+(i+1)+'. '+(n?.target?.title||n?.title||'')+'</div>').join('')||'<div class="loading">暂无</div>';
   }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
 })();
-  const el=document.getElementById('dailyQuotes');
-  try{
-    const res=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k&encode=json');
-    // 一言API只返回一条, 多次调用凑10条
-    let quotes=[];
-    for(let i=0;i<5;i++){
-      const r=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k&encode=json');
-      if(r.ok){const d=await r.json();if(d.hitokoto)quotes.push(d);}
-    }
-    if(!quotes.length) throw Error();
-    el.innerHTML=quotes.map(q=>'<div class="item">💬 '+q.hitokoto+'<span class="src">—— '+q.from_who||q.from||'佚名'+'</span></div>').join('');
-  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
-}
-async function fetchNews(){
-  const el=document.getElementById('dailyNews');
-  try{
-    // Use zhihu daily or RSS
-    const r=await fetch('https://api.zhihu.com/topstory/hot-list?limit=10');
-    if(!r.ok)throw Error();
-    const d=await r.json();
-    const items=d?.data||[];
-    el.innerHTML=items.slice(0,10).map((n,i)=>{
-      const t=n?.target?.title||n?.title||'';
-      const u=n?.target?.url||'';
-      return '<div class="item">📰 <span>'+(i+1)+'. '+t+'</span></div>';
-    }).join('')||'<div class="loading">暂无新闻</div>';
-  }catch(e){
-    // Fallback: github trending
-    el.innerHTML='<div class="loading">新闻暂时无法加载</div>';
-  }
-}
-function showDaily(tab){
-  document.querySelectorAll('.daily-toggle button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
-  document.getElementById('dailyQuotes').classList.toggle('show',tab==='quotes');
-  document.getElementById('dailyNews').classList.toggle('show',tab==='news');
-}
-fetchQuotes();fetchNews();
 
 // Weather
 (async function(){
