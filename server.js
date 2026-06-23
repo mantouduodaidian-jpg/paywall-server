@@ -161,26 +161,29 @@ const NEWS_CACHE = { data: null, time: 0 };
 app.get('/api/news', async (req, res) => {
   try {
     if (Date.now() - NEWS_CACHE.time < 300000 && NEWS_CACHE.data) return res.json(NEWS_CACHE.data);
-    // Hacker News (always works, no auth)
-    const r = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
-    if (!r.ok) throw Error('hn fail');
-    const ids = (await r.json()).slice(0, 15);
-    const items = [];
-    for (const id of ids) {
+    // Try 36kr RSS (Chinese news)
+    const feeds = [
+      'https://36kr.com/feed',
+      'https://feedss.36kr.com/feed/news',
+      'https://www.zhihu.com/rss/hotlist',
+    ];
+    let items = [];
+    for (const url of feeds) {
       try {
-        const ri = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
-        if (ri.ok) { const d = await ri.json(); if (d?.title) items.push(d.title); }
-      } catch(e) {}
+        const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(5000) });
+        if (!r.ok) continue;
+        const text = await r.text();
+        const titles = [...text.matchAll(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/gs)].slice(1, 11).map(m => {
+          let t = m[1]; t = t.replace(/<!\[CDATA\[/g,'').replace(/\]\]>/g,''); return t;
+        }).filter(Boolean);
+        if (titles.length > 3) { items = titles; break; }
+      } catch(e) { continue; }
     }
     if (items.length) {
-      NEWS_CACHE.data = { items: items.slice(0, 10), source: 'Hacker News' };
+      NEWS_CACHE.data = { items: items.slice(0, 10), source: '中文热闻' };
       NEWS_CACHE.time = Date.now();
       return res.json(NEWS_CACHE.data);
     }
-    // Fallback: github trending
-    const r2 = await fetch('https://api.github.com/search/repositories?q=stars:>1000&sort=stars&per_page=10');
-    if (r2.ok) { const d2 = await r2.json(); const items2 = (d2?.items||[]).map(i => i.full_name); if(items2.length){NEWS_CACHE.data={items:items2,source:'GitHub'};NEWS_CACHE.time=Date.now();return res.json(NEWS_CACHE.data);} }
-    throw Error('all failed');
   } catch(e) {
     res.json({ items: ['今日新闻暂无'], source: '' });
   }
