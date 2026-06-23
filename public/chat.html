@@ -335,35 +335,21 @@ function newChat(){
   CONV_ID=Date.now(); MSGS.length=0; msgArea.innerHTML=''; showEmpty();
   chatInput.focus();
 }
-function delConv(id,e){
-  e.stopPropagation();
-  let list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
-  list=list.filter(c=>c.id!==id);
-  localStorage.setItem('chat_convs',JSON.stringify(list));
-  renderConvList();
-}
-function clearAllConvs(){
-  if(!confirm('清除所有对话历史？'))return;
-  localStorage.removeItem('chat_convs');
-  renderConvList();
-}
-
 function renderConvList(){
   const list=JSON.parse(localStorage.getItem('chat_convs')||'[]');
   const el=document.getElementById('convList');
   const items=document.getElementById('convItems');
-  if(!list.length){el.style.display='none';document.getElementById('mobHistory').classList.remove('show');return;}
-  el.style.display='block';
-  items.innerHTML='<div style="text-align:right;margin-bottom:4px"><button onclick="clearAllConvs()" style="padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:10px;cursor:pointer">🗑 全部清除</button></div>'+list.slice().reverse().map(c=>
-    '<div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .1s;" onmouseover="this.style.background=\'rgba(255,255,255,.04)\'" onmouseout="this.style.background=\'transparent\'">'+c.title+'</div><span onclick="delConv('+c.id+',event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px;flex-shrink:0">✕</span></div>'
-  ).join('');
-  // Update mobile panel too
+  const has=list.length>0;
+  el.style.display=has?'block':'none';
+  if(!has){document.getElementById('mobHistory')?.classList.remove('show');return;}
+  items.innerHTML='<div style="text-align:right;margin-bottom:4px"><button onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(\'chat_convs\');renderConvList();}" style="padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:10px;cursor:pointer">🗑 全部清除</button></div>'+
+    list.slice().reverse().map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\'chat_convs\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\'chat_convs\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
   const mb=document.getElementById('mobHistory');
   if(mb){
-    mb.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:14px;color:rgba(255,255,255,.4)">💬 对话历史</span><span onclick="toggleMobHist()" style="cursor:pointer;color:rgba(255,255,255,.2);font-size:18px">✕</span></div><div style="padding:8px 16px;overflow-y:auto;flex:1">'+
+    mb.innerHTML='<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:14px;color:rgba(255,255,255,.4)">💬 对话</span><span onclick="toggleMobHist()" style="cursor:pointer;color:rgba(255,255,255,.2);font-size:18px">✕</span></div><div style="padding:8px 16px;overflow-y:auto;flex:1">'+
     list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+'</div>').join('')+
-    '<button onclick="clearAllConvs();toggleMobHist()" style="width:100%;margin-top:12px;padding:8px;border-radius:8px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:12px;cursor:pointer">🗑 全部清除</button></div>';
-    mb.style.display=list.length?'flex':'none';
+    '</div>';
+    mb.style.display='flex';
   }
 }
 renderConvList();
