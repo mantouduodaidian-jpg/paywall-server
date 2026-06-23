@@ -328,7 +328,10 @@ async function loadAnn() {
 // ====== Products ======
 function setCat(c) {
   selCat = c;
-  document.querySelectorAll('#catList .cat').forEach(el => el.classList.toggle('active', el.textContent.includes(c) || (c==='' && el.textContent.includes('全部'))));
+  document.querySelectorAll('#catList .cat').forEach(el => {
+    if (c === '') el.classList.toggle('active', el.textContent.includes('全部'));
+    else el.classList.toggle('active', el.textContent.includes(c));
+  });
   load();
 }
 
