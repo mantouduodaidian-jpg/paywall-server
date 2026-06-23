@@ -327,7 +327,8 @@ async function publish(){
     const r=await fetch('/api/marketplace/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     const d=await r.json();
     btn.textContent='✅ 确认发布'; btn.disabled=false;
-    if(d.id||d.ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
+    const ok = d?.id || d?.[0]?.id || d?.ok;
+    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
     else alert(d.error || '发布失败');
   }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; alert('发布失败');}
 }
