@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>林间小语 · 体验版</title>
+<title>林间小语 · AI Chat</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -221,8 +221,7 @@
 
   <label>🌲 模型</label>
   <select id="modelSelect">
-    <option value="gh-gpt-4o-mini" selected>GPT-4o-mini 🆓</option>
-    <option value="agnes-2.0-flash">Agnes 2.0 Flash 👁️</option>
+    <option value="agnes-2.0-flash" selected>Agnes 2.0 Flash 👁️</option>
     <option value="gh-gpt-4o-mini">GPT-4o-mini 🆓</option>
     <option value="gh-gpt-4o">GPT-4o 🆓</option>
     <option value="deepseek-chat">DeepSeek Chat</option>
@@ -234,7 +233,10 @@
     <option value="agnes-1.5-flash">Agnes 1.5 Flash 👁️</option>
   </select>
 
-  
+  <div id="convList" style="margin-bottom:12px;flex:1;overflow-y:auto;display:none;">
+    <div style="font-size:11px;color:rgba(255,255,255,.15);margin-bottom:6px;">对话历史</div>
+    <div id="convItems"></div>
+  </div>
 
   <div style="margin-top:auto;">
     <div class="stats">
@@ -242,8 +244,8 @@
       <div class="row"><span>🍃 本月 tokens</span><span class="v" id="sMonth">--</span></div>
     </div>
     <div class="nav-links">
-      
-      
+      <a href="/dashboard.html">📊 仪表盘</a>
+      <a href="/v1">⚡ API</a>
     </div>
   </div>
 </div>
@@ -295,7 +297,20 @@
 
 <script>
 let CONV_ID=Date.now();
-function convKey(){return 'chat_convs';}
+function convKey(){
+  // Merge old mobile data into shared key on first call
+  try{
+    const mob=localStorage.getItem('chat_convs_mob');
+    if(mob){
+      const shared=JSON.parse(localStorage.getItem('chat_convs')||'[]');
+      const mobData=JSON.parse(mob);
+      const merged=[...shared,...mobData.filter(m=>!shared.find(s=>s.id===m.id))];
+      localStorage.setItem('chat_convs',JSON.stringify(merged.slice(-30)));
+      localStorage.removeItem('chat_convs_mob');
+    }
+  }catch(e){}
+  return 'chat_convs';
+}
 const MSGS=[];
 const msgArea=document.getElementById('msgArea');
 const chatInput=document.getElementById('chatInput');
@@ -303,17 +318,69 @@ const sendBtn=document.getElementById('sendBtn');
 const modelSelect=document.getElementById('modelSelect');
 
 // Conversation persistence
-function saveConv(){}
-  
-function loadConv(id){}
+function saveConv(){
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
+  const first=MSGS.find(m=>m.role==='user');
+  const existing=list.findIndex(c=>c.id===CONV_ID);
+  const isMobile=window.innerWidth<=640||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now(),device:isMobile?'mobile':'pc'};
+  if(existing>=0) list[existing]=entry; else list.push(entry);
+  localStorage.setItem(convKey(),JSON.stringify(list.slice(-20)));
+  renderConvList();
+  // Sync to server (cross-device)
+  try{fetch('/api/chat/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({convs:list.slice(-20)})});}catch(e){}
+}
+function loadConv(id){
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
+  const c=list.find(x=>x.id===id);
+  if(!c) return;
+  CONV_ID=c.id; MSGS.length=0; MSGS.push(...c.msgs);
+  modelSelect.value=c.model;
+  document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
+  msgArea.innerHTML='';
+  MSGS.forEach(m=>addMsg(m.role,m.content));
+  if(!MSGS.length) showEmpty();
+}
 function newChat(){
   if(MSGS.length) saveConv();
   CONV_ID=Date.now(); MSGS.length=0; msgArea.innerHTML=''; showEmpty();
   chatInput.focus();
 }
-function renderConvList(){}
+function renderConvList(){
+  const list=JSON.parse(localStorage.getItem(convKey())||'[]');
+  const el=document.getElementById('convList');
+  const items=document.getElementById('convItems');
+  const has=list.length>0;
+  el.style.display=has?'block':'none';
+  const k=convKey();
+  const allItems=list.slice().reverse();
+  const localItems=allItems.filter(c=>(c.device||'pc')!=='mobile');
+  const mobItems=allItems.filter(c=>(c.device||'pc')==='mobile');
+  const activeTab=localStorage.getItem('conv_tab')||'all';
+  const tabHtml='<div style="display:flex;gap:4px;margin-bottom:6px">'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'all\');renderConvList();msgArea.scrollTop=msgArea.scrollHeight" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='all'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='all'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">全部('+allItems.length+')</span>'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'pc\');renderConvList();msgArea.scrollTop=msgArea.scrollHeight" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='pc'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='pc'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">电脑('+localItems.length+')</span>'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'mobile\');renderConvList();" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='mobile'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='mobile'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">手机('+mobItems.length+')</span>'+
+    '<span style="margin-left:auto;cursor:pointer;color:rgba(239,68,68,.3);font-size:11px;padding:3px 4px" onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(convKey());renderConvList();}">🗑</span></div>';
+  const filtered=activeTab==='all'?allItems:activeTab==='pc'?localItems:mobItems;
+  items.innerHTML=tabHtml+filtered.map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\''+k+'\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\''+k+'\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
+    '</div>';
+}
 
-renderConvList();
+// Load server-side conversations for cross-device sync
+(async function(){
+  try{
+    const r=await fetch('/api/chat/sync');
+    if(!r.ok)return;
+    const d=await r.json();
+    if(d.convs&&d.convs.length){
+      const local=JSON.parse(localStorage.getItem(convKey())||'[]');
+      const merged=[...local,...d.convs.filter(s=>!local.find(l=>l.id===s.id))];
+      localStorage.setItem(convKey(),JSON.stringify(merged.slice(-30)));
+    }
+  }catch(e){}
+  renderConvList();
+})();
 
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,120)+'px';});
 modelSelect.addEventListener('change',()=>{
