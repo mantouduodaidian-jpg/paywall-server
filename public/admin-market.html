@@ -476,16 +476,22 @@ async function loadVers() {
     document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
       filtered.map(v => '<tr><td style="color:rgba(255,255,255,.15)">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:rgba(255,255,255,.3)">'+esc(v.student_id)+'</td><td style="color:rgba(255,255,255,.2)">'+esc(v.phone||'-')+'</td>'+
         '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:rgba(255,255,255,.15);font-size:10px">无</span>')+'</td>'+
-        '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status||'pending')+'</span></td>'+
+        '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
         '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(v.created_at)+'</td>'+
         '<td style="text-align:center">'+(v.status==='pending'
-          ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button></span>'
-          : '<button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button>')+'</td></tr>').join('');
+          ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="rejectVer('+v.id+')">✕ 未通过</button><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button></span>'
+          : '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button></span>')+'</td></tr>').join('');
   } catch(e) {}
 }
 async function approveVer(id) {
   await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
   toast('✅ 已通过'); loadVers(); loadOverview();
+}
+async function rejectVer(id) {
+  const reason = prompt('请输入未通过原因：');
+  if (reason === null) return;
+  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  toast('✕ 已标记为未通过' + (reason ? '：' + reason : '')); loadVers(); loadOverview();
 }
 async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
