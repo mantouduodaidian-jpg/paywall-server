@@ -329,7 +329,8 @@ function saveConv(){
   const list=JSON.parse(localStorage.getItem(convKey())||'[]');
   const first=MSGS.find(m=>m.role==='user');
   const existing=list.findIndex(c=>c.id===CONV_ID);
-  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now(),device:window.innerWidth<=640?'mobile':'pc'};
+  const isMobile=window.innerWidth<=640||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now(),device:isMobile?'mobile':'pc'};
   if(existing>=0) list[existing]=entry; else list.push(entry);
   localStorage.setItem(convKey(),JSON.stringify(list.slice(-20)));
   renderConvList();
