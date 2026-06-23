@@ -239,11 +239,13 @@ function goToWeek(dateStr){
       const weeks=getWeeks();
       const idx=weeks.findIndex(w=>d.getDate()>=w.start&&d.getDate()<=w.end);
       if(idx>=0){CUR_WEEK=idx+1;render();}
+      _dateChangeDone();
     },200);
   } else {
     const weeks=getWeeks();
     const idx=weeks.findIndex(w=>d.getDate()>=w.start&&d.getDate()<=w.end);
     if(idx>=0){CUR_WEEK=idx+1;render();}
+    _dateChangeDone();
   }
 }
 
@@ -251,8 +253,12 @@ async function load(){
   const m=ym(CUR_MONTH);
   document.getElementById('monthLabel').textContent=CUR_MONTH.getFullYear()+'年'+(CUR_MONTH.getMonth()+1)+'月';
   document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
-  // Click date input → go to that date's week
+  // Date input change → navigate to that date's week
+  let _dateChanging = false;
+  const _dateChangeDone = () => setTimeout(() => _dateChanging = false, 300);
   document.getElementById('fDate').onchange=function(){
+    if(_dateChanging) return;
+    _dateChanging = true;
     if(this.value)goToWeek(this.value);
   };
   // Week tab click handler
@@ -282,11 +288,14 @@ function render(d){
       return '<div class="wt'+(CUR_WEEK===i+1?' active':'')+'" data-w="'+(i+1)+'">第'+(i+1)+'周('+weekCounts[i]+')<br><span style="font-size:9px;opacity:.4">'+fmtD(w.start)+'-'+fmtD(w.end)+'</span></div>';
     }).join('');
 
-  // Update date input to show selected week's first day
-  if(CUR_WEEK>0){
+  // Update date input to show selected week's first day (skip if user is changing date)
+  if(CUR_WEEK>0 && !_dateChanging){
     const weeks=getWeeks();
     const w=weeks[CUR_WEEK-1];
     if(w){const ym2=ym(CUR_MONTH);document.getElementById('fDate').value=ym2+'-'+String(w.start).padStart(2,'0');}
+  }
+  if(!_dateChanging && CUR_WEEK===0 && !document.getElementById('fDate').value){
+    document.getElementById('fDate').value=new Date().toISOString().slice(0,10);
   }
   // Apply filters
   const filter=document.getElementById('fFilter').value;
@@ -339,18 +348,6 @@ async function delE(id){
   try{await fetch('/api/expenses/'+id,{method:'DELETE'});load();}catch(e){}
 }
 function chgM(d){CUR_MONTH.setMonth(CUR_MONTH.getMonth()+d);load()}
-function goToWeek(dateStr){
-  if(!dateStr)return;
-  const d=new Date(dateStr);
-  CUR_MONTH.setFullYear(d.getFullYear(),d.getMonth(),1);
-  // Need to re-render first to get weeks
-  load().then(()=>{
-    const monDay=getMonDay(d);
-    const weeks=getWeeks();
-    const idx=weeks.findIndex(w=>monDay>=w.start&&monDay<=w.end);
-    if(idx>=0){CUR_WEEK=idx+1;render2();}
-  });
-}
 
 function showBudget(){
   document.getElementById('budgetInput').value=localStorage.getItem('expense_budget')||'0';
