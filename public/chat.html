@@ -366,7 +366,10 @@ function renderConvList(){
 renderConvList();
 
 chatInput.addEventListener('input',()=>{chatInput.style.height='auto';chatInput.style.height=Math.min(chatInput.scrollHeight,120)+'px';});
-modelSelect.addEventListener('change',()=>{document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;});
+modelSelect.addEventListener('change',()=>{
+  document.getElementById('currentModel').textContent=modelSelect.options[modelSelect.selectedIndex].text;
+  if(window.innerWidth<=640){document.querySelector('.side').classList.remove('open');document.getElementById('mobileOverlay').classList.remove('show');}
+});
 
 function addMsg(role,content,loading){
   const empty=msgArea.querySelector('.empty-state'); if(empty) empty.remove();
