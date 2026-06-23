@@ -85,7 +85,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .pub-box h2{font-size:20px;color:rgba(255,255,255,.5);margin-bottom:20px}
 .pub-box .row{display:flex;gap:10px;margin-bottom:10px}
 .pub-box .row input,.pub-box .row select{flex:1}
-.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:0;font-family:inherit;-webkit-tap-highlight-color:transparent;box-shadow:none}
+.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#d4f0d4;font-size:14px;outline:0;font-family:inherit;-webkit-tap-highlight-color:transparent;box-shadow:none}
+.pub-box select option{background:#0a1a0f;color:#c8e6c9}
 .pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.4);background:rgba(0,0,0,.35);outline:0;-webkit-tap-highlight-color:transparent;box-shadow:0 0 0 2px rgba(52,211,153,.08)}
 .pub-box textarea{min-height:100px;resize:vertical}
 .pub-box .btns{display:flex;gap:8px;margin-top:16px}
@@ -285,7 +286,7 @@ async function loadCats() {
     document.getElementById('catList').innerHTML = catHtml;
     // Also populate publish form
     document.getElementById('fCat').innerHTML = '<option value="">分类</option>' +
-      arr.map(c => '<option value="'+esc(c.name)+'">'+(getCatIcon(c.name)||'')+' '+esc(c.name)+'</option>').join('');
+      arr.map(c => '<option value="'+esc(c.name)+'">'+(CAT_ICONS_EMOJI[c.name]||'')+' '+esc(c.name)+'</option>').join('');
   } catch(e) {
     // Fallback hardcoded
     document.getElementById('catList').innerHTML = '<div class="cat active" onclick="setCat(\'\')">🏠 全部</div>' +
@@ -480,6 +481,16 @@ const CAT_ICONS = {
   '生活百货': '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1" stroke-linejoin="round"/><line x1="3" y1="6" x2="21" y2="6" stroke="#a7f3d0" stroke-width="1.3" stroke-linecap="round"/><path d="M16 10a4 4 0 0 1-8 0" fill="none" stroke="#a7f3d0" stroke-width="1.3" stroke-linecap="round"/></svg>',
   '其他': '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><polyline points="3.27 6.96 12 12.01 20.73 6.96" fill="none" stroke="#a7f3d0" stroke-width="1.1"/><line x1="12" y1="22.08" x2="12" y2="12" stroke="#a7f3d0" stroke-width="1.1"/></svg>',
 };
+
+const CAT_ICONS_EMOJI = {
+  '全部': '🏠',
+  '教材笔记': '📚',
+  '数码配件': '🔌',
+  '宿舍用品': '🛏️',
+  '生活百货': '🧴',
+  '其他': '📦',
+};
+
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
 
 // ====== Student Card Upload ======
