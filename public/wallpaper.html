@@ -88,6 +88,18 @@
   .dash-panel .bf{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .8s}
   .dash-panel .qt{font-size:10px;color:rgba(255,255,255,.1);text-align:right}
 
+  .daily-section{margin-top:30px;max-width:500px;margin-left:auto;margin-right:auto;width:100%}
+  .daily-toggle{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+  .daily-toggle button{padding:6px 16px;border-radius:100px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.2);font-size:12px;cursor:pointer;font-family:inherit;transition:.15s}
+  .daily-toggle button:hover{border-color:rgba(52,211,153,.15);color:rgba(255,255,255,.4)}
+  .daily-toggle button.active{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);color:rgba(52,211,153,.5);font-weight:600}
+  .daily-content{display:none;background:rgba(255,255,255,.015);border-radius:14px;padding:16px;border:1px solid rgba(255,255,255,.03);margin-bottom:8px}
+  .daily-content.show{display:block}
+  .daily-content .item{font-size:14px;color:rgba(255,255,255,.35);line-height:1.7;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+  .daily-content .item:last-child{border:none}
+  .daily-content .item .src{font-size:11px;color:rgba(255,255,255,.12);margin-left:6px}
+  .daily-content .loading{text-align:center;padding:20px;color:rgba(255,255,255,.06);font-size:13px}
+
   .bottom-bar {
     display: flex; gap: 20px; justify-content: center; margin-top: auto;
     padding-top: 20px; font-size: 12px; color: rgba(255,255,255,.06);
@@ -160,6 +172,16 @@
     </div>
   </div>
 
+  <!-- Daily -->
+  <div class="daily-section">
+    <div class="daily-toggle">
+      <button class="active" id="tabQuotes" onclick="showDaily('quotes')">💬 每日十言</button>
+      <button id="tabNews" onclick="showDaily('news')">📰 每日新闻</button>
+    </div>
+    <div class="daily-content show" id="dailyQuotes"><div class="loading">加载中...</div></div>
+    <div class="daily-content" id="dailyNews"><div class="loading">加载中...</div></div>
+  </div>
+
   <div class="bottom-bar">
     <a href="/admin-market.html">后台</a>
     <span>·</span>
@@ -180,6 +202,47 @@ setInterval(updateTime, 1000); updateTime();
 const h = new Date().getHours();
 const msgs = ['早起的鸟儿有虫吃','上午好','下午好','夜深了'];
 document.getElementById('greetingMsg').textContent = h<6?msgs[3]:h<9?msgs[0]:h<12?msgs[1]:h<18?msgs[2]:msgs[3];
+
+// Daily: quotes & news
+async function fetchQuotes(){
+  const el=document.getElementById('dailyQuotes');
+  try{
+    const res=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k&encode=json');
+    // 一言API只返回一条, 多次调用凑10条
+    let quotes=[];
+    for(let i=0;i<5;i++){
+      const r=await fetch('https://v1.hitokoto.cn/?c=a&c=b&c=d&c=i&c=k&encode=json');
+      if(r.ok){const d=await r.json();if(d.hitokoto)quotes.push(d);}
+    }
+    if(!quotes.length) throw Error();
+    el.innerHTML=quotes.map(q=>'<div class="item">💬 '+q.hitokoto+'<span class="src">—— '+q.from_who||q.from||'佚名'+'</span></div>').join('');
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+}
+async function fetchNews(){
+  const el=document.getElementById('dailyNews');
+  try{
+    // Use zhihu daily or RSS
+    const r=await fetch('https://api.zhihu.com/topstory/hot-list?limit=10');
+    if(!r.ok)throw Error();
+    const d=await r.json();
+    const items=d?.data||[];
+    el.innerHTML=items.slice(0,10).map((n,i)=>{
+      const t=n?.target?.title||n?.title||'';
+      const u=n?.target?.url||'';
+      return '<div class="item">📰 <span>'+(i+1)+'. '+t+'</span></div>';
+    }).join('')||'<div class="loading">暂无新闻</div>';
+  }catch(e){
+    // Fallback: github trending
+    el.innerHTML='<div class="loading">新闻暂时无法加载</div>';
+  }
+}
+function showDaily(tab){
+  document.querySelectorAll('.daily-toggle button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  document.getElementById('dailyQuotes').classList.toggle('show',tab==='quotes');
+  document.getElementById('dailyNews').classList.toggle('show',tab==='news');
+}
+fetchQuotes();fetchNews();
 
 // Weather
 (async function(){
