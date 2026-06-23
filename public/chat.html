@@ -329,7 +329,7 @@ function saveConv(){
   const list=JSON.parse(localStorage.getItem(convKey())||'[]');
   const first=MSGS.find(m=>m.role==='user');
   const existing=list.findIndex(c=>c.id===CONV_ID);
-  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now()};
+  const entry={id:CONV_ID,model:modelSelect.value,title:(first?first.content.slice(0,30):'空对话'),msgs:MSGS.slice(-50),time:Date.now(),device:window.innerWidth<=640?'mobile':'pc'};
   if(existing>=0) list[existing]=entry; else list.push(entry);
   localStorage.setItem(convKey(),JSON.stringify(list.slice(-20)));
   renderConvList();
@@ -360,8 +360,17 @@ function renderConvList(){
   el.style.display=has?'block':'none';
   if(!has){document.getElementById('mobHistory')?.classList.remove('show');return;}
   const k=convKey();
-  items.innerHTML='<div style="text-align:right;margin-bottom:4px"><button onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(convKey());renderConvList();}" style="padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,.15);background:transparent;color:rgba(239,68,68,.4);font-size:10px;cursor:pointer">🗑 全部清除</button></div>'+
-    list.slice().reverse().map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\''+k+'\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\''+k+'\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
+  const allItems=list.slice().reverse();
+  const localItems=allItems.filter(c=>c.device!=='mobile');
+  const mobItems=allItems.filter(c=>c.device==='mobile');
+  const activeTab=localStorage.getItem('conv_tab')||'all';
+  const tabHtml='<div style="display:flex;gap:4px;margin-bottom:6px">'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'all\');renderConvList();msgArea.scrollTop=msgArea.scrollHeight" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='all'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='all'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">全部('+allItems.length+')</span>'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'pc\');renderConvList();msgArea.scrollTop=msgArea.scrollHeight" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='pc'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='pc'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">电脑('+localItems.length+')</span>'+
+    '<span onclick="localStorage.setItem(\'conv_tab\',\'mobile\');renderConvList();" style="padding:3px 10px;border-radius:8px;font-size:11px;cursor:pointer;background:'+(activeTab==='mobile'?'rgba(52,211,153,.1)':'transparent')+';color:'+(activeTab==='mobile'?'rgba(52,211,153,.5)':'rgba(255,255,255,.2)')+'">手机('+mobItems.length+')</span>'+
+    '<span style="margin-left:auto;cursor:pointer;color:rgba(239,68,68,.3);font-size:11px;padding:3px 4px" onclick="if(confirm(\'清除所有？\')){localStorage.removeItem(convKey());renderConvList();}">🗑</span></div>';
+  const filtered=activeTab==='all'?allItems:activeTab==='pc'?localItems:mobItems;
+  items.innerHTML=tabHtml+filtered.map(c=>'<div style="display:flex;gap:4px;margin-bottom:2px"><div onclick="loadConv('+c.id+')" style="flex:1;padding:6px 8px;border-radius:8px;font-size:12px;color:rgba(255,255,255,.4);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.title+'</div><span onclick="(e=>{e.stopPropagation();let l=JSON.parse(localStorage.getItem(\''+k+'\')||\'[]\');l=l.filter(x=>x.id!=='+c.id+');localStorage.setItem(\''+k+'\',JSON.stringify(l));renderConvList();})(event)" style="cursor:pointer;color:rgba(255,255,255,.1);font-size:12px;padding:2px 4px">✕</span></div>').join('');
   const mb=document.getElementById('mobHistory');
   if(mb) mb.innerHTML='<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04)"><span style="font-size:14px;color:rgba(255,255,255,.4)">💬 对话</span><span onclick="toggleMobHist()" style="cursor:pointer;color:rgba(255,255,255,.2);font-size:18px">✕</span></div><div style="padding:8px 16px;overflow-y:auto;flex:1">'+
     list.slice().reverse().map(c=>'<div onclick="loadConv('+c.id+');toggleMobHist()" style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:rgba(255,255,255,.4);cursor:pointer">'+c.title+'</div>').join('')+
