@@ -152,6 +152,29 @@ app.get('/api/stats', (req, res) => {
   res.json({ totalPwd: t, usedPwd: u, revenue: u * 0.99 });
 });
 
+// ====== Chat Sync ======
+const CONVS_FILE = join(DATA_DIR, 'chat-convs.json');
+
+app.get('/api/chat/sync', (req, res) => {
+  try {
+    const data = JSON.parse(readFileSync(CONVS_FILE, 'utf8'));
+    res.json({ ok: true, convs: data.convs || [] });
+  } catch(e) {
+    res.json({ ok: true, convs: [] });
+  }
+});
+
+app.post('/api/chat/sync', (req, res) => {
+  try {
+    const { convs } = req.body;
+    if (!convs) return res.json({ ok: false, msg: 'no data' });
+    writeFileSync(CONVS_FILE, JSON.stringify({ convs: convs.slice(-30), updated: Date.now() }));
+    res.json({ ok: true });
+  } catch(e) {
+    res.json({ ok: false, msg: e.message });
+  }
+});
+
 // ====== API Proxy ======
 const API_KEYS = {
   deepseek: process.env.DEEPSEEK_KEY || '',
@@ -162,7 +185,7 @@ const API_KEYS = {
   doubao: process.env.DOUBAO_KEY || process.env.DOUBAO_KET || '',
   groq: process.env.GROQ_KEY || '',
   github: process.env.GITHUB_KEY || '',
-  agnes: process.env.AGNES_API_KEY || '',
+  agnes: process.env.AGNES_API_KEY || 'sk-JL8A3iizDl9ohLtgxdywS3VeZFyeUPFJtgCbAlBSf1rc7s38',
 };
 const PROXY_BASE = {
   deepseek: 'https://api.deepseek.com',
@@ -199,6 +222,7 @@ const SUPABASE_URL = 'https://hcinnimptpsjocbkkbna.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjaW5uaW1wdHBzam9jYmtrYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxMjgsImV4cCI6MjA5NzY2ODEyOH0.AeEZcgDaVFqn4LmqK5dMqj7qOzYl0WUly398jG_dcpM';
 const SB = (path) => SUPABASE_URL + '/rest/v1/' + path;
 const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
+const SB_HEADERS2 = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
 
 async function trackAI(model, tokens) {
   try {
@@ -374,7 +398,7 @@ app.get('/v1', (req, res) => {
     github: !!API_KEYS.github,
   };
   const models = { deepseek: ['deepseek-chat','deepseek-v4-flash'], openai: ['gpt-4o-mini','gpt-4o'], dashscope: ['qwen-plus','qwen-turbo'], kimi: ['kimi-k2','moonshot-v1'], doubao: ['doubao-pro-32k'], groq: ['llama3-70b','llama3-8b','mixtral-8x7b'], github: ['gh-gpt-4o-mini','gh-gpt-4o','gh-jamba','gh-command-r'] };
-  res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>API Proxy</title><meta name="viewport" content="width=device-width"><style>body{font-family:system-ui;background:#0f0d23;color:#fff;padding:24px;max-width:600px;margin:0 auto;}h1{font-size:22px;color:#a78bfa}code{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px;font-size:13px}.ok{color:#34d399}.off{color:rgba(255,255,255,.15)}.card{background:rgba(255,255,255,.03);border-radius:12px;padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,.06)}</style></head><body>
+  res.type('html').send(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>API Proxy</title><link rel="icon" type="image/svg+xml" href="/favicon.svg"><meta name="viewport" content="width=device-width"><style>body{font-family:system-ui;background:#0f0d23;color:#fff;padding:24px;max-width:600px;margin:0 auto;}h1{font-size:22px;color:#a78bfa}code{background:rgba(255,255,255,.04);padding:2px 8px;border-radius:4px;font-size:13px}.ok{color:#34d399}.off{color:rgba(255,255,255,.15)}.card{background:rgba(255,255,255,.03);border-radius:12px;padding:16px;margin:12px 0;border:1px solid rgba(255,255,255,.06)}</style></head><body>
 <h1>✦ API Proxy</h1>
 <p style="color:rgba(255,255,255,.4);margin-bottom:20px;">POST 请求发送到 <code>/v1/chat/completions</code></p>
 <div class="card"><h3 style="margin:0 0 12px 0;font-size:14px;color:rgba(255,255,255,.5);">已配置的供应商</h3>
@@ -383,6 +407,76 @@ ${Object.entries(info).map(([k,v]) => '<div style="display:flex;justify-content:
 ${Object.entries(models).map(([p,ms]) => ms.map(m => '<code style="display:inline-block;margin:3px;">'+m+'</code>').join('')).join('<br>')}</div>
 <p style="color:rgba(255,255,255,.2);font-size:12px;margin-top:20px;"><a href="/dashboard.html" style="color:rgba(167,139,250,.4);">仪表盘 →</a></p>
 </body></html>`);
+});
+
+// ====== Verification API ======
+app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) => {
+  try {
+    const { name, student_id, phone, image } = req.body;
+    if (!name || !student_id) return res.status(400).json({ error: 'name and student_id required' });
+    const r = await fetch(SB('verifications'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ name, student_id, phone: phone||'', image: image||'', status: 'pending', created_at: new Date().toISOString() })
+    });
+    const t = await r.text();
+    res.json(t ? JSON.parse(t) : { ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/verify/list', async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/verify/approve', express.json(), async (req, res) => {
+  try {
+    const { id, productIds } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'approved' }) });
+    if (productIds && productIds.length) {
+      for (const pid of productIds) {
+        await fetch(SB('products?id=eq.'+pid), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ verified: true }) });
+      }
+    }
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Marketplace API ======
+app.post('/api/marketplace/products', express.json(), async (req, res) => {
+  try {
+    const { title, price, category, desc, images, contact, quality } = req.body;
+    if (!title || !price) return res.status(400).json({ error: 'title and price required' });
+    const r = await fetch(SB('products'), {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false })
+    });
+    const t = await r.text();
+    res.json(t ? JSON.parse(t) : { ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/products', async (req, res) => {
+  try {
+    const { category, search } = req.query;
+    let url = SB('products?order=created_at.desc&select=*');
+    if (category) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    let data = await r.json();
+    if (search) data = data.filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
+    res.json(data);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/products/:id', async (req, res) => {
+  try {
+    const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
+    const data = await r.json();
+    res.json(data[0] || null);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ====== Expenses API ======
