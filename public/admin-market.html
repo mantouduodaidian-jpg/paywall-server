@@ -284,6 +284,21 @@ tr:hover td{background:rgba(52,211,153,.02)}
   </div>
 </div>
 
+<!-- Reject Verification Modal -->
+<div class="modal-overlay" id="rejectVerModal" onclick="if(event.target===this)closeRejectVer()">
+  <div class="modal"><h2>✕ 未通过原因</h2>
+    <select id="rejectVerReason">
+      <option>学生证不清晰</option>
+      <option>姓名与学号不匹配</option>
+      <option>信息不完整</option>
+      <option>重复注册</option>
+      <option>其他</option>
+    </select>
+    <textarea id="rejectVerDetail" placeholder="补充说明（选填）"></textarea>
+    <div class="btns"><button class="btn-red" onclick="confirmRejectVer()">✕ 未通过</button><button class="btn-ghost" onclick="closeRejectVer()">取消</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -487,11 +502,16 @@ async function approveVer(id) {
   await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
   toast('✅ 已通过'); loadVers(); loadOverview();
 }
-async function rejectVer(id) {
-  const reason = prompt('请输入未通过原因：');
-  if (reason === null) return;
-  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
-  toast('✕ 已标记为未通过' + (reason ? '：' + reason : '')); loadVers(); loadOverview();
+let rejectingVerId = null;
+function rejectVer(id) { rejectingVerId = id; document.getElementById('rejectVerModal').classList.add('show'); }
+function closeRejectVer() { rejectingVerId = null; document.getElementById('rejectVerModal').classList.remove('show'); }
+async function confirmRejectVer() {
+  if (!rejectingVerId) return;
+  const reason = document.getElementById('rejectVerReason').value;
+  const detail = document.getElementById('rejectVerDetail').value.trim();
+  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId})});
+  toast('✕ 未通过：' + reason + (detail?' - '+detail:''));
+  closeRejectVer(); loadVers(); loadOverview();
 }
 async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
