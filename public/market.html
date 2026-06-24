@@ -178,10 +178,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:85vh;touch-action:auto}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:92vh;touch-action:auto;display:flex;flex-direction:column}
+  .chat-panel.show{display:flex}
+  .chat-body{flex:1;overflow-y:auto;max-height:none}
+  .chat-msgs{flex:1;min-height:60px;max-height:none}
   .contact-sidebar{max-height:100vh;touch-action:auto;z-index:201}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
-  .chat-msgs{min-height:200px;max-height:55vh}
   .chat-input-row input{font-size:16px}
   .chat-input-row button{padding:10px 18px;font-size:14px}
   #pageNav{margin-top:8px!important;padding:8px 0!important}
