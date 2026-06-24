@@ -341,10 +341,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
       <div id="tradeActions" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04);gap:6px;flex-direction:column">
+        <div id="tradeStatus" style="display:none;text-align:center;padding:6px;font-size:12px;border-radius:6px"></div>
         <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🤝 我想交易</button></div>
-        <div id="tradeSeller" style="display:none;display:flex;gap:6px">
+        <div id="tradeSeller" style="display:none;gap:6px">
           <button onclick="confirmTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(52,211,153,.12);color:#34d399;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✅ 确认成交</button>
-          <button onclick="showRejectTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕ 拒绝</button>
+          <button onclick="cancelTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕ 取消交易</button>
         </div>
       </div>
       <div class="chat-input-row">
@@ -604,7 +605,8 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '<span class="contact" style="opacity:.3;cursor:default">已售罄</span>')+
+      (!p.sold && p.owner_student_id !== currentUser?.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
+      (p.owner_student_id === currentUser?.student_id && p.trade_buyer_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+p.trade_buyer_id+'\',\''+esc(p.trade_buyer_name||'买家')+'\',\''+esc(p.title)+'\')">💬 联系买家</button>' : '')+
       '<button class="close" onclick="hideDetail()">关闭</button></div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
     document.getElementById('detailModal').classList.add('show');
@@ -952,59 +954,107 @@ function closeConv(key) {
 
 var _lastChatTime = 0;
 function updateTradeButtons(p) {
-  var buyer = document.getElementById('tradeBuyer');
-  var seller = document.getElementById('tradeSeller');
-  document.getElementById('tradeActions').style.display = 'none';
-  buyer.style.display = 'none';
-  seller.style.display = 'none';
+  var actions = document.getElementById('tradeActions');
+  var status = document.getElementById('tradeStatus');
+  var buyerBtn = document.getElementById('tradeBuyer');
+  var sellerBtns = document.getElementById('tradeSeller');
+  actions.style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
   if (!p || p.sold) return;
-  document.getElementById('tradeActions').style.display = 'flex';
-  if (currentUser && p.owner_student_id === currentUser.student_id) {
-    seller.style.display = 'flex';
-  } else if (currentUser && p.owner_student_id !== currentUser.student_id) {
-    buyer.style.display = '';
+  var isOwner = currentUser && p.owner_student_id === currentUser.student_id;
+  var isBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
+
+  actions.style.display = 'flex';
+
+  if (isOwner && p.trade_status === 'trading') {
+    // Seller sees confirm/cancel for active trade
+    status.style.display = ''; status.innerHTML = '👤 ' + esc(p.trade_buyer_name||'买家') + ' 想购买';
+    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24';
+    sellerBtns.style.display = 'flex';
+  } else if (isBuyer && p.trade_status === 'trading') {
+    // Buyer sees waiting message
+    status.style.display = ''; status.innerHTML = '⏳ 等待卖家确认';
+    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24';
+  } else if (isOwner && p.trade_status === 'completed') {
+    status.style.display = ''; status.innerHTML = '✅ 交易成功';
+    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(52,211,153,.08);color:#34d399';
+  } else if (!isOwner && p.trade_status === 'completed') {
+    status.style.display = ''; status.innerHTML = '✅ 交易成功';
+    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(52,211,153,.08);color:#34d399';
+  } else if (!isOwner && p.trade_status !== 'trading' && p.trade_status !== 'completed') {
+    // Normal buyer sees request button
+    buyerBtn.style.display = '';
+  } else if (isOwner && !p.trade_status) {
+    // Seller with no pending trade - nothing to show
+    actions.style.display = 'none';
   }
 }
 
 function requestTrade() {
   if (!chatProductId || !currentUser) return;
-  notify('已发送交易请求', '🤝');
-  fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:currentUser.name+' 想购买此商品'})
-  }).then(function(r){return r.json();}).then(function(){
-    document.getElementById('tradeBuyer').innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.2);font-size:11px;padding:4px">⏳ 已发送请求，等待卖家回复</div>';
-    load();
-  }).catch(function(){});
+  fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId,buyer_id:currentUser.student_id,buyer_name:currentUser.name})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('已发送购买请求', '🤝');
+        // Send chat message
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'🤝 我想购买此商品'})
+        }).catch(function(){});
+        // Reload product to update buttons
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
 }
 
-function showRejectTrade() {
-  document.getElementById('rejectTradeModal').classList.add('show');
+function confirmTrade() {
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/confirm', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('✅ 交易成功');
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✅ 交易成功'})
+        }).catch(function(){});
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);load();}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
 }
-function closeRejectTrade() {
-  document.getElementById('rejectTradeModal').classList.remove('show');
+
+function cancelTrade() {
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/cancel', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('已取消交易');
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✕ 已取消交易'})
+        }).catch(function(){});
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
 }
+
+function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
+function closeRejectTrade() { document.getElementById('rejectTradeModal').classList.remove('show'); }
 function confirmRejectTrade() {
   var reason = document.getElementById('rejectTradeReason').value;
   var detail = document.getElementById('rejectTradeDetail').value.trim();
   var msg = reason + (detail ? ' - '+detail : '');
-  fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'已拒绝交易：'+msg})
-  }).then(function(){notify('已拒绝交易','✕');closeRejectTrade();load();}).catch(function(){});
-}
-
-function confirmTrade() {
-  fetch('/api/marketplace/products/'+chatProductId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})})
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/cancel', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
     .then(function(r){return r.json();})
     .then(function(d){
       if(d.ok){
-        notify('✅ 交易完成');
-        document.getElementById('tradeActions').style.display = 'none';
+        notify('已拒绝交易','✕');
         fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✅ 交易已完成'})
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✕ 拒绝交易：'+msg})
         }).catch(function(){});
-        load();
-      } else notify('操作失败','❌');
-    }).catch(function(){notify('操作失败','❌');});
+        closeRejectTrade();
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      }
+    }).catch(function(){});
 }
 
 function sendChat() {

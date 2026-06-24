@@ -697,6 +697,34 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Trade API ======
+app.post('/api/marketplace/trade/request', express.json(), async (req, res) => {
+  try {
+    const { product_id, buyer_id, buyer_name } = req.body;
+    if (!product_id || !buyer_id) return res.status(400).json({ error: 'missing fields' });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: buyer_name||'' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
+  try {
+    const { product_id } = req.body;
+    if (!product_id) return res.status(400).json({ error: 'product_id required' });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
+  try {
+    const { product_id } = req.body;
+    if (!product_id) return res.status(400).json({ error: 'product_id required' });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Categories API ======
 app.get('/api/marketplace/categories', async (req, res) => {
   try {
