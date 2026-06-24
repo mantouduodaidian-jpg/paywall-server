@@ -978,14 +978,9 @@ try {
   }
 } catch(e) {}
 loadCats();
-// Highlight saved category (after loadCats re-renders the list)
-if (selCat) {
-  document.querySelectorAll('#catList .cat').forEach(function(el) {
-    el.classList.toggle('active', el.textContent.includes(selCat));
-  });
-}
+// Restore category/search/page state
+if (selCat) { setCat(selCat); } else { load(false); }
 loadAnn();
-load(false);
 startProductPoll();
 </script>
 <svg style="display:none">
