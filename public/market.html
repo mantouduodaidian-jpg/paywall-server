@@ -388,6 +388,13 @@ async function loadCats() {
     const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
+    // Restore saved category highlight
+    if (selCat) {
+      document.querySelectorAll('#catList .cat').forEach(function(el) {
+        if (selCat === '') el.classList.toggle('active', el.textContent.includes('全部'));
+        else el.classList.toggle('active', el.textContent.includes(selCat));
+      });
+    }
     // Populate category select + display
     var sel = document.getElementById('fCat');
     sel.innerHTML = '<option value="">分类</option>' +
@@ -978,14 +985,6 @@ try {
   }
 } catch(e) {}
 loadCats();
-// Restore category/search/page state
-if (selCat) {
-  // Apply highlight manually without resetting page
-  document.querySelectorAll('#catList .cat').forEach(function(el) {
-    if (selCat === '') el.classList.toggle('active', el.textContent.includes('全部'));
-    else el.classList.toggle('active', el.textContent.includes(selCat));
-  });
-}
 load(false);
 loadAnn();
 startProductPoll();
