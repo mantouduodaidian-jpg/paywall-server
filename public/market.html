@@ -165,6 +165,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.2);font-size:11px;text-decoration:none">退出</a>
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
+    <a href="#" class="dash" id="restoreChatBtn" onclick="restoreChat();return false" style="display:none;font-size:11px">💬</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
   </div>
 </div>
@@ -260,9 +261,15 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <div class="chat-panel" id="chatPanel">
   <div class="chat-panel-header">
     <span>💬 消息</span>
-    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    <span style="display:flex;gap:8px">
+      <span onclick="dismissChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.15)" title="隐藏消息按钮">⊘</span>
+      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    </span>
   </div>
   <div class="chat-body" id="chatBody">
+    <div style="padding:8px 8px 0">
+      <input type="text" id="chatSearch" placeholder="搜索联系人..." onkeyup="loadConvs()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
+    </div>
     <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv" style="display:none">
       <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
@@ -483,12 +490,13 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); setTimeout(connectWS, 1000); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; }
+if (currentUser && !localStorage.getItem('chatDismissed')) { document.getElementById('chatBtn').style.display = ''; }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
   document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户');
+  if (localStorage.getItem('chatDismissed')) { document.getElementById('restoreChatBtn').style.display = ''; }
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -622,6 +630,17 @@ function toggleChat() {
   }
 }
 
+function dismissChat() {
+  document.getElementById('chatPanel').classList.remove('show');
+  document.getElementById('chatBtn').style.display = 'none';
+  localStorage.setItem('chatDismissed', '1');
+}
+function restoreChat() {
+  localStorage.removeItem('chatDismissed');
+  document.getElementById('chatBtn').style.display = '';
+  document.getElementById('restoreChatBtn').style.display = 'none';
+}
+
 function connectWS() {
   if (!currentUser) return;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -700,6 +719,12 @@ function loadConvs() {
       if (unread > 0) { badge.textContent = unread; } else badge.textContent = '0';
       var el = document.getElementById('chatConvs');
       var keys = Object.keys(convs);
+      var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
+      if (search) keys = keys.filter(function(k) {
+        var m = convs[k];
+        var other = m.from_student_id === currentUser.student_id ? (m.to_student_id||'') : (m.from_name||m.from_student_id||'');
+        return other.toLowerCase().includes(search);
+      });
       if (!keys.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.1);font-size:12px">暂无消息</div>'; return; }
       el.innerHTML = keys.map(function(k) {
         var m = convs[k];
