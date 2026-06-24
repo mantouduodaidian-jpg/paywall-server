@@ -157,7 +157,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh;touch-action:auto}
+  .contact-sidebar{max-height:100vh;touch-action:auto}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
   .chat-msgs{min-height:120px;max-height:200px}
   .chat-input-row input{font-size:16px}
@@ -725,9 +726,11 @@ function toggleChat() {
   if (panel.classList.contains('show')) {
     panel.classList.remove('show');
     btn.style.display = '';
+    document.body.style.overflow = '';
   } else {
     panel.classList.add('show');
     btn.style.display = 'none';
+    document.body.style.overflow = 'hidden';
     // Load convs in background
     setTimeout(loadConvs, 50);
   }
@@ -948,12 +951,15 @@ function startProductPoll() {
 function appendMsg(m, isHistory) {
   var el = document.getElementById('chatMsgs');
   if (!el) return;
+  // Dedup by checking if message already exists
+  if (m.id && el.querySelector('[data-msgid="'+m.id+'"]')) return;
   var mine = currentUser && m.from_student_id === currentUser.student_id;
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   var name = m.from_name || (mine ? '我' : '对方');
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
+  if (m.id) div.setAttribute('data-msgid', m.id);
   div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
