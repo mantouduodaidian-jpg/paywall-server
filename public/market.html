@@ -566,7 +566,7 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -923,6 +923,21 @@ function startUnreadPoll() {
   }, 2000);
 }
 
+var _productTimer = null;
+function startProductPoll() {
+  if (_productTimer) clearInterval(_productTimer);
+  var lastCount = 0;
+  _productTimer = setInterval(function() {
+    fetch('/api/marketplace/products?limit=1&offset=0')
+      .then(function(r){return r.json();})
+      .then(function(json){
+        var total = json.total || (Array.isArray(json)?json.length:0);
+        if (lastCount > 0 && total !== lastCount) { load(); }
+        lastCount = total;
+      }).catch(function(){});
+  }, 5000);
+}
+
 function appendMsg(m, isHistory) {
   var el = document.getElementById('chatMsgs');
   if (!el) return;
@@ -941,6 +956,7 @@ function appendMsg(m, isHistory) {
 loadCats();
 loadAnn();
 load();
+startProductPoll();
 </script>
 <svg style="display:none">
   <defs>
