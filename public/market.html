@@ -173,10 +173,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:12.5%;right:auto;bottom:80px;width:75%;border-radius:16px;max-height:75vh;touch-action:auto}
-  .contact-sidebar{max-height:100vh;touch-action:auto}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:85vh;touch-action:auto}
+  .contact-sidebar{max-height:100vh;touch-action:auto;z-index:201}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
-  .chat-msgs{min-height:120px;max-height:200px}
+  .chat-msgs{min-height:200px;max-height:55vh}
   .chat-input-row input{font-size:16px}
   .chat-input-row button{padding:10px 18px;font-size:14px}
   #pageNav{margin-top:8px!important;padding:8px 0!important}
@@ -376,6 +376,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 </div>
 
 <!-- Contact Sidebar -->
+<div class="modal-overlay" id="contactsOverlay" onclick="closeContacts()" style="z-index:199"></div>
 <div class="contact-sidebar" id="contactSidebar" onclick="event.stopPropagation()">
   <div class="contact-sidebar-header">
     <span>👥 全部联系人</span>
@@ -832,10 +833,8 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
-  // Show sold button if current user owns this product
   fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
-    if(p && p.owner_student_id === currentUser.student_id && !p.sold) document.getElementById('chatSoldBtn').style.display='';
-    else document.getElementById('chatSoldBtn').style.display='none';
+    updateTradeButtons(p);
   }).catch(function(){});
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
@@ -905,14 +904,59 @@ function closeConv(key) {
 }
 
 var _lastChatTime = 0;
-function markSoldFromChat() {
+function updateTradeButtons(p) {
+  var buyer = document.getElementById('tradeBuyer');
+  var seller = document.getElementById('tradeSeller');
+  document.getElementById('tradeActions').style.display = 'none';
+  buyer.style.display = 'none';
+  seller.style.display = 'none';
+  if (!p || p.sold) return;
+  document.getElementById('tradeActions').style.display = 'flex';
+  if (currentUser && p.owner_student_id === currentUser.student_id) {
+    seller.style.display = 'flex';
+  } else if (currentUser && p.owner_student_id !== currentUser.student_id) {
+    buyer.style.display = '';
+  }
+}
+
+function requestTrade() {
   if (!chatProductId || !currentUser) return;
-  if (!confirm('确认标记此商品为已售出？')) return;
+  notify('已发送交易请求', '🤝');
+  fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:currentUser.name+' 想购买此商品'})
+  }).then(function(r){return r.json();}).then(function(){
+    document.getElementById('tradeBuyer').innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.2);font-size:11px;padding:4px">⏳ 已发送请求，等待卖家回复</div>';
+    load();
+  }).catch(function(){});
+}
+
+function showRejectTrade() {
+  document.getElementById('rejectTradeModal').classList.add('show');
+}
+function closeRejectTrade() {
+  document.getElementById('rejectTradeModal').classList.remove('show');
+}
+function confirmRejectTrade() {
+  var reason = document.getElementById('rejectTradeReason').value;
+  var detail = document.getElementById('rejectTradeDetail').value.trim();
+  var msg = reason + (detail ? ' - '+detail : '');
+  fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'已拒绝交易：'+msg})
+  }).then(function(){notify('已拒绝交易','✕');closeRejectTrade();load();}).catch(function(){});
+}
+
+function confirmTrade() {
   fetch('/api/marketplace/products/'+chatProductId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})})
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.ok){notify('✅ 已标记售出');document.getElementById('chatSoldBtn').style.display='none';load();}
-      else notify('操作失败','❌');
+      if(d.ok){
+        notify('✅ 交易完成');
+        document.getElementById('tradeActions').style.display = 'none';
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✅ 交易已完成'})
+        }).catch(function(){});
+        load();
+      } else notify('操作失败','❌');
     }).catch(function(){notify('操作失败','❌');});
 }
 
@@ -983,7 +1027,7 @@ function loadContacts() {
       }).join('');
     });
 }
-function closeContacts() { document.getElementById('contactSidebar').classList.remove('show'); }
+function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
 
 var _unreadTimer = null;
 function startUnreadPoll() {
