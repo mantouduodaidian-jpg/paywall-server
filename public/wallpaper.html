@@ -341,8 +341,6 @@ function vaultUnlock(){
 async function loadVault(){try{const r=await fetch('/api/vault');vaultItems=await r.json();renderVault();}catch(e){}}
 function vEnc(s){if(!vaultMaster||!s)return '';try{let r='';const t=decodeURIComponent(escape(atob(s)));for(let i=0;i<t.length;i++)r+=String.fromCharCode(t.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return r}catch(e){return ''}}
 function renderVault(){
-  const el=document.getElementById('vaultList');
-  if(!vaultItems.length){el.innerHTML='<div style="text-align:center;padding:20px;color:rgba(255,255,255,.06)">暂无密码</div>';return;}
   const el=document.getElementById('vaultText');
   if(!vaultItems.length){el.value='暂无密码';return;}
   el.value=vaultItems.map(i=>vEnc(i.name)+' | '+vEnc(i.username||'')+' | '+vEnc(i.password||'')).join('\n');
