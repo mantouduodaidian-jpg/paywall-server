@@ -124,6 +124,10 @@ tr:hover td{background:rgba(52,211,153,.02)}
     </div>
     <div class="actions">
       <a href="/market.html" class="btn-outline" target="_blank">🏪 前台</a>
+      <span style="position:relative;cursor:pointer" onclick="refreshAll()">
+        <span style="font-size:18px">🔔</span>
+        <span id="notifBellBadge" style="display:none;position:absolute;top:-4px;right:-6px;background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:6px;font-weight:700">0</span>
+      </span>
       <button class="btn-outline" onclick="refreshAll()">🔄 刷新</button>
       <button class="btn-danger" onclick="logout()">退出</button>
     </div>
@@ -695,12 +699,15 @@ function connectAdminWS() {
     try {
       var d = JSON.parse(e.data);
       if (d.type === 'admin_new_verification' || d.type === 'admin_new_product') {
-        // Refresh everything
         loadOverview();
         loadProds();
         loadVers();
         loadReports();
         toast('🔔 有新' + (d.type === 'admin_new_verification' ? '认证申请' : '商品') + '，已刷新');
+        // Increment bell badge
+        var bell = document.getElementById('notifBellBadge');
+        var c = parseInt(bell.textContent) || 0;
+        bell.textContent = c + 1; bell.style.display = '';
       }
     } catch(e) {}
   };

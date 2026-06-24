@@ -581,6 +581,10 @@ app.patch('/api/marketplace/products/:id', express.json(), async (req, res) => {
       body: JSON.stringify(fields)
     });
     addLog('product_update', 'product', id, JSON.stringify(fields));
+    notifyAdmin('product_update', { id, fields });
+    onlineUsers.forEach(function(ws) {
+      try { ws.send(JSON.stringify({ type: 'product_update', data: { id, fields } })); } catch(e) {}
+    });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

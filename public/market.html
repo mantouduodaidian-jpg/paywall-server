@@ -111,20 +111,21 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .cat-select-display svg{width:16px;height:16px;flex-shrink:0;vertical-align:middle}
 .cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(255,255,255,.2);font-size:10px}
 
-.chat-panel{position:fixed;bottom:20px;right:20px;width:320px;background:rgba(10,26,15,.96);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:100;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.chat-panel{position:fixed;bottom:20px;left:20px;width:320px;background:rgba(10,26,15,.96);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:100;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 40px rgba(0,0,0,.5)}
 .chat-header{padding:12px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
 .chat-header .chat-badge{background:#ef4444;color:#fff;font-size:10px;padding:1px 7px;border-radius:8px;font-weight:700}
 .chat-header .chat-toggle{margin-left:auto;font-size:10px;color:rgba(255,255,255,.2)}
 .chat-body{max-height:400px;overflow-y:auto;display:block}
 .chat-body.collapsed{display:none}
 .chat-msgs{padding:12px;min-height:200px;max-height:300px;overflow-y:auto}
-.chat-msg{margin-bottom:10px;font-size:12px;line-height:1.5}
-.chat-msg .bubble{display:inline-block;padding:8px 12px;border-radius:12px;max-width:85%;word-break:break-word}
-.chat-msg.mine{text-align:right}
-.chat-msg.mine .bubble{background:linear-gradient(135deg,#059669,#34d399);color:#fff;border-radius:12px 12px 4px 12px}
-.chat-msg.other{text-align:left}
-.chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:12px 12px 12px 4px}
-.chat-msg .time{font-size:9px;color:rgba(255,255,255,.15);margin-top:2px;display:block}
+.chat-msg{margin-bottom:12px}
+.chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
+.chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5;position:relative}
+.chat-msg .bubble:after{content:'';position:absolute;bottom:0;width:0;height:0;border:6px solid transparent}
+.chat-msg.mine{text-align:left}
+.chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 4px 14px;margin-left:0}
+.chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:14px 14px 14px 4px}
+.chat-msg .time{font-size:9px;color:rgba(255,255,255,.12);margin-top:3px;display:block}
 .chat-input-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04)}
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
@@ -258,6 +259,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   <div class="chat-body" id="chatBody">
     <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv" style="display:none">
+      <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
+        <span id="chatConvLabel">💬 聊天</span>
+        <span onclick="showConvs()" style="cursor:pointer;font-size:10px;color:rgba(255,255,255,.15)">← 返回</span>
+      </div>
       <div class="chat-msgs" id="chatMsgs"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
@@ -606,6 +611,10 @@ function connectWS() {
   wsChat.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
+      if (d.type === 'product_update') {
+        load();
+        return;
+      }
       if (d.type === 'chat' && d.data) {
         var badge = document.getElementById('chatBadge');
         var c = parseInt(badge.textContent) || 0;
@@ -628,6 +637,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').style.display = '';
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
+  document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
   fetch('/api/marketplace/messages?product_id='+productId)
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -689,9 +699,10 @@ function appendMsg(m, isHistory) {
   var mine = currentUser && m.from_student_id === currentUser.student_id;
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var name = m.from_name || (mine ? '我' : '对方');
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
-  div.innerHTML = '<div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+  div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
 }
