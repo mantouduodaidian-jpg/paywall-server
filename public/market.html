@@ -115,6 +115,14 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-btn{position:fixed;bottom:24px;left:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:90;box-shadow:0 4px 20px rgba(52,211,153,.3);transition:transform .2s}
 .chat-btn:hover{transform:scale(1.1)}
 .chat-btn .chat-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 8px rgba(239,68,68,.3)}
+/* Contact Sidebar */
+.contact-sidebar{position:fixed;top:0;left:-320px;width:300px;height:100vh;background:rgba(10,26,15,.98);border-right:1px solid rgba(52,211,153,.15);z-index:95;transition:left .3s ease;backdrop-filter:blur(12px);overflow:hidden;display:flex;flex-direction:column}
+.contact-sidebar.show{left:0}
+.contact-sidebar-header{padding:16px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.contact-list{flex:1;overflow-y:auto;padding:8px}
+.contact-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
+.contact-item:hover{background:rgba(52,211,153,.04)}
+.contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
 .chat-panel{position:fixed;bottom:88px;left:24px;width:340px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:89;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
 .chat-panel.show{display:block}
@@ -169,6 +177,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <!-- Header -->
 <div class="header">
   <div style="display:flex;align-items:center;gap:12px">
+    <span id="hamburgerBtn" onclick="toggleContacts()" style="cursor:pointer;font-size:20px;color:rgba(255,255,255,.3);margin-right:8px;display:none">☰</span>
     <div class="logo"><svg viewBox="0 0 28 28" width="22" height="22" style="vertical-align:middle"><path d="M6 2h12l4 4v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#064e3b" opacity=".5" transform="translate(1,2)"/><path d="M18 2v4h4" fill="#064e3b" opacity=".5" transform="translate(1,2)"/><polygon points="14 8 17.5 12.5 14 17 10.5 12.5" fill="#064e3b" opacity=".5" transform="translate(1,2)"/><path d="M6 2h12l4 4v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#065f46" opacity=".6" transform="translate(.7,1.3)"/><path d="M18 2v4h4" fill="#065f46" opacity=".6" transform="translate(.7,1.3)"/><polygon points="14 8 17.5 12.5 14 17 10.5 12.5" fill="#065f46" opacity=".6" transform="translate(.7,1.3)"/><path d="M6 2h12l4 4v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1.2" stroke-linejoin="round"/><path d="M18 2v4h4" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".8" stroke-linejoin="round"/><polygon points="14 8 17.5 12.5 14 17 10.5 12.5" fill="url(#lo2)" stroke="#a7f3d0" stroke-width="1" stroke-linejoin="round"/><polygon points="14 10 15.8 12.5 14 15 12.2 12.5" fill="rgba(255,255,255,.25)"/><line x1="8" y1="10" x2="11" y2="10" stroke="#a7f3d0" stroke-width=".8" stroke-linecap="round" opacity=".3"/><line x1="8" y1="13" x2="10" y2="13" stroke="#a7f3d0" stroke-width=".8" stroke-linecap="round" opacity=".3"/><line x1="8" y1="22" x2="19" y2="22" stroke="#a7f3d0" stroke-width=".8" stroke-linecap="round" opacity=".15"/><line x1="8" y1="24" x2="16" y2="24" stroke="#a7f3d0" stroke-width=".8" stroke-linecap="round" opacity=".15"/></svg> <span>校园严选</span></div>
     <div class="sub">严格认证 · 当面交易</div>
   </div>
@@ -272,11 +281,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <!-- Chat Panel -->
 <div class="chat-panel" id="chatPanel">
   <div class="chat-panel-header">
-    <span>💬 <span id="chatModeLabel">消息</span></span>
-    <span style="display:flex;gap:6px;align-items:center">
-      <span id="chatModeBtn" onclick="toggleChatMode()" style="cursor:pointer;font-size:10px;color:rgba(255,255,255,.2);padding:3px 8px;border:1px solid rgba(255,255,255,.06);border-radius:6px">全部历史</span>
-      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
-    </span>
+    <span>💬 最近对话</span>
+    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
   </div>
   <div class="chat-body" id="chatBody">
     <div style="padding:8px 8px 0">
@@ -318,6 +324,18 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     </div>
     <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(255,255,255,.15);text-decoration:none">稍后再说</a></div>
   </div>
+</div>
+
+<!-- Contact Sidebar -->
+<div class="contact-sidebar" id="contactSidebar">
+  <div class="contact-sidebar-header">
+    <span>👥 全部联系人</span>
+    <span onclick="toggleContacts()" style="cursor:pointer;font-size:14px;color:rgba(255,255,255,.2)">✕</span>
+  </div>
+  <div style="padding:8px">
+    <input type="text" id="contactSearch" placeholder="搜索联系人..." onkeyup="loadContacts()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
+  </div>
+  <div class="contact-list" id="contactList"></div>
 </div>
 
 <!-- Verify Modal -->
@@ -548,7 +566,7 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; startUnreadPoll(); }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -578,7 +596,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -787,9 +805,6 @@ function loadConvs() {
       var arr = Array.isArray(contacts) ? contacts : [];
       // Filter by search
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
-      // Filter closed conversations
-      var closed = JSON.parse(localStorage.getItem('closedConvs') || '[]');
-      if (!_showAllHistory && !search && closed.length) arr = arr.filter(function(c) { return !closed.includes(c.student_id); });
       // Count unread
       var unread = 0;
       var el = document.getElementById('chatConvs');
@@ -801,7 +816,7 @@ function loadConvs() {
       el.innerHTML = arr.map(function(c) {
         var sid = c.student_id;
         var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
-        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'<span onclick="(function(e){e.stopPropagation();closeConv(\''+sid+'\')})(event)" style="cursor:pointer;font-size:14px;color:rgba(255,255,255,.25);padding:2px 8px;border-radius:4px">✕</span></div>';
+        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
       badge.textContent = totalUnread > 0 ? totalUnread : '0';
@@ -816,13 +831,6 @@ function closeConv(key) {
 }
 
 var _lastChatTime = 0;
-var _showAllHistory = false;
-function toggleChatMode() {
-  _showAllHistory = !_showAllHistory;
-  document.getElementById('chatModeLabel').textContent = _showAllHistory ? '历史' : '消息';
-  document.getElementById('chatModeBtn').textContent = _showAllHistory ? '当前对话' : '全部历史';
-  loadConvs();
-}
 function sendChat() {
   try {
     var now = Date.now();
@@ -863,6 +871,29 @@ function startChatPoll() {
 function stopChatPoll() {
   if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
 }
+
+function toggleContacts() {
+  var s = document.getElementById('contactSidebar');
+  s.classList.toggle('show');
+  if (s.classList.contains('show')) loadContacts();
+}
+function loadContacts() {
+  if (!currentUser) return;
+  var search = (document.getElementById('contactSearch').value || '').trim().toLowerCase();
+  fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var arr = Array.isArray(data)?data:[];
+      if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
+      var el = document.getElementById('contactList');
+      if (!arr.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">暂无联系人</div>'; return; }
+      el.innerHTML = arr.map(function(c) {
+        var unBadge = (c.unread && c.unread > 0) ? '<span class="badge">'+c.unread+'</span>' : '';
+        return '<div class="contact-item" onclick="closeContacts();openChat('+c.product_id+',\''+c.student_id+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
+      }).join('');
+    });
+}
+function closeContacts() { document.getElementById('contactSidebar').classList.remove('show'); }
 
 var _unreadTimer = null;
 function startUnreadPoll() {
