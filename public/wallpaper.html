@@ -342,22 +342,13 @@ async function loadVault(){try{const r=await fetch('/api/vault');vaultItems=awai
 function vEnc(s){if(!vaultMaster||!s)return '';try{let r='';const t=decodeURIComponent(escape(atob(s)));for(let i=0;i<t.length;i++)r+=String.fromCharCode(t.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return r}catch(e){return ''}}
 function renderVault(){
   const el=document.getElementById('vaultText');
-  if(!vaultItems.length){el.value='';return;}
-  el.value=vaultItems.map(i=>vEnc(i.name)+' | '+vEnc(i.username||'')+' | '+vEnc(i.password||'')).join('\n');
+  el.value=vaultItems.length?atob(vaultItems[0].name):'';
 }
-function vEnc2(s){if(!vaultMaster)return s;let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return btoa(unescape(encodeURIComponent(r)))}
 async function saveVaultText(){
-  const text=document.getElementById('vaultText').value.trim();
-  const lines=text.split('\n').filter(l=>l.trim());
+  const text=document.getElementById('vaultText').value;
   try{await fetch('/api/vault/clear',{method:'DELETE'})}catch(e){}
-  let ok=0;
-  for(const line of lines){
-    const parts=line.split('|').map(s=>s.trim());
-    if(parts.length<3)continue;
-    const [n,u,p]=parts;if(!n||!p)continue;
-    try{await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:vEnc2(n),username:vEnc2(u||''),password:vEnc2(p)})});ok++;}catch(e){}
-  }
-  alert('已保存 '+ok+' 条');loadVault();
+  await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(text)})});
+  loadVault();
 }
 
 function switchTab(t){
