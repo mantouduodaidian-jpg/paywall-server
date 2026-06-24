@@ -173,7 +173,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh;touch-action:auto}
+  .chat-panel{left:12.5%;right:auto;bottom:80px;width:75%;border-radius:16px;max-height:75vh;touch-action:auto}
   .contact-sidebar{max-height:100vh;touch-action:auto}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
   .chat-msgs{min-height:120px;max-height:200px}
@@ -272,6 +272,16 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   <div class="modal-box" id="detailBox"></div>
 </div>
 
+<!-- Reject Trade Modal -->
+<div class="modal-overlay" id="rejectTradeModal" onclick="if(event.target===this)closeRejectTrade()">
+  <div class="modal"><h2>✕ 拒绝交易</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:12px">告知买家拒绝原因</p>
+    <select id="rejectTradeReason"><option>已售出</option><option>价格不合适</option><option>不想卖了</option><option>已与其他买家交易</option><option>其他</option></select>
+    <textarea id="rejectTradeDetail" placeholder="补充说明（选填）" style="min-height:60px"></textarea>
+    <div class="btns"><button class="btn-red" onclick="confirmRejectTrade()">✕ 拒绝</button><button class="btn-ghost" onclick="closeRejectTrade()">取消</button></div>
+  </div>
+</div>
+
 <!-- Report Modal -->
 <div class="pub-overlay report-modal" id="reportOverlay">
   <div class="pub-box">
@@ -320,7 +330,13 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
         <span></span>
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
-      <div style="padding:4px 12px 0;display:none" id="chatSoldBtn"><button onclick="markSoldFromChat()" style="width:100%;padding:6px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">✅ 标记已售出</button></div>
+      <div id="tradeActions" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04);gap:6px;flex-direction:column">
+        <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🤝 我想交易</button></div>
+        <div id="tradeSeller" style="display:none;display:flex;gap:6px">
+          <button onclick="confirmTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(52,211,153,.12);color:#34d399;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✅ 确认成交</button>
+          <button onclick="showRejectTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕ 拒绝</button>
+        </div>
+      </div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
         <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
