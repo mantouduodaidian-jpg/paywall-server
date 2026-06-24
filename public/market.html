@@ -137,19 +137,16 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .contact-item:hover{background:rgba(52,211,153,.04)}
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);overflow:hidden;display:none;flex-direction:column;max-height:500px}
 #contactsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
 #contactsOverlay.show{display:block}
-.chat-panel.show{display:block}
-.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
-.chat-body{max-height:450px;overflow-y:auto;display:flex;flex-direction:column}
+.chat-panel.show{display:flex}
+.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);flex-shrink:0}
+.chat-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-msgs{padding:14px;flex:1;overflow-y:auto;min-height:0}
-.chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
-.chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
-.chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-msg{margin-bottom:12px}
 .chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
 .chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
@@ -157,12 +154,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 14px 4px}
 .chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:4px 14px 14px 14px}
 .chat-msg .time{font-size:9px;color:rgba(255,255,255,.12);margin-top:3px;display:block}
-.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04)}
+.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04);flex-shrink:0}
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);color:#c8e6c9;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
-.chat-convs{padding:8px}
-.chat-conv{display:flex;flex-direction:column;height:100%;flex:1}
-.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
+.chat-convs{padding:8px;flex-shrink:0}
+.chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
+.chat-conv.show{display:flex}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
 .chat-conv-item:hover{background:rgba(52,211,153,.04)}
 
@@ -890,7 +887,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
     document.getElementById('chatPanel').classList.add('show');
     document.getElementById('chatBtn').style.display = 'none';
     document.getElementById('chatConvs').style.display = 'none';
-    document.getElementById('chatConv').style.display = '';
+    document.getElementById('chatConv').classList.add('show');
     document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
     document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
   } catch(e) { notify('打开聊天失败', '❌'); return; }
@@ -913,7 +910,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
 function showConvs() {
   stopChatPoll();
   document.getElementById('chatConvs').style.display = '';
-  document.getElementById('chatConv').style.display = 'none';
+  document.getElementById('chatConv').classList.remove('show');
   chatProductId = null;
   loadConvs();
 }
