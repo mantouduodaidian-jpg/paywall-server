@@ -336,7 +336,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <div class="chat-search-area">
       <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()">
     </div>
-    <div class="chat-convs" id="chatConvs"></div>
+    <div class="chat-convs" id="chatConvs"><div style="text-align:center;padding:20px;color:rgba(52,211,153,.3);font-size:11px">加载联系人...</div></div>
     <div class="chat-conv" id="chatConv" style="display:none">
       <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
         <span onclick="showConvs()" style="cursor:pointer;color:#34d399">← 返回</span>
@@ -844,7 +844,7 @@ function toggleChat() {
     btn.style.display = 'none';
     bd.classList.add('show');
     document.body.style.overflow = 'hidden';
-    setTimeout(loadConvs, 50);
+    loadConvs();
   }
 }
 
@@ -918,6 +918,7 @@ function showConvs() {
 }
 
 function loadConvs() {
+  console.log("loadConvs called", currentUser);
   if (!currentUser) return;
   var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
   fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
