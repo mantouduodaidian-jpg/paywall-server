@@ -342,13 +342,21 @@ async function loadVault(){try{const r=await fetch('/api/vault');vaultItems=awai
 function vEnc(s){if(!vaultMaster||!s)return '';try{let r='';const t=decodeURIComponent(escape(atob(s)));for(let i=0;i<t.length;i++)r+=String.fromCharCode(t.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return r}catch(e){return ''}}
 function renderVault(){
   const el=document.getElementById('vaultText');
-  el.value=vaultItems.length?atob(vaultItems[0].name):'';
+  try{el.value=vaultItems.length?decodeURIComponent(escape(atob(vaultItems[0].name))):'';}catch(e){el.value='';}
+}
+function vaultToast(m){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;bottom:60px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:12px;background:#065f46;color:#c8e6c9;font-size:14px;z-index:300;border:1px solid rgba(52,211,153,.2);box-shadow:0 4px 20px rgba(0,0,0,.3);font-family:inherit';
+  d.textContent=m;
+  document.body.appendChild(d);
+  setTimeout(()=>{d.style.opacity='0';d.style.transition='opacity .3s';setTimeout(()=>d.remove(),300)},1500);
 }
 async function saveVaultText(){
   const text=document.getElementById('vaultText').value;
   try{await fetch('/api/vault/clear',{method:'DELETE'})}catch(e){}
-  await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(text)})});
-  loadVault();
+  try{await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(unescape(encodeURIComponent(text)))})});
+  vaultToast('✅ 已保存');
+  loadVault();}catch(e){vaultToast('❌ 保存失败');}
 }
 
 function switchTab(t){
