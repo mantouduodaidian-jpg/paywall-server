@@ -326,6 +326,12 @@ function toast(msg, dur) {
   el.textContent = msg; el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), dur||2000);
 }
+function apiFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  return fetch(url, opts);
+}
 
 function login() {
   var pwd = document.getElementById('loginPwd').value;
@@ -352,7 +358,7 @@ if (token) { document.getElementById('loginGate').style.display = 'none'; docume
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  const map = {overview:'tabOverview',products:'tabProducts',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs'};
+  const map = {overview:'tabOverview',products:'tabProducts',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',promotions:'tabPromotions'};
   document.getElementById(map[name]).style.display = '';
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
   if (name === 'overview') loadOverview();
@@ -370,7 +376,7 @@ function refreshAll() { loadOverview(); }
 // ====== OVERVIEW ======
 async function loadOverview() {
   try {
-    const r = await fetch('/api/marketplace/admin/stats');
+    const r = await apiFetch('/api/marketplace/admin/stats');
     const d = await r.json();
     document.getElementById('statsContainer').innerHTML =
       '<div class="stat-card"><div class="num green">'+d.total+'</div><div class="label">总商品</div></div>'+
@@ -393,7 +399,7 @@ async function loadOverview() {
   } catch(e) {}
   // Recent
   try {
-    const r = await fetch('/api/marketplace/products?admin=1&limit=5');
+    const r = await apiFetch('/api/marketplace/products?admin=1&limit=5');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('recentList').innerHTML = !arr.length ? '<div class="empty">暂无商品</div>' :
@@ -409,7 +415,7 @@ async function loadOverview() {
 // ====== PRODUCTS ======
 async function loadProds() {
   try {
-    const r = await fetch('/api/marketplace/products?admin=1');
+    const r = await apiFetch('/api/marketplace/products?admin=1');
     let data = await r.json();
     const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
     const search = document.getElementById('prodSearch').value.trim().toLowerCase();
@@ -447,7 +453,7 @@ async function loadProds() {
 
 async function approveProd(id) {
   toast('✅ 已通过');
-  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',listed:true,verified:true})});
+  await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',listed:true,verified:true})});
   loadProds(); loadOverview();
 }
 function showReject(id) { rejectingProdId = id; document.getElementById('rejectProdModal').classList.add('show'); }
@@ -455,30 +461,30 @@ function closeRejectProd() { rejectingProdId = null; document.getElementById('re
 async function confirmReject() {
   const reason = document.getElementById('rejectReason').value;
   const detail = document.getElementById('rejectDetail').value.trim();
-  await fetch('/api/marketplace/products/'+rejectingProdId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',listed:false,reject_reason: reason + (detail?': '+detail:'')})});
+  await apiFetch('/api/marketplace/products/'+rejectingProdId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',listed:false,reject_reason: reason + (detail?': '+detail:'')})});
   toast('已拒绝'); closeRejectProd(); loadProds(); loadOverview();
 }
 async function toggleListed(id, currently) {
   toast(currently?'已下架':'已上架');
-  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:!currently})});
+  await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:!currently})});
   loadProds(); loadOverview();
 }
 async function togglePin(id, pin) {
-  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:pin})});
+  await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:pin})});
   toast(pin?'✅ 已置顶':'已取消置顶'); loadProds();
 }
 async function markSold(id) {
   if (!confirm('确认标记为已售出？')) return;
-  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})});
+  await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})});
   toast('✅ 已标记售出'); loadProds(); loadOverview();
 }
 async function markUnsold(id) {
-  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:false,listed:true})});
+  await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:false,listed:true})});
   toast('已恢复在售'); loadProds(); loadOverview();
 }
 function editProd(id) {
   editingProdId = id;
-  fetch('/api/marketplace/products/'+id).then(r=>r.json()).then(p=>{
+  apiFetch('/api/marketplace/products/'+id).then(r=>r.json()).then(p=>{
     if(!p)return;
     document.getElementById('epTitle').value = p.title||'';
     document.getElementById('epPrice').value = p.price||'';
@@ -493,7 +499,7 @@ function editProd(id) {
 function closeEditProd() { document.getElementById('editProdModal').classList.remove('show'); editingProdId = null; }
 async function saveEditProd() {
   if (!editingProdId) return;
-  await fetch('/api/marketplace/products/'+editingProdId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+  await apiFetch('/api/marketplace/products/'+editingProdId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({
     title: document.getElementById('epTitle').value.trim(),
     price: parseFloat(document.getElementById('epPrice').value)||0,
     category: document.getElementById('epCat').value||'其他',
@@ -505,14 +511,14 @@ async function saveEditProd() {
 }
 async function delProd(id, title) {
   if (!confirm('确认删除「'+title+'」？不可恢复。')) return;
-  await fetch('/api/marketplace/products/'+id, {method:'DELETE'});
+  await apiFetch('/api/marketplace/products/'+id, {method:'DELETE'});
   toast('🗑️ 已删除'); loadProds(); loadOverview();
 }
 
 // ====== VERIFICATIONS ======
 async function loadVers() {
   try {
-    const r = await fetch('/api/verify/list');
+    const r = await apiFetch('/api/verify/list');
     let data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
@@ -540,7 +546,7 @@ async function approveVer(id) {
     }
   });
   // Fetch in background
-  await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
+  await apiFetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
   setTimeout(function() { loadVers(); loadOverview(); }, 500);
 }
 let rejectingVerId = null;
@@ -562,19 +568,19 @@ async function confirmRejectVer() {
       row.cells[7].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+rejectingVerId+',\'...\')">🗑️ 删除</button></span>';
     }
   });
-  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId,reason:fullReason})});
+  await apiFetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId,reason:fullReason})});
   setTimeout(function() { loadVers(); loadOverview(); }, 500);
 }
 async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
-  await fetch('/api/verify/'+id, {method:'DELETE'});
+  await apiFetch('/api/verify/'+id, {method:'DELETE'});
   toast('🗑️ 已删除'); loadVers(); loadOverview();
 }
 
 // Image Preview
 async function showCard(id) {
   try {
-    const r = await fetch('/api/verify/list');
+    const r = await apiFetch('/api/verify/list');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const v = arr.find(x => x.id === id);
@@ -594,7 +600,7 @@ function closeImgPreview() {
 // ====== CATEGORIES ======
 async function loadCats() {
   try {
-    const r = await fetch('/api/marketplace/categories');
+    const r = await apiFetch('/api/marketplace/categories');
     const data = await r.json();
     cats = Array.isArray(data) ? data : [];
     document.getElementById('catTbody').innerHTML = !cats.length ? '<tr><td colspan="5"><div class="empty">暂无分类</div></td></tr>' :
@@ -611,28 +617,28 @@ async function addCat() {
   const name = document.getElementById('catName').value.trim();
   const icon = document.getElementById('catIcon').value.trim() || '📦';
   if (!name) { toast('输入分类名称'); return; }
-  await fetch('/api/marketplace/categories', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,icon})});
+  await apiFetch('/api/marketplace/categories', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,icon})});
   document.getElementById('catName').value = ''; document.getElementById('catIcon').value = '';
   toast('✅ 已添加'); loadCats(); loadOverview();
 }
 function editCat(id, name, icon) {
   const n = prompt('分类名称：', name); if (!n) return;
   const i = prompt('图标 (emoji)：', icon) || '📦';
-  fetch('/api/marketplace/categories/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,icon:i})}).then(()=>{toast('✅ 已更新');loadCats();});
+  apiFetch('/api/marketplace/categories/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,icon:i})}).then(()=>{toast('✅ 已更新');loadCats();});
 }
 async function updateCatSort(id, sort) {
-  await fetch('/api/marketplace/categories/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
+  await apiFetch('/api/marketplace/categories/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
 }
 async function delCat(id, name) {
   if (!confirm('删除分类「'+name+'」？')) return;
-  await fetch('/api/marketplace/categories/'+id,{method:'DELETE'});
+  await apiFetch('/api/marketplace/categories/'+id,{method:'DELETE'});
   toast('🗑️ 已删除'); loadCats();
 }
 
 // ====== REPORTS ======
 async function loadReports() {
   try {
-    const r = await fetch('/api/marketplace/reports');
+    const r = await apiFetch('/api/marketplace/reports');
     let data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('reportStatusFilter').value;
@@ -649,14 +655,14 @@ async function loadReports() {
   } catch(e) {}
 }
 async function resolveReport(id, action) {
-  await fetch('/api/marketplace/reports/resolve', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})});
+  await apiFetch('/api/marketplace/reports/resolve', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,action})});
   toast(action==='resolved'?'✅ 已处理':'已驳回'); loadReports(); loadOverview();
 }
 
 // ====== ANNOUNCEMENTS ======
 async function loadAnns() {
   try {
-    const r = await fetch('/api/marketplace/announcements?all=1');
+    const r = await apiFetch('/api/marketplace/announcements?all=1');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('annTbody').innerHTML = !arr.length ? '<tr><td colspan="6"><div class="empty">暂无公告</div></td></tr>' :
@@ -672,24 +678,24 @@ async function addAnn() {
   const title = document.getElementById('annTitle').value.trim();
   const content = document.getElementById('annContent').value.trim();
   if (!title) { toast('输入标题'); return; }
-  await fetch('/api/marketplace/announcements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content})});
+  await apiFetch('/api/marketplace/announcements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,content})});
   document.getElementById('annTitle').value = ''; document.getElementById('annContent').value = '';
   toast('✅ 已发布'); loadAnns(); loadOverview();
 }
 async function toggleAnn(id, active) {
-  await fetch('/api/marketplace/announcements/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!active})});
+  await apiFetch('/api/marketplace/announcements/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!active})});
   toast(active?'已关闭':'已开启'); loadAnns();
 }
 async function delAnn(id) {
   if (!confirm('删除此公告？')) return;
-  await fetch('/api/marketplace/announcements/'+id,{method:'DELETE'});
+  await apiFetch('/api/marketplace/announcements/'+id,{method:'DELETE'});
   toast('🗑️ 已删除'); loadAnns(); loadOverview();
 }
 
 // ====== BLOCKED WORDS ======
 async function loadBws() {
   try {
-    const r = await fetch('/api/marketplace/blocked-words');
+    const r = await apiFetch('/api/marketplace/blocked-words');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('bwTbody').innerHTML = !arr.length ? '<tr><td colspan="4"><div class="empty">暂无敏感词</div></td></tr>' :
@@ -701,21 +707,21 @@ async function addBw() {
   const word = document.getElementById('bwInput').value.trim();
   if (!word) { toast('输入敏感词'); return; }
   try {
-    await fetch('/api/marketplace/blocked-words',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word})});
+    await apiFetch('/api/marketplace/blocked-words',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({word})});
     document.getElementById('bwInput').value = '';
     toast('✅ 已添加'); loadBws();
   } catch(e) { toast('添加失败（可能已存在）'); }
 }
 async function delBw(id, word) {
   if (!confirm('删除「'+word+'」？')) return;
-  await fetch('/api/marketplace/blocked-words/'+id,{method:'DELETE'});
+  await apiFetch('/api/marketplace/blocked-words/'+id,{method:'DELETE'});
   toast('🗑️ 已删除'); loadBws();
 }
 
 // ====== Promotions ======
 async function loadPromos() {
   try {
-    const r = await fetch('/api/marketplace/promotions?all=1');
+    const r = await apiFetch('/api/marketplace/promotions?all=1');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('promoTbody').innerHTML = !arr.length ? '<tr><td colspan="7"><div class="empty">暂无</div></td></tr>' :
@@ -731,7 +737,7 @@ async function loadPromos() {
 async function addPromo() {
   const title = document.getElementById('promoTitle').value.trim();
   if (!title) { toast('输入标题'); return; }
-  await fetch('/api/marketplace/promotions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:document.getElementById('promoDesc').value.trim(),contact:document.getElementById('promoContact').value.trim()})});
+  await apiFetch('/api/marketplace/promotions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:document.getElementById('promoDesc').value.trim(),contact:document.getElementById('promoContact').value.trim()})});
   document.getElementById('promoTitle').value='';document.getElementById('promoDesc').value='';document.getElementById('promoContact').value='';
   toast('✅ 已添加'); loadPromos();
 }
@@ -740,26 +746,26 @@ async function editPromo(id) {
   if (!title) return;
   var desc = prompt('描述：', '');
   var contact = prompt('联系方式：', '');
-  await fetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:desc||'',contact:contact||''})});
+  await apiFetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:desc||'',contact:contact||''})});
   toast('✅ 已更新'); loadPromos();
 }
 async function togglePromo(id, active) {
-  await fetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!active})});
+  await apiFetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!active})});
   toast(active?'已隐藏':'已显示'); loadPromos();
 }
 async function updatePromoSort(id, sort) {
-  await fetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
+  await apiFetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
 }
 async function delPromo(id, title) {
   if (!confirm('删除「'+title+'」？')) return;
-  await fetch('/api/marketplace/promotions/'+id,{method:'DELETE'});
+  await apiFetch('/api/marketplace/promotions/'+id,{method:'DELETE'});
   toast('🗑️ 已删除'); loadPromos();
 }
 
 // ====== LOGS ======
 async function loadLogs() {
   try {
-    const r = await fetch('/api/marketplace/logs?limit=100');
+    const r = await apiFetch('/api/marketplace/logs?limit=100');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('logTbody').innerHTML = !arr.length ? '<tr><td colspan="5"><div class="empty">暂无日志</div></td></tr>' :
@@ -784,7 +790,7 @@ function init() {
 function connectAdminWS() {
   var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   var ws = new WebSocket(proto + '//' + location.host);
-  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:'x130977889'})); };
+  ws.onopen = function() { var t = localStorage.getItem('marketAdminToken'); if (t) ws.send(JSON.stringify({type:'admin_auth',token:t})); };
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
