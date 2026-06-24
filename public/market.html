@@ -430,25 +430,30 @@ async function load(reset) {
         (p.sold?'<div class="sold-badge">已售罄</div>':'');
       list.appendChild(div);
     });
-    // Add load more button if there are more results
-    var nextOffset = pageOffset + PAGE_SIZE;
-    var loadMore = document.getElementById('loadMoreBtn');
-    if (nextOffset < total) {
-      if (!loadMore) {
-        loadMore = document.createElement('div');
-        loadMore.id = 'loadMoreBtn';
-        loadMore.style.cssText = 'text-align:center;padding:16px;grid-column:1/-1';
-        loadMore.innerHTML = '<a href="#" onclick="loadMore();return false" style="color:rgba(255,255,255,.2);font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.06);padding:8px 24px;border-radius:8px;display:inline-block">加载更多 ↓</a>';
-        list.parentNode.appendChild(loadMore);
-      }
-    } else if (loadMore) {
-      loadMore.remove();
+    // Page navigation
+    var totalPages = Math.ceil(total / PAGE_SIZE);
+    var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
+    var nav = document.getElementById('pageNav');
+    if (!nav) {
+      nav = document.createElement('div');
+      nav.id = 'pageNav';
+      nav.style.cssText = 'text-align:center;padding:16px;grid-column:1/-1;display:flex;gap:6px;justify-content:center;align-items:center';
+      list.parentNode.appendChild(nav);
     }
+    var navHtml = '';
+    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:6px">‹ 上一页</a>';
+    for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
+      if (i === currentPage) navHtml += '<span style="background:rgba(52,211,153,.1);color:#34d399;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600">'+i+'</span>';
+      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(255,255,255,.25);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.04);border-radius:6px">'+i+'</a>';
+    }
+    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:6px">下一页 ›</a>';
+    nav.innerHTML = navHtml;
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
 }
 
-function loadMore() {
-  pageOffset += PAGE_SIZE;
+function gotoPage(page) {
+  pageOffset = (page - 1) * PAGE_SIZE;
+  document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>';
   load(false);
 }
 
