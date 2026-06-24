@@ -892,7 +892,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   startChatPoll();
   // Load messages async
   setTimeout(function() {
-    fetch('/api/marketplace/messages?product_id='+productId+'&student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
+    fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         var arr = Array.isArray(data) ? data : [];
@@ -1079,7 +1079,7 @@ function startChatPoll() {
   var lastId = 0;
   _chatPollTimer = setInterval(function() {
     if (!chatProductId || !currentUser) { stopChatPoll(); return; }
-    fetch('/api/marketplace/messages?product_id='+chatProductId+'&student_id='+currentUser.student_id+'&other_student_id='+(chatOtherStudent||''))
+    fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+(chatOtherStudent||''))
       .then(function(r){return r.json();})
       .then(function(data){
         var arr = Array.isArray(data)?data:[];
