@@ -297,44 +297,53 @@ function switchTab(t){
   document.getElementById('leftNews').style.display=t==='news'?'block':'none';
 }
 
-// Fetch quotes (10条) — 异步不阻塞
-setTimeout(async ()=>{
-  const el=document.getElementById('leftQuotes');
-  try{
-    let html='',used=new Set();
-    const cats=['a','b','c','d','i','k','j','f','l'];
-    for(const cat of cats){
-      try{
-        const r=await fetch('https://v1.hitokoto.cn/?c='+cat+'&encode=json&_t='+Date.now(),{signal:AbortSignal.timeout(3000)});
-        if(r.ok){const d=await r.json();if(d.hitokoto && !used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:6px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
-      }catch(e){}
-    }
-    el.innerHTML=html||'<div class="loading">暂无</div>';
-  }catch(e){}
-},100);
-
-// Fetch news (via server proxy) — 异步不阻塞
-setTimeout(async ()=>{
-  const el=document.getElementById('leftNews');
-  try{
-    const r=await fetch('/api/news',{signal:AbortSignal.timeout(8000)});
-    if(!r.ok)throw Error();
-    const d=await r.json();
-    el.innerHTML=(d.items||[]).map((item,i)=>'<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">📰</span>'+(i+1)+'. '+item+'</div>').join('')||'<div class="loading">暂无</div>';
-  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
-},200);
-
-// Weather
+// Weather (cached)
+const wc=JSON.parse(localStorage.getItem('_weather')||'{}');
+if(wc.temp)document.getElementById('weatherTemp').textContent=wc.temp, document.getElementById('weatherDesc').textContent=wc.desc;
 (async function(){
   try{
-    const r=await fetch('https://wttr.in/Nanning?format=j1');
-    if(!r.ok)return;const d=await r.json();const c=d.current_condition[0];
-    document.getElementById('weatherTemp').textContent=c.temp_C+'°';
-    document.getElementById('weatherDesc').textContent=c.weatherDesc[0].value;
+    const r=await fetch('https://wttr.in/Nanning?format=j1',{signal:AbortSignal.timeout(4000)});
+    if(!r.ok)return;const c=(await r.json()).current_condition[0];
+    const data={temp:c.temp_C+'°',desc:c.weatherDesc[0].value};
+    localStorage.setItem('_weather',JSON.stringify(data));
+    document.getElementById('weatherTemp').textContent=data.temp;
+    document.getElementById('weatherDesc').textContent=data.desc;
     const icons={113:'☀️',116:'⛅',119:'☁️',176:'🌦',200:'⛈',227:'🌨',248:'🌫',266:'🌦',293:'🌦',296:'🌦',302:'🌧',311:'🌧',317:'🌧',320:'🌨',350:'🌧',353:'🌦',356:'🌧',362:'🌧',368:'🌨',386:'⛈',389:'⛈',392:'⛈'};
     document.getElementById('weatherIcon').textContent=icons[parseInt(c.weatherCode)]||'🌤';
   }catch(e){}
 })();
+
+// Quotes & News — only load when panel opens
+let quotesLoaded=false,newsLoaded=false;
+document.addEventListener('click',function _init(e){
+  if(quotesLoaded && newsLoaded) return;
+  if(document.getElementById('leftPanel').classList.contains('open')){
+    if(!quotesLoaded){
+      quotesLoaded=true;
+      setTimeout(async()=>{
+        const el=document.getElementById('leftQuotes');let html='',used=new Set();
+        for(const c of ['a','b','c','d','i','k','j','f','l']){
+          try{
+            const r=await fetch('https://v1.hitokoto.cn/?c='+c+'&_t='+Date.now(),{signal:AbortSignal.timeout(3000)});
+            if(r.ok){const d=await r.json();if(d.hitokoto&&!used.has(d.hitokoto)){used.add(d.hitokoto);html+='<div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;vertical-align:-.2em;margin-right:6px;opacity:.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'+d.hitokoto+'<br><span class="src">—— '+(d.from_who||d.from||'佚名')+'</span></div>';}}
+          }catch(e){}
+        }
+        el.innerHTML=html||'<div class="loading">暂无</div>';
+      },100);
+    }
+    if(!newsLoaded){
+      newsLoaded=true;
+      setTimeout(async()=>{
+        const el=document.getElementById('leftNews');
+        try{
+          const r=await fetch('/api/news',{signal:AbortSignal.timeout(8000)});if(!r.ok)throw Error();
+          const d=await r.json();
+          el.innerHTML=(d.items||[]).map((item,i)=>'<div class="item"><span style="color:rgba(52,211,153,.4);margin-right:6px">📰</span>'+(i+1)+'. '+item+'</div>').join('')||'<div class="loading">暂无</div>';
+        }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+      },200);
+    }
+  }
+});
 
 // Dashboard sidebar clock
 setInterval(()=>{document.getElementById('dashClock').textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
