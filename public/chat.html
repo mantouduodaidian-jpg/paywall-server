@@ -421,6 +421,53 @@ function sendSuggest(txt){
 // ====== Image Upload ======
 let pendingImg = null;
 
+// WebSocket connection for streaming
+let ws = null;
+let wsReconnectTimer = null;
+function connectWS() {
+  try {
+    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(protocol + '//' + location.host);
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'ai_token') {
+          const el = document.querySelector('.msg.loading .content');
+          if (el) {
+            let txt = msg.token.replace(/</g,'&lt');
+            if (el.dataset.full === undefined) el.dataset.full = '';
+            el.dataset.full += msg.token;
+            el.innerHTML = el.dataset.full.replace(/\n/g,'<br>') + '▊';
+          }
+        } else if (msg.type === 'ai_done') {
+          const el = document.querySelector('.msg.loading .content');
+          if (el) {
+            el.innerHTML = el.dataset.full.replace(/\n/g,'<br>');
+            el.closest('.msg').classList.remove('loading');
+          }
+          const lastMsg = MSGS[MSGS.length - 1];
+          if (lastMsg && lastMsg.role === 'assistant') {
+            lastMsg.content = msg.fullText;
+          } else {
+            MSGS.push({ role: 'assistant', content: msg.fullText });
+          }
+          saveConv();
+          sendBtn.disabled = false;
+          chatInput.focus();
+        } else if (msg.type === 'ai_error') {
+          const el = document.querySelector('.msg.loading');
+          if (el) el.remove();
+          addMsg('assistant', '错误：' + (msg.error || '请求失败'));
+          sendBtn.disabled = false;
+        }
+      } catch(e) {}
+    };
+    ws.onclose = () => { ws = null; setTimeout(connectWS, 3000); };
+    ws.onerror = () => {};
+  } catch(e) {}
+}
+connectWS();
+
 function handlePaste(e) {
   const items = e.clipboardData?.items;
   if (!items) return;
@@ -625,6 +672,20 @@ function toggleMic(){
 
 async function send(){
   const text=chatInput.value.trim(); if(!text||sendBtn.disabled) return;
+  // Try WebSocket streaming first
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    chatInput.value='';chatInput.style.height='auto';sendBtn.disabled=true;
+    let userContent = text;
+    if(pendingImg){
+      userContent = [{type:'text',text},{type:'image_url',image_url:{url:pendingImg.data}}];
+      removeImg();
+    }
+    MSGS.push({role:'user',content:userContent});addMsg('user',userContent);
+    const loadingDiv=addMsg('assistant','▊',true);
+    ws.send(JSON.stringify({type:'ai_chat',model:modelSelect.value,messages:MSGS.slice(-30),max_tokens:4096}));
+    return;
+  }
+  // Fallback to HTTP
   chatInput.value='';chatInput.style.height='auto';sendBtn.disabled=true;
   let userContent = text;
   if(pendingImg){
