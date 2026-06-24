@@ -487,6 +487,10 @@ ${Object.entries(models).map(([p,ms]) => ms.map(m => '<code style="display:inlin
 </body></html>`);
 });
 
+// ====== Sensitive Words API ======
+const SENSITIVE_WORDS = ['代考','替考','作弊','答案','出售答案','买答案','代写','枪手','办证','假证','发票','赌博','赌场','毒品','吸毒','卖淫','嫖娼','诈骗','洗钱','高利贷','校园贷','裸贷','传销'];
+app.get('/api/sensitive-words', (req, res) => { res.json({ words: SENSITIVE_WORDS }); });
+
 // ====== Verification API ======
 app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) => {
   try {
