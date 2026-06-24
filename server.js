@@ -966,7 +966,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset } = req.query;
+    const { category, search, admin, limit, offset, owner } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
     // Get total count first
@@ -974,6 +974,10 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (!admin) countUrl = SB('products?status=eq.approved&listed=eq.true&select=id');
     if (category && admin) countUrl = SB('products?category=eq.'+category+'&select=id');
     if (category && !admin) countUrl = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+    if (owner) {
+      countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
+      if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
+    }
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
@@ -983,6 +987,10 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && admin) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));

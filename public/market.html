@@ -57,6 +57,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .card .info .meta{display:flex;gap:6px;font-size:10px;color:rgba(255,255,255,.2);flex-wrap:wrap}
 .card .info .meta .tag{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.04)}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:rgba(239,68,68,.15);color:#ef4444;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;backdrop-filter:blur(4px)}
+.status-badge{font-size:10px;padding:2px 8px;border-radius:4px;display:inline-block}
+.status-badge.pending{background:rgba(251,191,36,.1);color:#fbbf24}
+.status-badge.approved{background:rgba(52,211,153,.1);color:#34d399}
+.status-badge.rejected{background:rgba(239,68,68,.1);color:#ef4444}
+.status-badge.sold{background:rgba(239,68,68,.1);color:#ef4444}
 
 .empty{text-align:center;padding:60px;color:rgba(255,255,255,.06);font-size:14px;grid-column:1/-1}
 
@@ -196,6 +201,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.2);font-size:11px;text-decoration:none">退出</a>
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
+    <a href="#" class="dash" id="myBtn" onclick="showMyProducts();return false" style="display:none">我的</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
   </div>
 </div>
@@ -314,6 +320,14 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
         <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- My Products Panel -->
+<div class="pub-overlay" id="myOverlay" onclick="if(event.target===this)hideMyProducts()">
+  <div class="pub-box" style="max-width:600px">
+    <h2>📦 我的商品</h2>
+    <div id="myProductList"><div class="empty" style="padding:30px">加载中...</div></div>
   </div>
 </div>
 
@@ -595,11 +609,13 @@ if (currentUser) { document.getElementById('chatBtn').style.display = ''; docume
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
+  document.getElementById('myBtn').style.display = '';
   document.getElementById('userInfo').style.display = 'flex';
   document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户');
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
+  document.getElementById('myBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'none';
   currentUser = null;
   localStorage.removeItem('marketUser');
@@ -983,6 +999,28 @@ function startProductPoll() {
         lastCount = total;
       }).catch(function(){});
   }, 5000);
+}
+
+function showMyProducts() {
+  document.getElementById('myOverlay').classList.add('show');
+  loadMyProducts();
+}
+function hideMyProducts() { document.getElementById('myOverlay').classList.remove('show'); }
+function loadMyProducts() {
+  if (!currentUser) return;
+  fetch('/api/marketplace/products?owner='+currentUser.student_id+'&limit=50&offset=0')
+    .then(function(r){return r.json();})
+    .then(function(json){
+      var data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      var el = document.getElementById('myProductList');
+      if (!data.length) { el.innerHTML = '<div class="empty" style="padding:30px">还没有发布过商品</div>'; return; }
+      el.innerHTML = '<div style="display:grid;gap:8px">' + data.map(function(p){
+        var statusMap = {pending:'待审核',approved:'已上架',rejected:'未通过'};
+        var sLabel = p.sold ? '已售罄' : (statusMap[p.status]||p.status);
+        var sClass = p.sold ? 'sold' : p.status;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;font-size:12px"><span style="flex:1">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 12px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="status-badge '+sClass+'">'+sLabel+'</span></div>';
+      }).join('') + '</div>';
+    }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
 }
 
 function appendMsg(m, isHistory) {
