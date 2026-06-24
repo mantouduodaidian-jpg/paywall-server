@@ -860,6 +860,10 @@ function sendChat() {
     if (!text) { notify('输入消息', '✏️'); return; }
     if (!chatProductId) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
+    // Sensitive word check
+    var bw=['代考','替考','作弊','答案','出售答案','买答案','代写','枪手','办证','假证','发票','赌博','赌场','毒品','吸毒','卖淫','嫖娼','诈骗','洗钱','高利贷','校园贷','裸贷','传销'];
+    var blocked=false;for(var b=0;b<bw.length;b++){if(text.indexOf(bw[b])>=0){blocked=true;break;}}
+    if(blocked){notify('消息包含违规内容','🚫');document.getElementById('chatInput').value='';document.getElementById('chatInput').style.borderColor='rgba(239,68,68,.3)';setTimeout(function(){document.getElementById('chatInput').style.borderColor=''},1500);return;}
     input.value = '';
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
