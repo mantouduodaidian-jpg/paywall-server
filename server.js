@@ -1058,6 +1058,45 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify({ type: 'admin_auth_ok' }));
         return;
       }
+      if (msg.type === 'ai_chat' && msg.messages) {
+        const model = msg.model || 'deepseek-chat';
+        const provider = getProvider(model);
+        const apiKey = API_KEYS[provider];
+        if (!apiKey) { ws.send(JSON.stringify({ type: 'ai_error', error: provider + ' key not configured' })); return; }
+        const baseUrl = PROXY_BASE[provider];
+        const upstreamModel = mapModel(provider, model);
+        try {
+          const r = await fetch(baseUrl + '/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+            body: JSON.stringify({ model: upstreamModel, messages: msg.messages, stream: true, max_tokens: msg.max_tokens||4096 })
+          });
+          if (!r.ok) { ws.send(JSON.stringify({ type: 'ai_error', error: 'upstream error' })); return; }
+          const reader = r.body.getReader();
+          const decoder = new TextDecoder();
+          let fullText = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
+            for (const line of lines) {
+              try {
+                const d = JSON.parse(line.slice(6));
+                if (d.choices?.[0]?.delta?.content) {
+                  const token = d.choices[0].delta.content;
+                  fullText += token;
+                  ws.send(JSON.stringify({ type: 'ai_token', token }));
+                }
+                if (d.usage) await trackAI(model, d.usage.total_tokens);
+              } catch(e) {}
+            }
+          }
+          ws.send(JSON.stringify({ type: 'ai_done', fullText }));
+          if (fullText) await trackAI(model, Math.ceil(fullText.length / 2));
+        } catch(e) { ws.send(JSON.stringify({ type: 'ai_error', error: e.message })); }
+        return;
+      }
       if (msg.type === 'chat' && msg.product_id && msg.content && userId) {
         const r = await fetch(SB('messages'), {
           method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
