@@ -148,7 +148,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-search-area{padding:8px 8px 0;flex-shrink:0}
 .chat-search-area input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
-.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
+.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0;display:block}
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;flex-shrink:0}
@@ -181,7 +181,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .modal-box{margin:10px;max-width:100%}
   .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh;touch-action:auto;display:flex;flex-direction:column}
   .chat-panel.show{display:flex}
-  .chat-body{max-height:none;flex:1}
+  .chat-body{position:absolute;top:52px;bottom:0;left:0;right:0}
   .chat-msgs{flex:1;min-height:60px;max-height:none}
   .chat-conv{height:auto;flex:1}
   .contact-sidebar{max-height:100vh;touch-action:auto;z-index:201}
