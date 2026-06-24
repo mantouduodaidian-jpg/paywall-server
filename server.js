@@ -1067,6 +1067,17 @@ app.delete('/api/expenses/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889';
+app.post('/api/admin/login', express.json(), (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    const token = randomBytes(16).toString('hex');
+    res.json({ ok: true, token });
+  } else {
+    res.json({ ok: false, msg: '密码错误' });
+  }
+});
+
 const PORT = process.env.PORT || 3456;
 
 // ====== WebSocket Server ======

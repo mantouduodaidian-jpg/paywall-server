@@ -302,7 +302,6 @@ tr:hover td{background:rgba(52,211,153,.02)}
 <div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_PWD = 'x130977889';
 let token = sessionStorage.getItem('marketAdminToken');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
@@ -314,15 +313,20 @@ function toast(msg, dur) {
 }
 
 function login() {
-  if (document.getElementById('loginPwd').value === ADMIN_PWD) {
-    token = 'ok'; sessionStorage.setItem('marketAdminToken', 'ok');
-    document.getElementById('loginGate').style.display = 'none';
-    document.getElementById('app').classList.add('show');
-    init();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
-    setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
-  }
+  var pwd = document.getElementById('loginPwd').value;
+  fetch('/api/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok && d.token) {
+        token = d.token; sessionStorage.setItem('marketAdminToken', d.token);
+        document.getElementById('loginGate').style.display = 'none';
+        document.getElementById('app').classList.add('show');
+        init();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
+      }
+    });
 }
 function logout() {
   sessionStorage.removeItem('marketAdminToken');
@@ -715,7 +719,7 @@ function init() {
 function connectAdminWS() {
   var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   var ws = new WebSocket(proto + '//' + location.host);
-  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:ADMIN_PWD})); };
+  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:'x130977889'})); };
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
