@@ -111,6 +111,28 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .cat-select-display svg{width:16px;height:16px;flex-shrink:0;vertical-align:middle}
 .cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(255,255,255,.2);font-size:10px}
 
+.chat-panel{position:fixed;bottom:20px;right:20px;width:320px;background:rgba(10,26,15,.96);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:100;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.chat-header{padding:12px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
+.chat-header .chat-badge{background:#ef4444;color:#fff;font-size:10px;padding:1px 7px;border-radius:8px;font-weight:700}
+.chat-header .chat-toggle{margin-left:auto;font-size:10px;color:rgba(255,255,255,.2)}
+.chat-body{max-height:400px;overflow-y:auto;display:block}
+.chat-body.collapsed{display:none}
+.chat-msgs{padding:12px;min-height:200px;max-height:300px;overflow-y:auto}
+.chat-msg{margin-bottom:10px;font-size:12px;line-height:1.5}
+.chat-msg .bubble{display:inline-block;padding:8px 12px;border-radius:12px;max-width:85%;word-break:break-word}
+.chat-msg.mine{text-align:right}
+.chat-msg.mine .bubble{background:linear-gradient(135deg,#059669,#34d399);color:#fff;border-radius:12px 12px 4px 12px}
+.chat-msg.other{text-align:left}
+.chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:12px 12px 12px 4px}
+.chat-msg .time{font-size:9px;color:rgba(255,255,255,.15);margin-top:2px;display:block}
+.chat-input-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04)}
+.chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
+.chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
+.chat-convs{padding:8px}
+.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
+.chat-conv-item:hover{background:rgba(52,211,153,.04)}
+.chat-conv-item .badge{background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:6px;margin-left:auto}
+
 @media(max-width:768px){
   .main{flex-direction:column;padding:16px}
   .sidebar{width:100%}
@@ -182,9 +204,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     </div>
     <div class="row">
       <select id="fQuality"><option value="">新旧程度</option><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>五成新</option></select>
-      <select id="fContactType" style="flex:0.35;min-width:60px"><option value="微信">微信</option><option value="QQ">QQ</option><option value="手机">手机</option></select>
-      <input type="text" id="fContact" placeholder="账号/号码" style="flex:0.65">
-    </div>
+          </div>
     <textarea id="fDesc" placeholder="描述（版本、使用情况、面交地点...）"></textarea>
     <div style="margin-bottom:10px">
       <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 添加照片
@@ -224,6 +244,25 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <div class="btns">
       <button class="submit" onclick="submitReport()">提交举报</button>
       <button class="cancel" onclick="hideReport()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Panel -->
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header" onclick="toggleChat()">
+    <span>💬 消息</span>
+    <span class="chat-badge" id="chatBadge" style="display:none">0</span>
+    <span class="chat-toggle" id="chatToggle">▲</span>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-convs" id="chatConvs"></div>
+    <div class="chat-conv" id="chatConv" style="display:none">
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-primary btn-sm" onclick="sendChat()">发送</button>
+      </div>
     </div>
   </div>
 </div>
@@ -365,7 +404,7 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (p.contact && !p.sold ? '<a class="contact" href="https://weixin://dl/business/?t='+p.contact+'">📱 联系卖家：'+esc(p.contact)+'</a>' : (p.sold ? '<span class="contact" style="opacity:.3;cursor:default">已售罄</span>' : ''))+
+      (!p.sold ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '<span class="contact" style="opacity:.3;cursor:default">已售罄</span>')+
       '<button class="close" onclick="hideDetail()">关闭</button></div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
     document.getElementById('detailModal').classList.add('show');
@@ -387,7 +426,8 @@ async function publish(){
     title,price:parseFloat(price),category:document.getElementById('fCat').value||'其他',
     quality:document.getElementById('fQuality').value||'八成新',
     desc:document.getElementById('fDesc').value.trim(),
-    contact: (document.getElementById('fContactType').value||'微信') + ': ' + document.getElementById('fContact').value.trim(),
+    owner_student_id: currentUser ? currentUser.student_id : '',
+    owner_name: currentUser ? currentUser.name : '',
     images: window._uploadedImages || []
   };
   try{
@@ -395,7 +435,7 @@ async function publish(){
     const d=await r.json();
     btn.textContent='✅ 确认发布'; btn.disabled=false;
     const ok = d?.id || d?.[0]?.id || d?.ok;
-    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fContact').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
+    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
     else notify(d.error || '发布失败', '❌');
   }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; notify('发布失败', '❌');}
 }
@@ -426,7 +466,7 @@ async function submitReport(){
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
-if (currentUser) { renderLoggedIn(); }
+if (currentUser) { renderLoggedIn(); setTimeout(connectWS, 1000); }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -454,7 +494,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();connectWS();hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -539,6 +579,121 @@ function previewImg(input) {
     document.getElementById('fImagePreview').style.display = '';
   };
   reader.readAsDataURL(file);
+}
+
+// ====== Chat ======
+let wsChat = null;
+let chatProductId = null;
+let chatOtherStudent = null;
+let chatVisible = false;
+
+function fmtDate(d) { if(!d) return ''; var dt=new Date(d); var now=new Date(); if(dt.getDate()===now.getDate()&&now-dt<864e5) return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'); return (dt.getMonth()+1)+'/'+dt.getDate(); }
+
+function toggleChat() {
+  chatVisible = !chatVisible;
+  document.getElementById('chatBody').classList.toggle('collapsed', !chatVisible);
+  document.getElementById('chatToggle').textContent = chatVisible ? '▲' : '▼';
+  if (chatVisible) loadConvs();
+}
+
+function connectWS() {
+  if (!currentUser) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  wsChat = new WebSocket(proto + '//' + location.host);
+  wsChat.onopen = function() {
+    wsChat.send(JSON.stringify({type:'auth', student_id: currentUser.student_id}));
+  };
+  wsChat.onmessage = function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.type === 'chat' && d.data) {
+        var badge = document.getElementById('chatBadge');
+        var c = parseInt(badge.textContent) || 0;
+        badge.textContent = c + 1; badge.style.display = '';
+        if (chatProductId && chatProductId == d.data.product_id) {
+          appendMsg(d.data, false);
+        }
+      }
+    } catch(e) {}
+  };
+  wsChat.onclose = function() { setTimeout(connectWS, 3000); };
+}
+
+function openChat(productId, sellerStudentId, sellerName, productTitle) {
+  chatProductId = productId;
+  chatOtherStudent = sellerStudentId;
+  document.getElementById('chatBody').classList.remove('collapsed');
+  chatVisible = true;
+  document.getElementById('chatToggle').textContent = '▲';
+  document.getElementById('chatConvs').style.display = 'none';
+  document.getElementById('chatConv').style.display = '';
+  document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
+  fetch('/api/marketplace/messages?product_id='+productId)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var arr = Array.isArray(data) ? data : [];
+      document.getElementById('chatMsgs').innerHTML = '';
+      arr.forEach(function(m) { appendMsg(m, true); });
+      var msgs = document.getElementById('chatMsgs');
+      msgs.scrollTop = msgs.scrollHeight;
+      if (currentUser) {
+        fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,student_id:currentUser.student_id})});
+      }
+    });
+}
+
+function showConvs() {
+  document.getElementById('chatConvs').style.display = '';
+  document.getElementById('chatConv').style.display = 'none';
+  chatProductId = null;
+  loadConvs();
+}
+
+function loadConvs() {
+  if (!currentUser) return;
+  fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var arr = Array.isArray(data) ? data : [];
+      var convs = {}, unread = 0;
+      arr.forEach(function(m) {
+        var key = m.product_id + '-' + (m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id);
+        if (!convs[key] || new Date(m.created_at) > new Date(convs[key].created_at)) convs[key] = m;
+        if (!m.read && m.to_student_id === currentUser.student_id) unread++;
+      });
+      var badge = document.getElementById('chatBadge');
+      if (unread > 0) { badge.textContent = unread; badge.style.display = ''; } else badge.style.display = 'none';
+      var el = document.getElementById('chatConvs');
+      var keys = Object.keys(convs);
+      if (!keys.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.1);font-size:12px">暂无消息</div>'; return; }
+      el.innerHTML = keys.map(function(k) {
+        var m = convs[k];
+        var other = m.from_student_id === currentUser.student_id ? (m.to_student_id||'对方') : (m.from_name||m.from_student_id);
+        return '<div class="chat-conv-item" onclick="openChat('+m.product_id+',\''+(m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id)+'\',\''+esc(other)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(other)+'</span><span style="font-size:10px;color:rgba(255,255,255,.15)">'+fmtDate(m.created_at)+'</span></div>';
+      }).join('');
+    });
+}
+
+function sendChat() {
+  var input = document.getElementById('chatInput');
+  var text = input.value.trim();
+  if (!text || !chatProductId || !currentUser || !wsChat) return;
+  input.value = '';
+  var toStudent = chatOtherStudent || '';
+  wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:toStudent}));
+}
+
+function appendMsg(m, isHistory) {
+  var el = document.getElementById('chatMsgs');
+  if (!el) return;
+  var mine = currentUser && m.from_student_id === currentUser.student_id;
+  var d = new Date(m.created_at);
+  var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
+  div.innerHTML = '<div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
 }
 
 // ====== Init ======

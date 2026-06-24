@@ -2,6 +2,8 @@ import express from 'express';
 import initSqlJs from 'sql.js';
 import cors from 'cors';
 import { randomBytes } from 'crypto';
+import http from 'http';
+import { WebSocketServer } from 'ws';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -154,6 +156,36 @@ app.get('/api/stats', (req, res) => {
   const t = qOne('SELECT COUNT(*) as c FROM passwords' + (pid ? ' WHERE product_id = ' + pid : '')).c;
   const u = qOne('SELECT COUNT(*) as c FROM passwords WHERE used = 1' + (pid ? ' AND product_id = ' + pid : '')).c;
   res.json({ totalPwd: t, usedPwd: u, revenue: u * 0.99 });
+});
+
+// ====== Vault API ======
+app.get('/api/vault', async (req, res) => {
+  try {
+    const r = await fetch(SB('vault?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
+    res.json(await r.json());
+  } catch(e) { res.json([]); }
+});
+
+app.post('/api/vault', express.json(), async (req, res) => {
+  try {
+    const { name, username, password, note } = req.body;
+    const r = await fetch(SB('vault'), { method: 'POST', headers: SB_HEADERS2, body: JSON.stringify({name, username, password, note}) });
+    const t = await r.text(); res.json(t ? JSON.parse(t) : { ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/vault/:id', express.json(), async (req, res) => {
+  try {
+    await fetch(SB('vault?id=eq.'+req.params.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(req.body) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/vault/:id', async (req, res) => {
+  try {
+    await fetch(SB('vault?id=eq.'+req.params.id), { method: 'DELETE', headers: SB_HEADERS2 });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ====== News API ======
@@ -889,7 +921,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'' })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
@@ -917,6 +949,40 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
     const data = await r.json();
     res.json(data[0] || null);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ====== Messages API ======
+app.get('/api/marketplace/messages', async (req, res) => {
+  try {
+    const { product_id, student_id } = req.query;
+    let url = SB('messages?order=created_at.asc&select=*');
+    if (product_id) url = SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select=*');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    let data = await r.json();
+    if (student_id) data = (Array.isArray(data) ? data : []).filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
+    res.json(data);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/messages', express.json(), async (req, res) => {
+  try {
+    const { product_id, from_student_id, from_name, to_student_id, content } = req.body;
+    if (!product_id || !from_student_id || !content) return res.status(400).json({ error: 'missing fields' });
+    const r = await fetch(SB('messages'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', content, read: false })
+    });
+    const t = await r.json();
+    res.json(t);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/messages/read', express.json(), async (req, res) => {
+  try {
+    const { product_id, student_id } = req.body;
+    await fetch(SB('messages?product_id=eq.'+product_id+'&to_student_id=eq.'+student_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ read: true }) });
+    res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -956,8 +1022,48 @@ app.delete('/api/expenses/:id', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3456;
-app.listen(PORT, '0.0.0.0', () => {
+
+// ====== WebSocket Server ======
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+const onlineUsers = new Map();
+
+wss.on('connection', (ws, req) => {
+  let userId = null;
+  ws.on('message', async (raw) => {
+    try {
+      const msg = JSON.parse(raw.toString());
+      if (msg.type === 'auth' && msg.student_id) {
+        userId = msg.student_id;
+        onlineUsers.set(userId, ws);
+        ws.send(JSON.stringify({ type: 'auth_ok', student_id: userId }));
+        return;
+      }
+      if (msg.type === 'chat' && msg.product_id && msg.content && userId) {
+        // Save to Supabase
+        const r = await fetch(SB('messages'), {
+          method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ product_id: msg.product_id, from_student_id: userId, from_name: msg.from_name||'', to_student_id: msg.to_student_id||'', content: msg.content, read: false })
+        });
+        const saved = await r.json();
+        const msgData = { type: 'chat', data: saved };
+        // Send to recipient if online
+        if (msg.to_student_id && onlineUsers.has(msg.to_student_id)) {
+          onlineUsers.get(msg.to_student_id).send(JSON.stringify(msgData));
+        }
+        // Confirm to sender
+        ws.send(JSON.stringify(msgData));
+      }
+    } catch(e) { console.error('ws error:', e.message); }
+  });
+  ws.on('close', () => {
+    if (userId) onlineUsers.delete(userId);
+  });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ 付费验证服务已启动: http://0.0.0.0:${PORT}`);
   console.log(`📊 管理后台: http://localhost:${PORT}/admin.html`);
+  console.log(`💬 WebSocket 已启动`);
 });
 // force redeploy Tue Jun 23 15:09:58     2026
