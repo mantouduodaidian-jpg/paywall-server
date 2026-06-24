@@ -1003,9 +1003,24 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
       if (!otherId) return;
       if (!seen[otherId]) {
-        seen[otherId] = true;
-        contacts.push({ student_id: otherId, name: otherName || otherId, last_message: m.content, last_time: m.created_at, product_id: m.product_id });
+        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
       }
+      // Track latest message time
+      if (new Date(m.created_at) > new Date(seen[otherId].last_time)) {
+        seen[otherId].last_time = m.created_at;
+        seen[otherId].last_message = m.content;
+        seen[otherId].product_id = m.product_id;
+      }
+      // Count unread
+      if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
+      // Try to improve name from any message
+      var nameCandidate = m.from_student_id === student_id ? m.to_name : m.from_name;
+      if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
+        seen[otherId].name = nameCandidate;
+      }
+    });
+    contacts = Object.keys(seen).map(function(k) {
+      return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
     res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1013,11 +1028,11 @@ app.get('/api/marketplace/contacts', async (req, res) => {
 
 app.post('/api/marketplace/messages', express.json(), async (req, res) => {
   try {
-    const { product_id, from_student_id, from_name, to_student_id, content } = req.body;
+    const { product_id, from_student_id, from_name, to_student_id, to_name, content } = req.body;
     if (!product_id || !from_student_id || !content) return res.status(400).json({ error: 'missing fields' });
     const r = await fetch(SB('messages'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', content, read: false })
+      body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', to_name: to_name||'', content, read: false })
     });
     const t = await r.json();
     res.json(t);
