@@ -289,7 +289,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <div class="chat-msgs" id="chatMsgs"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
-        <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;color:#fff;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="发送"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+        <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
       </div>
     </div>
   </div>
@@ -710,6 +710,7 @@ function connectWS() {
   if (!currentUser) return;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   wsChat = new WebSocket(proto + '//' + location.host);
+  wsChat.onerror = function(e) { console.error('WS error', e); };
   wsChat.onopen = function() {
     document.getElementById('chatBadge').textContent = '0';
     wsChat.send(JSON.stringify({type:'auth', student_id: currentUser.student_id}));
