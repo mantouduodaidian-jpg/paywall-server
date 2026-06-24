@@ -142,13 +142,13 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 #contactsOverlay.show{display:block}
 .chat-panel.show{display:flex}
 .chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);display:flex;justify-content:space-between;align-items:center}
-.chat-body{position:absolute;top:52px;bottom:0;left:0;right:0;display:flex;flex-direction:column;overflow:hidden}
+.chat-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-search-area{padding:8px 8px 0;flex-shrink:0}
 .chat-search-area input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
-.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:200px;display:block}
+.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:200px}
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;flex-shrink:0}
@@ -917,13 +917,15 @@ function showConvs() {
   loadConvs();
 }
 
+var _loadingConvs = false;
 function loadConvs() {
-  console.warn("CHAT:loadConvs called",currentUser);
-  if (!currentUser) return;
+  if (!currentUser || _loadingConvs) return;
+  _loadingConvs = true;
   var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
   fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
     .then(function(r) { return r.json(); })
     .then(function(contacts) {
+      _loadingConvs = false;
       var arr = Array.isArray(contacts) ? contacts : [];
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
       var el = document.getElementById('chatConvs');
@@ -955,7 +957,7 @@ function loadConvs() {
         el.appendChild(item);
       });
       badge.textContent = totalUnread > 0 ? totalUnread : '0';
-    });
+    }).catch(function(e){_loadingConvs=false;});
 }
 
 function closeConv(key) {
