@@ -116,7 +116,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-btn:hover{transform:scale(1.1)}
 .chat-btn .chat-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 8px rgba(239,68,68,.3)}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:0;left:24px;width:340px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px 16px 0 0;z-index:89;backdrop-filter:blur(12px);box-shadow:0 -4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:340px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:89;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
 .chat-panel.show{display:block}
 .chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
 .chat-body{max-height:450px;overflow-y:auto}
@@ -165,7 +165,6 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.2);font-size:11px;text-decoration:none">退出</a>
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
-    <a href="#" class="dash" id="restoreChatBtn" onclick="restoreChat();return false" style="display:none;font-size:11px">💬</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
   </div>
 </div>
@@ -261,10 +260,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <div class="chat-panel" id="chatPanel">
   <div class="chat-panel-header">
     <span>💬 消息</span>
-    <span style="display:flex;gap:8px">
-      <span onclick="dismissChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.15)" title="隐藏消息按钮">⊘</span>
-      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
-    </span>
+    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
   </div>
   <div class="chat-body" id="chatBody">
     <div style="padding:8px 8px 0">
@@ -490,13 +486,12 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); setTimeout(connectWS, 1000); }
-if (currentUser && !localStorage.getItem('chatDismissed')) { document.getElementById('chatBtn').style.display = ''; }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
   document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户');
-  if (localStorage.getItem('chatDismissed')) { document.getElementById('restoreChatBtn').style.display = ''; }
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -630,16 +625,6 @@ function toggleChat() {
   }
 }
 
-function dismissChat() {
-  document.getElementById('chatPanel').classList.remove('show');
-  document.getElementById('chatBtn').style.display = 'none';
-  localStorage.setItem('chatDismissed', '1');
-}
-function restoreChat() {
-  localStorage.removeItem('chatDismissed');
-  document.getElementById('chatBtn').style.display = '';
-  document.getElementById('restoreChatBtn').style.display = 'none';
-}
 
 function connectWS() {
   if (!currentUser) return;
