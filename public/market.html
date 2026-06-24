@@ -930,33 +930,25 @@ function loadConvs() {
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
       var el = document.getElementById('chatConvs');
       var badge = document.getElementById('chatBadge');
-      el.innerHTML = '';
+      var html = '';
       if (!arr.length) {
-        el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
-        badge.textContent = '0'; return;
+        html = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
+        badge.textContent = '0';
+      } else {
+        var totalUnread = 0;
+        arr.forEach(function(c) {
+          totalUnread += (c.unread || 0);
+          var safeName = c.name || c.student_id || '';
+          html += '<div class="chat-conv-item" onclick="openChat(' + c.product_id + ','' + c.student_id + '','' + safeName.replace(/'/g,'') + '','')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">' + safeName + '</span>';
+          if (c.unread && c.unread > 0) {
+            html += '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">' + c.unread + '</span>';
+          }
+          html += '</div>';
+        });
+        badge.textContent = totalUnread > 0 ? totalUnread : '0';
       }
-      var totalUnread = 0;
-      arr.forEach(function(c) {
-        totalUnread += (c.unread || 0);
-        var item = document.createElement('div');
-        item.className = 'chat-conv-item';
-        item.onclick = function() { openChat(c.product_id, c.student_id, c.name, ''); };
-        var icon = document.createElement('span');
-        icon.textContent = '💬';
-        var nameSpan = document.createElement('span');
-        nameSpan.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis';
-        nameSpan.textContent = c.name || c.student_id;
-        item.appendChild(icon);
-        item.appendChild(nameSpan);
-        if (c.unread && c.unread > 0) {
-          var unreadSpan = document.createElement('span');
-          unreadSpan.style.cssText = 'background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px';
-          unreadSpan.textContent = c.unread;
-          item.appendChild(unreadSpan);
-        }
-        el.appendChild(item);
-      });
-      badge.textContent = totalUnread > 0 ? totalUnread : '0';
+      el.innerHTML = html;
+      console.warn('CHAT: rendered', arr.length, 'contacts');
     }).catch(function(e){_loadingConvs=false;});
 }
 
