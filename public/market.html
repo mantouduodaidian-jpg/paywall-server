@@ -105,6 +105,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .toast-icon{font-size:18px}
 .toast-msg{color:#c8e6c9;font-weight:500}
 
+.cat-select-wrap{position:relative;flex:1}
+.cat-select-real{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;font-size:14px}
+.cat-select-display{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;display:flex;align-items:center;gap:8px;pointer-events:none;z-index:1;position:relative}
+.cat-select-display svg{width:16px;height:16px;flex-shrink:0;vertical-align:middle}
+.cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(255,255,255,.2);font-size:10px}
 
 @media(max-width:768px){
   .main{flex-direction:column;padding:16px}
@@ -170,7 +175,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <input type="text" id="fTitle" placeholder="物品名称 *">
     <div class="row">
       <input type="number" id="fPrice" placeholder="价格（元）*" step="0.01">
-      <select id="fCat"><option value="">分类</option></select>
+      <div class="cat-select-wrap">
+        <select id="fCat" class="cat-select-real"><option value="">分类</option></select>
+        <div class="cat-select-display" id="fCatDisplay"><span style="color:rgba(255,255,255,.2)">分类</span></div>
+      </div>
     </div>
     <div class="row">
       <select id="fQuality"><option value="">新旧程度</option><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>五成新</option></select>
@@ -285,9 +293,16 @@ async function loadCats() {
     const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
-    // Also populate publish form
-    document.getElementById('fCat').innerHTML = '<option value="">分类</option>' +
+    // Populate category select + display
+    var sel = document.getElementById('fCat');
+    sel.innerHTML = '<option value="">分类</option>' +
       arr.map(c => '<option value="'+esc(c.name)+'">'+(CAT_ICONS_EMOJI[c.name]||'')+' '+esc(c.name)+'</option>').join('');
+    sel.onchange = function() {
+      var val = sel.value;
+      var name = val || '分类';
+      var icon = val ? (getCatIcon(val) || CAT_ICONS_EMOJI[val] || '') : '';
+      document.getElementById('fCatDisplay').innerHTML = (icon || '<span style="color:rgba(255,255,255,.2)">分类</span>') + ' ' + (val || '');
+    };
   } catch(e) {
     // Fallback hardcoded
     document.getElementById('catList').innerHTML = '<div class="cat active" onclick="setCat(\'\')">🏠 全部</div>' +

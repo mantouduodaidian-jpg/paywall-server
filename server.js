@@ -189,13 +189,13 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-// ====== Chat Sync ======
-const CONVS_FILE = join(DATA_DIR, 'chat-convs.json');
-
-app.get('/api/chat/sync', (req, res) => {
+// ====== Chat Sync (Supabase) ======
+app.get('/api/chat/sync', async (req, res) => {
   try {
-    const data = JSON.parse(readFileSync(CONVS_FILE, 'utf8'));
-    res.json({ ok: true, convs: data.convs || [] });
+    const r = await fetch(SB('chat_convs?select=data&order=id.desc&limit=1'), { headers: SB_HEADERS2 });
+    const rows = await r.json();
+    const convs = rows?.[0]?.data || [];
+    res.json({ ok: true, convs });
   } catch(e) {
     res.json({ ok: true, convs: [] });
   }
@@ -205,7 +205,12 @@ app.post('/api/chat/sync', (req, res) => {
   try {
     const { convs } = req.body;
     if (!convs) return res.json({ ok: false, msg: 'no data' });
-    writeFileSync(CONVS_FILE, JSON.stringify({ convs: convs.slice(-30), updated: Date.now() }));
+    // Store in Supabase
+    const body = JSON.stringify({ data: convs.slice(-30), updated: new Date().toISOString() });
+    fetch(SB('chat_convs'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body
+    }).catch(() => {});
     res.json({ ok: true });
   } catch(e) {
     res.json({ ok: false, msg: e.message });
