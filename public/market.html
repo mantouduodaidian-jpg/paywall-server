@@ -809,16 +809,19 @@ function closeConv(key) {
 
 var _lastChatTime = 0;
 function sendChat() {
-  var now = Date.now();
-  if (now - _lastChatTime < 1000) { notify('发送太快，请稍等', '⏳'); return; }
-  _lastChatTime = now;
-  var input = document.getElementById('chatInput');
-  var text = input.value.trim();
-  if (!text || !chatProductId || !currentUser) { notify('无法发送', '⚠️'); return; }
-  if (!wsChat || wsChat.readyState !== 1) { notify('连接中...', '⏳'); setTimeout(connectWS, 100); return; }
-  input.value = '';
-  var toStudent = chatOtherStudent || '';
-  wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:toStudent,to_name:chatOtherName||''}));
+  try {
+    var now = Date.now();
+    if (now - _lastChatTime < 1000) { notify('发送太快，请稍等', '⏳'); return; }
+    _lastChatTime = now;
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if (!text) { notify('输入消息', '✏️'); return; }
+    if (!chatProductId) { notify('请先选择对话', '💬'); return; }
+    if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
+    if (!wsChat || wsChat.readyState !== 1) { notify('连接中...', '⏳'); setTimeout(connectWS, 100); return; }
+    input.value = '';
+    wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||''}));
+  } catch(e) { notify('发送出错', '❌'); console.error(e); }
 }
 
 function appendMsg(m, isHistory) {
