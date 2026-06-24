@@ -607,7 +607,8 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
+      (!p.sold && p.owner_student_id !== currentUser?.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
+      (p.owner_student_id === currentUser?.student_id && p.trade_buyer_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+p.trade_buyer_id+'\',\''+esc(p.trade_buyer_name||'买家')+'\',\''+esc(p.title)+'\')">💬 联系买家</button>' : '')+
       '<button class="close" onclick="hideDetail()">关闭</button></div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
     document.getElementById('detailModal').classList.add('show');
@@ -878,10 +879,14 @@ function connectWS() {
 
 function openChat(productId, sellerStudentId, sellerName, productTitle) {
   if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
-  if (sellerStudentId === 'unknown') { notify('卖家信息不完整', '⚠️'); return; }
+  if (sellerStudentId === 'unknown') { notify('卖家信息不完整，暂无法联系', '⚠️'); return; }
+  if (sellerStudentId === currentUser.student_id) { notify('这是你自己的商品', '👤'); return; }
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
+  fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
+    if (p && p.id) updateTradeButtons(p);
+  }).catch(function(){});
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
@@ -889,7 +894,6 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatConv').style.display = '';
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
   document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
-  startChatPoll();
   // Load messages async
   setTimeout(function() {
     fetch('/api/marketplace/messages?product_id='+productId+'&student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
@@ -900,9 +904,12 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
         arr.forEach(function(m) { appendMsg(m, true); });
         var msgs = document.getElementById('chatMsgs');
         msgs.scrollTop = msgs.scrollHeight;
-        fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,student_id:currentUser.student_id})});
-      }).catch(function(){});
+        if (currentUser) {
+          fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,student_id:currentUser.student_id})});
+        }
+      });
   }, 100);
+  startChatPoll();
 }
 
 function showConvs() {
