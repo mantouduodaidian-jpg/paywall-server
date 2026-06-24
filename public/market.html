@@ -387,6 +387,7 @@ function setCat(c) {
 }
 
 async function load() {
+  document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>';
   const search = document.getElementById('searchInput').value.trim();
   let url = '/api/marketplace/products';
   if (selCat) url += '?category='+selCat;
@@ -616,7 +617,8 @@ function toggleChat() {
   } else {
     panel.classList.add('show');
     btn.style.display = 'none';
-    loadConvs();
+    // Load convs in background
+    setTimeout(loadConvs, 50);
   }
 }
 
@@ -651,24 +653,28 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
-  document.getElementById('chatBody').classList.remove('collapsed');
-  chatVisible = true;
+  // Show panel immediately
+  document.getElementById('chatPanel').classList.add('show');
+  document.getElementById('chatBtn').style.display = 'none';
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').style.display = '';
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
   document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
-  fetch('/api/marketplace/messages?product_id='+productId)
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      var arr = Array.isArray(data) ? data : [];
-      document.getElementById('chatMsgs').innerHTML = '';
-      arr.forEach(function(m) { appendMsg(m, true); });
-      var msgs = document.getElementById('chatMsgs');
-      msgs.scrollTop = msgs.scrollHeight;
-      if (currentUser) {
-        fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,student_id:currentUser.student_id})});
-      }
-    });
+  // Load messages async
+  setTimeout(function() {
+    fetch('/api/marketplace/messages?product_id='+productId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var arr = Array.isArray(data) ? data : [];
+        document.getElementById('chatMsgs').innerHTML = '';
+        arr.forEach(function(m) { appendMsg(m, true); });
+        var msgs = document.getElementById('chatMsgs');
+        msgs.scrollTop = msgs.scrollHeight;
+        if (currentUser) {
+          fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:productId,student_id:currentUser.student_id})});
+        }
+      });
+  }, 100);
 }
 
 function showConvs() {
