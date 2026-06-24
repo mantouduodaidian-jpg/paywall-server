@@ -272,8 +272,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <!-- Chat Panel -->
 <div class="chat-panel" id="chatPanel">
   <div class="chat-panel-header">
-    <span>💬 消息</span>
-    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    <span>💬 <span id="chatModeLabel">消息</span></span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <span id="chatModeBtn" onclick="toggleChatMode()" style="cursor:pointer;font-size:10px;color:rgba(255,255,255,.2);padding:3px 8px;border:1px solid rgba(255,255,255,.06);border-radius:6px">全部历史</span>
+      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    </span>
   </div>
   <div class="chat-body" id="chatBody">
     <div style="padding:8px 8px 0">
@@ -784,7 +787,7 @@ function loadConvs() {
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
       // Filter closed conversations
       var closed = JSON.parse(localStorage.getItem('closedConvs') || '[]');
-      if (!search && closed.length) arr = arr.filter(function(c) { return !closed.includes(c.student_id); });
+      if (!_showAllHistory && !search && closed.length) arr = arr.filter(function(c) { return !closed.includes(c.student_id); });
       // Count unread
       var unread = 0;
       var el = document.getElementById('chatConvs');
@@ -808,6 +811,13 @@ function closeConv(key) {
 }
 
 var _lastChatTime = 0;
+var _showAllHistory = false;
+function toggleChatMode() {
+  _showAllHistory = !_showAllHistory;
+  document.getElementById('chatModeLabel').textContent = _showAllHistory ? '历史' : '消息';
+  document.getElementById('chatModeBtn').textContent = _showAllHistory ? '当前对话' : '全部历史';
+  loadConvs();
+}
 function sendChat() {
   try {
     var now = Date.now();
