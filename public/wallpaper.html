@@ -357,7 +357,8 @@ function renderVault(){
 }
 async function vCopy(id){const i=vaultItems.find(x=>x.id===id);if(!i)return;const p=vEnc(i.password);try{await navigator.clipboard.writeText(p)}catch(e){}}
 async function vDel(id){if(!confirm('删除？'))return;try{await fetch('/api/vault/'+id,{method:'DELETE'});loadVault()}catch(e){}}
-function vaultAdd(){const n=prompt('名称');if(!n)return;const u=prompt('用户名');const p=prompt('密码');if(!p)return;fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(n),username:btoa(u||''),password:btoa(p)})}).then(()=>loadVault());}
+function vEnc2(s){if(!vaultMaster)return btoa(s);let r='';for(let i=0;i<s.length;i++)r+=String.fromCharCode(s.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return btoa(unescape(encodeURIComponent(r)))}
+function vaultAdd(){const n=prompt('名称');if(!n)return;const u=prompt('用户名');const p=prompt('密码');if(!p)return;fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:vEnc2(n),username:vEnc2(u||''),password:vEnc2(p)})}).then(()=>loadVault());}
 function toggleBulk(){
   const s=document.getElementById('vaultBulkSection');
   s.style.display=s.style.display==='none'?'block':'none';
@@ -372,7 +373,7 @@ async function doBulk(){
     if(parts.length<2)continue;
     const n=parts[0],u=parts[1]||'',p=parts[2]||'';
     if(!n||!p){fail++;continue;}
-    try{await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(n),username:btoa(u),password:btoa(p)})});ok++;}catch(e){fail++;}
+    try{await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:vEnc2(n),username:vEnc2(u),password:vEnc2(p)})});ok++;}catch(e){fail++;}
   }
   alert('导入完成：成功 '+ok+' 条'+(fail?'，失败 '+fail+' 条':''));
   document.getElementById('vaultBulkSection').style.display='none';loadVault();
