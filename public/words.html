@@ -2,171 +2,416 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>背单词</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a1a0f;color:#c8e6c9;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-  .card{width:340px;min-height:280px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:24px;padding:32px 24px;text-align:center;cursor:pointer;transition:all .3s;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
-  .card:hover{border-color:rgba(52,211,153,.12)}
-  .card .word{font-size:32px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:16px;transition:all .3s}
-  .card .def{font-size:16px;color:rgba(255,255,255,.35);line-height:1.7;display:none;max-width:90%}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a1a0f;color:#c8e6c9;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+
+  .wrap{max-width:400px;width:100%}
+
+  .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .top h1{font-size:18px;font-weight:700}
+  .top h1 span{background:linear-gradient(135deg,#6ee7b7,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .top .mode{padding:4px 12px;border-radius:100px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.25);font-size:11px;cursor:pointer;font-family:inherit}
+  .top .mode:hover{border-color:rgba(52,211,153,.15);color:rgba(255,255,255,.4)}
+
+  .stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .stats .s{flex:1;background:rgba(255,255,255,.02);border-radius:10px;padding:8px;text-align:center;border:1px solid rgba(255,255,255,.03);min-width:60px}
+  .stats .s .n{font-size:16px;font-weight:700}
+  .stats .s .l{font-size:10px;color:rgba(255,255,255,.2);margin-top:1px}
+
+  .prog{height:3px;background:rgba(255,255,255,.04);border-radius:3px;margin-bottom:20px;overflow:hidden}
+  .prog .f{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .4s}
+
+  .card-wrap{position:relative;width:100%;min-height:320px;margin-bottom:16px}
+  .card{width:100%;min-height:320px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:20px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;position:absolute;user-select:none}
+  .card:hover{border-color:rgba(52,211,153,.1)}
+  .card .word{font-size:30px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:8px;text-align:center}
+  .card .phonetic{font-size:14px;color:rgba(255,255,255,.15);margin-bottom:12px;font-family:'Times New Roman',serif}
+  .card .def{font-size:16px;color:rgba(255,255,255,.35);line-height:1.7;display:none;text-align:center;max-width:90%}
   .card .def.show{display:block}
-  .card .hint{font-size:12px;color:rgba(255,255,255,.1);margin-top:auto;padding-top:20px}
+  .card .eg{font-size:13px;color:rgba(255,255,255,.12);line-height:1.6;display:none;margin-top:12px;text-align:center;max-width:90%;font-style:italic}
+  .card .eg.show{display:block}
+  .card .hint{font-size:11px;color:rgba(255,255,255,.06);margin-top:auto;padding-top:20px}
+  .card.slide-left{transform:translateX(-120%) rotate(-8deg);opacity:0}
+  .card.slide-right{transform:translateX(120%) rotate(8deg);opacity:0}
 
-  .btns{display:flex;gap:12px;margin-top:20px}
-  .btns button{width:100px;padding:12px;border-radius:14px;border:none;font-size:14px;cursor:pointer;font-weight:600;transition:all .15s;font-family:inherit}
+  .btns{display:flex;gap:10px;margin-top:8px}
+  .btns button{flex:1;padding:14px;border-radius:14px;border:none;font-size:14px;cursor:pointer;font-weight:600;transition:all .15s;font-family:inherit}
   .btns button:active{transform:scale(.95)}
-  .btns .know{background:rgba(52,211,153,.12);color:#34d399}
-  .btns .know:hover{background:rgba(52,211,153,.2)}
-  .btns .dont{background:rgba(239,68,68,.1);color:#f87171}
-  .btns .dont:hover{background:rgba(239,68,68,.18)}
+  .btns .dont{background:rgba(239,68,68,.08);color:#f87171;border:1px solid rgba(239,68,68,.12)}
+  .btns .dont:hover{background:rgba(239,68,68,.14)}
+  .btns .hard{background:rgba(251,191,36,.08);color:#fbbf24;border:1px solid rgba(251,191,36,.1)}
+  .btns .hard:hover{background:rgba(251,191,36,.14)}
+  .btns .good{background:rgba(52,211,153,.08);color:#34d399;border:1px solid rgba(52,211,153,.1)}
+  .btns .good:hover{background:rgba(52,211,153,.14)}
+  .btns .easy{background:rgba(96,165,250,.08);color:#60a5fa;border:1px solid rgba(96,165,250,.1)}
+  .btns .easy:hover{background:rgba(96,165,250,.14)}
 
-  .stats{display:flex;gap:16px;margin-bottom:24px;font-size:13px;color:rgba(255,255,255,.15)}
-  .stats span{display:flex;align-items:center;gap:4px}
+  .done{text-align:center;padding:40px 0}
+  .done h2{font-size:22px;color:rgba(255,255,255,.2);margin-bottom:6px}
+  .done p{font-size:13px;color:rgba(255,255,255,.08);margin-bottom:20px}
+  .done button{padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:14px;cursor:pointer;font-weight:600;margin:0 6px}
+  .done .sec{background:transparent;border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.3)}
 
-  .prog{width:340px;height:3px;background:rgba(255,255,255,.04);border-radius:3px;margin-bottom:24px;overflow:hidden}
-  .prog .f{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .4s;width:0%}
+  .badge{padding:2px 10px;border-radius:100px;font-size:10px;display:inline-block}
+  .badge.new{background:rgba(96,165,250,.1);color:#60a5fa}
+  .badge.learning{background:rgba(251,191,36,.1);color:#fbbf24}
+  .badge.done2{background:rgba(52,211,153,.1);color:#34d399}
 
-  .done{text-align:center;padding:40px}
-  .done h2{font-size:24px;color:rgba(255,255,255,.2);margin-bottom:8px}
-  .done p{font-size:14px;color:rgba(255,255,255,.08)}
-  .done button{margin-top:20px;padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:14px;cursor:pointer;font-weight:600}
+  @media(max-width:400px){.stats .s{min-width:45px}.stats .s .n{font-size:14px}}
 </style>
 </head>
 <body>
-<div class="stats">
-  <span>📚 <span id="totalWords">0</span></span>
-  <span>✅ <span id="knownCount">0</span></span>
-  <span>❌ <span id="unknownCount">0</span></span>
+<div class="wrap">
+  <div class="top">
+    <h1>📖 <span>背单词</span></h1>
+    <button class="mode" onclick="toggleMode()" id="modeBtn">全部</button>
+  </div>
+
+  <div class="stats">
+    <div class="s"><div class="n" id="sTotal">0</div><div class="l">总</div></div>
+    <div class="s"><div class="n" style="color:#60a5fa" id="sNew">0</div><div class="l">新词</div></div>
+    <div class="s"><div class="n" style="color:#fbbf24" id="sLearn">0</div><div class="l">学习中</div></div>
+    <div class="s"><div class="n" style="color:#34d399" id="sDone">0</div><div class="l">已掌握</div></div>
+  </div>
+
+  <div class="prog"><div class="f" id="progBar"></div></div>
+
+  <div class="card-wrap" id="cardArea"></div>
+
+  <div class="btns" id="btnArea"></div>
 </div>
-<div class="prog"><div class="f" id="progBar"></div></div>
-<div id="cardArea"></div>
 
 <script>
 const WORDS = [
-  { w: 'abandon', d: '放弃、遗弃' }, { w: 'ability', d: '能力、才能' }, { w: 'abroad', d: '在国外、到国外' },
-  { w: 'absence', d: '缺席、不在' }, { w: 'absolute', d: '绝对的、完全的' }, { w: 'absorb', d: '吸收、吸引' },
-  { w: 'abstract', d: '抽象的、摘要' }, { w: 'abundant', d: '丰富的、充裕的' }, { w: 'abuse', d: '滥用、虐待' },
-  { w: 'academic', d: '学术的、学院的' }, { w: 'accelerate', d: '加速、促进' }, { w: 'access', d: '通道、接近' },
-  { w: 'accident', d: '事故、意外' }, { w: 'accommodate', d: '容纳、提供住宿' }, { w: 'accompany', d: '陪伴、伴随' },
-  { w: 'accomplish', d: '完成、实现' }, { w: 'accurate', d: '准确的、精确的' }, { w: 'accuse', d: '指控、指责' },
-  { w: 'achieve', d: '达到、取得' }, { w: 'acknowledge', d: '承认、确认' }, { w: 'acquire', d: '获得、学到' },
-  { w: 'adapt', d: '适应、改编' }, { w: 'adequate', d: '足够的、适当的' }, { w: 'adjust', d: '调整、调节' },
-  { w: 'admire', d: '钦佩、羡慕' }, { w: 'admit', d: '承认、准许进入' }, { w: 'adopt', d: '采纳、收养' },
-  { w: 'advance', d: '前进、进步' }, { w: 'advantage', d: '优势、有利条件' }, { w: 'advertise', d: '做广告、宣传' },
-  { w: 'affair', d: '事务、事件' }, { w: 'affect', d: '影响、感动' }, { w: 'afford', d: '负担得起、提供' },
-  { w: 'agency', d: '代理、机构' }, { w: 'aggressive', d: '侵略的、好斗的' }, { w: 'agree', d: '同意、赞成' },
-  { w: 'agriculture', d: '农业、农学' }, { w: 'alarm', d: '警报、惊恐' }, { w: 'allow', d: '允许、准许' },
-  { w: 'alternative', d: '替代的、选择' }, { w: 'amaze', d: '使惊奇、使惊愕' }, { w: 'ambition', d: '雄心、野心' },
-  { w: 'amount', d: '数量、总额' }, { w: 'amuse', d: '逗乐、使开心' }, { w: 'analyze', d: '分析、解析' },
-  { w: 'announce', d: '宣布、通告' }, { w: 'annual', d: '每年的、年度的' }, { w: 'anxiety', d: '焦虑、忧虑' },
-  { w: 'apparent', d: '明显的、表面的' }, { w: 'appeal', d: '呼吁、吸引' }, { w: 'appetite', d: '食欲、胃口' },
-  { w: 'appliance', d: '电器、器具' }, { w: 'application', d: '申请、应用' }, { w: 'apply', d: '申请、应用' },
-  { w: 'appoint', d: '任命、指定' }, { w: 'appreciate', d: '感激、欣赏' }, { w: 'approach', d: '接近、方法' },
-  { w: 'appropriate', d: '适当的、合适的' }, { w: 'approve', d: '批准、赞成' }, { w: 'argue', d: '争论、辩论' },
-  { w: 'arrange', d: '安排、整理' }, { w: 'arrest', d: '逮捕、阻止' }, { w: 'article', d: '文章、物品' },
-  { w: 'aspect', d: '方面、层面' }, { w: 'assemble', d: '集合、组装' }, { w: 'assess', d: '评估、评定' },
-  { w: 'assign', d: '分配、指派' }, { w: 'assist', d: '帮助、协助' }, { w: 'assume', d: '假设、承担' },
-  { w: 'atmosphere', d: '大气、气氛' }, { w: 'attach', d: '附上、贴上' }, { w: 'attempt', d: '尝试、企图' },
-  { w: 'attend', d: '参加、出席' }, { w: 'attitude', d: '态度、看法' }, { w: 'attract', d: '吸引、引起' },
-  { w: 'authority', d: '权威、当局' }, { w: 'available', d: '可用的、有效的' }, { w: 'average', d: '平均的、普通' },
-  { w: 'avoid', d: '避免、回避' }, { w: 'aware', d: '意识到的、知道的' }, { w: 'balance', d: '平衡、余额' },
-  { w: 'bargain', d: '讨价还价、便宜货' }, { w: 'barrier', d: '障碍、屏障' }, { w: 'behave', d: '表现、举止' },
-  { w: 'belief', d: '信念、信仰' }, { w: 'belong', d: '属于、归属' }, { w: 'benefit', d: '利益、好处' },
-  { w: 'bitter', d: '苦的、痛苦的' }, { w: 'blame', d: '责备、责怪' }, { w: 'bother', d: '打扰、烦恼' },
-  { w: 'boundary', d: '边界、界限' }, { w: 'brilliant', d: '灿烂的、杰出的' }, { w: 'budget', d: '预算、经费' },
-  { w: 'burden', d: '负担、重担' }, { w: 'calculate', d: '计算、估计' }, { w: 'campaign', d: '运动、战役' },
-  { w: 'capable', d: '有能力的' }, { w: 'capacity', d: '容量、能力' }, { w: 'capture', d: '捕获、夺取' },
-  { w: 'career', d: '职业、生涯' }, { w: 'catalog', d: '目录、系列' }, { w: 'celebrate', d: '庆祝、赞美' },
-  { w: 'challenge', d: '挑战、质疑' }, { w: 'character', d: '性格、角色' }, { w: 'charge', d: '收费、控告' },
-  { w: 'cheat', d: '欺骗、作弊' }, { w: 'circumstance', d: '环境、情况' }, { w: 'claim', d: '声称、要求' },
-  { w: 'classify', d: '分类、归类' }, { w: 'climate', d: '气候、风气' }, { w: 'coach', d: '教练、指导' },
-  { w: 'collapse', d: '倒塌、崩溃' }, { w: 'combine', d: '结合、联合' }, { w: 'comfort', d: '安慰、舒适' },
-  { w: 'command', d: '命令、指挥' }, { w: 'comment', d: '评论、意见' }, { w: 'commerce', d: '商业、贸易' },
-  { w: 'commit', d: '犯（罪）、承诺' }, { w: 'communicate', d: '交流、沟通' }, { w: 'community', d: '社区、团体' },
-  { w: 'companion', d: '同伴、伙伴' }, { w: 'compare', d: '比较、对比' }, { w: 'compete', d: '竞争、比赛' },
-  { w: 'complain', d: '抱怨、投诉' }, { w: 'complete', d: '完成、完整的' }, { w: 'complex', d: '复杂的、综合的' },
-  { w: 'compose', d: '组成、创作' }, { w: 'concentrate', d: '集中、专注' }, { w: 'concept', d: '概念、观念' },
-  { w: 'concern', d: '关心、涉及' }, { w: 'conclude', d: '总结、结束' }, { w: 'condition', d: '条件、状况' },
-  { w: 'conduct', d: '行为、引导' }, { w: 'conference', d: '会议、讨论会' }, { w: 'confident', d: '自信的、确信的' },
-  { w: 'confirm', d: '确认、证实' }, { w: 'conflict', d: '冲突、矛盾' }, { w: 'confuse', d: '使困惑、混淆' },
-  { w: 'connect', d: '连接、联系' }, { w: 'conscious', d: '有意识的、清醒的' }, { w: 'consequence', d: '结果、后果' },
-  { w: 'conserve', d: '保存、节约' }, { w: 'consider', d: '考虑、认为' }, { w: 'consist', d: '由…组成' },
-  { w: 'constant', d: '不变的、持续的' }, { w: 'construct', d: '建造、构建' }, { w: 'consume', d: '消费、消耗' },
-  { w: 'contact', d: '联系、接触' }, { w: 'contain', d: '包含、容纳' }, { w: 'contemporary', d: '当代的、同时代的' },
-  { w: 'content', d: '内容、满足的' }, { w: 'contest', d: '竞赛、争夺' }, { w: 'continue', d: '继续、延续' },
-  { w: 'contract', d: '合同、收缩' }, { w: 'contrast', d: '对比、差异' }, { w: 'contribute', d: '贡献、捐献' },
-  { w: 'control', d: '控制、管理' }, { w: 'controversial', d: '有争议的' }, { w: 'convenient', d: '方便的、便利的' },
-  { w: 'convince', d: '说服、使确信' }, { w: 'cooperate', d: '合作、协作' }, { w: 'cope', d: '应付、处理' },
-  { w: 'core', d: '核心、要点' }, { w: 'correct', d: '正确的、纠正' }, { w: 'correspond', d: '对应、通信' },
-  { w: 'council', d: '委员会、理事会' }, { w: 'counsel', d: '建议、律师' }, { w: 'count', d: '计数、重要' },
-  { w: 'counter', d: '柜台、反驳' }, { w: 'couple', d: '一对、夫妇' }, { w: 'course', d: '课程、过程' },
-  { w: 'court', d: '法庭、球场' }, { w: 'cover', d: '覆盖、包括' }, { w: 'crash', d: '碰撞、崩溃' },
-  { w: 'create', d: '创造、创建' }, { w: 'creature', d: '生物、动物' }, { w: 'credit', d: '信用、学分' },
-  { w: 'crime', d: '犯罪、罪行' }, { w: 'crisis', d: '危机、危急关头' }, { w: 'criterion', d: '标准、准则' },
-  { w: 'critical', d: '批评的、关键的' }, { w: 'cultivate', d: '培养、耕作' }, { w: 'culture', d: '文化、文明' },
-  { w: 'cure', d: '治愈、治疗' }, { w: 'curious', d: '好奇的、求知的' }, { w: 'current', d: '当前的、水流' },
-  { w: 'custom', d: '习惯、海关' }, { w: 'damage', d: '损害、损坏' }, { w: 'debt', d: '债务、欠款' },
-  { w: 'decade', d: '十年、十年期' }, { w: 'decay', d: '腐烂、衰退' }, { w: 'deceive', d: '欺骗、蒙骗' },
-  { w: 'declare', d: '宣布、声明' }, { w: 'decline', d: '下降、拒绝' }, { w: 'decorate', d: '装饰、装潢' },
-  { w: 'decrease', d: '减少、减小' }, { w: 'dedicate', d: '致力于、奉献' }, { w: 'defeat', d: '击败、失败' },
-  { w: 'defend', d: '防御、辩护' }, { w: 'define', d: '定义、界定' }, { w: 'definite', d: '明确的、肯定的' },
-  { w: 'degree', d: '程度、学位' }, { w: 'delay', d: '延迟、推迟' }, { w: 'deliberate', d: '故意的、深思熟虑' },
-  { w: 'delicate', d: '精致的、微妙的' }, { w: 'deliver', d: '递送、发表' }, { w: 'demand', d: '要求、需求' },
-  { w: 'demonstrate', d: '展示、证明' }, { w: 'deny', d: '否认、拒绝' }, { w: 'depart', d: '离开、出发' },
-  { w: 'depend', d: '依赖、取决于' }, { w: 'deposit', d: '存款、押金' }, { w: 'depress', d: '使沮丧、压抑' },
-  { w: 'derive', d: '源于、获得' }, { w: 'describe', d: '描述、形容' }, { w: 'deserve', d: '值得、应得' },
-  { w: 'desire', d: '渴望、愿望' }, { w: 'desperate', d: '绝望的、拼命的' }, { w: 'despite', d: '尽管、不管' },
-  { w: 'destination', d: '目的地、终点' }, { w: 'destroy', d: '破坏、消灭' }, { w: 'detect', d: '察觉、发现' },
-  { w: 'determine', d: '决定、确定' }, { w: 'develop', d: '发展、开发' }, { w: 'device', d: '设备、装置' },
-  { w: 'devote', d: '致力于、奉献' }, { w: 'diagram', d: '图表、示意图' }, { w: 'discipline', d: '纪律、学科' },
-  { w: 'discover', d: '发现、发觉' }, { w: 'discuss', d: '讨论、论述' }, { w: 'dismiss', d: '解散、解雇' },
-  { w: 'display', d: '展示、陈列' }, { w: 'dispose', d: '处理、处置' }, { w: 'dispute', d: '争论、纠纷' },
-  { w: 'distinct', d: '不同的、明显的' }, { w: 'distinguish', d: '区分、辨别' }, { w: 'distribute', d: '分配、分发' },
-  { w: 'disturb', d: '打扰、扰乱' }, { w: 'diverse', d: '不同的、多样的' }, { w: 'document', d: '文件、文档' },
-  { w: 'domestic', d: '国内的、家庭的' }, { w: 'dominate', d: '支配、统治' }, { w: 'doubt', d: '怀疑、疑问' },
-  { w: 'draft', d: '草稿、草案' }, { w: 'drain', d: '排水、耗尽' }, { w: 'drama', d: '戏剧、剧本' },
-  { w: 'drastic', d: '激烈的、急剧的' }, { w: 'economy', d: '经济、节约' }, { w: 'edition', d: '版本、版次' },
-  { w: 'educate', d: '教育、培养' }, { w: 'efficient', d: '高效的、有效率的' },
+  {w:'abandon',p:'/əˈbændən/',d:'放弃、遗弃',e:'They had to ~ the plan.'},
+  {w:'ability',p:'/əˈbɪləti/',d:'能力、才能',e:'She has the ~ to succeed.'},
+  {w:'abroad',p:'/əˈbrɔːd/',d:'在国外、到国外',e:'He went ~ to study.'},
+  {w:'absence',p:'/ˈæbsəns/',d:'缺席、不在',e:'Your ~ was noticed.'},
+  {w:'absolute',p:'/ˈæbsəluːt/',d:'绝对的、完全的',e:'That is ~ nonsense.'},
+  {w:'absorb',p:'/əbˈzɔːrb/',d:'吸收、吸引',e:'Plants ~ sunlight.'},
+  {w:'abstract',p:'/ˈæbstrækt/',d:'抽象的、摘要',e:'This idea is too ~.'},
+  {w:'abundant',p:'/əˈbʌndənt/',d:'丰富的、充裕的',e:'The area has ~ resources.'},
+  {w:'accelerate',p:'/əkˈseləreɪt/',d:'加速、促进',e:'The car began to ~.'},
+  {w:'access',p:'/ˈækses/',d:'通道、接近',e:'Do you have ~ to the internet?'},
+  {w:'accommodate',p:'/əˈkɒmədeɪt/',d:'容纳、提供住宿',e:'The hotel can ~ 200 guests.'},
+  {w:'accompany',p:'/əˈkʌmpəni/',d:'陪伴、伴随',e:'I will ~ you to the airport.'},
+  {w:'accomplish',p:'/əˈkʌmplɪʃ/',d:'完成、实现',e:'We ~ed our goal.'},
+  {w:'accurate',p:'/ˈækjərət/',d:'准确的、精确的',e:'The data is ~.'},
+  {w:'achieve',p:'/əˈtʃiːv/',d:'达到、取得',e:'She ~d her dream.'},
+  {w:'acknowledge',p:'/əkˈnɒlɪdʒ/',d:'承认、确认',e:'He ~d his mistake.'},
+  {w:'acquire',p:'/əˈkwaɪər/',d:'获得、学到',e:'She ~d new skills.'},
+  {w:'adapt',p:'/əˈdæpt/',d:'适应、改编',e:'You must ~ to changes.'},
+  {w:'adequate',p:'/ˈædɪkwət/',d:'足够的、适当的',e:'The supply is ~.'},
+  {w:'adjust',p:'/əˈdʒʌst/',d:'调整、调节',e:'Please ~ the volume.'},
+  {w:'admit',p:'/ədˈmɪt/',d:'承认、准许进入',e:'He ~ted his fault.'},
+  {w:'adopt',p:'/əˈdɒpt/',d:'采纳、收养',e:'They decided to ~ a child.'},
+  {w:'advance',p:'/ədˈvæns/',d:'前进、进步',e:'Technology continues to ~.'},
+  {w:'advantage',p:'/ədˈvæntɪdʒ/',d:'优势、有利条件',e:'Being tall is an ~.'},
+  {w:'advertise',p:'/ˈædvərtaɪz/',d:'做广告、宣传',e:'Companies ~ on TV.'},
+  {w:'affect',p:'/əˈfekt/',d:'影响、感动',e:'Weather can ~ your mood.'},
+  {w:'afford',p:'/əˈfɔːrd/',d:'负担得起',e:'I can\'t ~ a new car.'},
+  {w:'aggressive',p:'/əˈɡresɪv/',d:'侵略的、好斗的',e:'His behavior was ~.'},
+  {w:'allow',p:'/əˈlaʊ/',d:'允许、准许',e:'Please ~ me to explain.'},
+  {w:'alternative',p:'/ɔːlˈtɜːrnətɪv/',d:'替代的、选择',e:'We need an ~ plan.'},
+  {w:'amaze',p:'/əˈmeɪz/',d:'使惊奇',e:'Her talent ~d everyone.'},
+  {w:'ambition',p:'/æmˈbɪʃn/',d:'雄心、野心',e:'He has great ~.'},
+  {w:'analyze',p:'/ˈænəlaɪz/',d:'分析、解析',e:'Let\'s ~ the data.'},
+  {w:'announce',p:'/əˈnaʊns/',d:'宣布、通告',e:'They ~d their engagement.'},
+  {w:'annual',p:'/ˈænjuəl/',d:'每年的、年度的',e:'This is an ~ event.'},
+  {w:'anxiety',p:'/æŋˈzaɪəti/',d:'焦虑、忧虑',e:'She felt ~ before the exam.'},
+  {w:'apparent',p:'/əˈpærənt/',d:'明显的、表面的',e:'It became ~ that he was lying.'},
+  {w:'appeal',p:'/əˈpiːl/',d:'呼吁、吸引',e:'The idea ~s to me.'},
+  {w:'apply',p:'/əˈplaɪ/',d:'申请、应用',e:'Please ~ for the job.'},
+  {w:'approach',p:'/əˈproʊtʃ/',d:'接近、方法',e:'Try a different ~.'},
+  {w:'approve',p:'/əˈpruːv/',d:'批准、赞成',e:'The committee ~d the plan.'},
+  {w:'arrange',p:'/əˈreɪndʒ/',d:'安排、整理',e:'Let me ~ a meeting.'},
+  {w:'aspect',p:'/ˈæspekt/',d:'方面、层面',e:'Every ~ of life.'},
+  {w:'assess',p:'/əˈses/',d:'评估、评定',e:'We need to ~ the damage.'},
+  {w:'assign',p:'/əˈsaɪn/',d:'分配、指派',e:'They ~ed me a task.'},
+  {w:'assist',p:'/əˈsɪst/',d:'帮助、协助',e:'Can you ~ me?'},
+  {w:'assume',p:'/əˈsjuːm/',d:'假设、承担',e:'I ~ you know the answer.'},
+  {w:'atmosphere',p:'/ˈætməsfɪər/',d:'大气、气氛',e:'The ~ was tense.'},
+  {w:'attach',p:'/əˈtætʃ/',d:'附上、贴上',e:'Please ~ the file.'},
+  {w:'attempt',p:'/əˈtempt/',d:'尝试、企图',e:'Don\'t ~ to cheat.'},
+  {w:'attend',p:'/əˈtend/',d:'参加、出席',e:'Please ~ the meeting.'},
+  {w:'attitude',p:'/ˈætɪtjuːd/',d:'态度、看法',e:'She has a positive ~.'},
+  {w:'attract',p:'/əˈtrækt/',d:'吸引、引起',e:'The movie ~ed a large audience.'},
+  {w:'available',p:'/əˈveɪləbl/',d:'可用的、有效的',e:'Is this seat ~?'},
+  {w:'average',p:'/ˈævərɪdʒ/',d:'平均的、普通',e:'On ~, I study 2 hours.'},
+  {w:'avoid',p:'/əˈvɔɪd/',d:'避免、回避',e:'Try to ~ mistakes.'},
+  {w:'aware',p:'/əˈweər/',d:'意识到的',e:'I am ~ of the risk.'},
+  {w:'balance',p:'/ˈbæləns/',d:'平衡、余额',e:'Keep your ~.'},
+  {w:'barrier',p:'/ˈbæriər/',d:'障碍、屏障',e:'Language can be a ~.'},
+  {w:'behave',p:'/bɪˈheɪv/',d:'表现、举止',e:'Please ~ yourself.'},
+  {w:'belief',p:'/bɪˈliːf/',d:'信念、信仰',e:'It is my ~ that...'},
+  {w:'benefit',p:'/ˈbenɪfɪt/',d:'利益、好处',e:'Exercise has many ~s.'},
+  {w:'blame',p:'/bleɪm/',d:'责备、责怪',e:'Don\'t ~ others.'},
+  {w:'budget',p:'/ˈbʌdʒɪt/',d:'预算、经费',e:'We have a tight ~.'},
+  {w:'capable',p:'/ˈkeɪpəbl/',d:'有能力的',e:'She is ~ of doing it.'},
+  {w:'capture',p:'/ˈkæptʃər/',d:'捕获、夺取',e:'The photo ~d the moment.'},
+  {w:'challenge',p:'/ˈtʃælɪndʒ/',d:'挑战、质疑',e:'It\'s a big ~.'},
+  {w:'character',p:'/ˈkærəktər/',d:'性格、角色',e:'He has a strong ~.'},
+  {w:'circumstance',p:'/ˈsɜːrkəmstæns/',d:'环境、情况',e:'Under no ~s...'},
+  {w:'claim',p:'/kleɪm/',d:'声称、要求',e:'He ~ed he was innocent.'},
+  {w:'collapse',p:'/kəˈlæps/',d:'倒塌、崩溃',e:'The building ~d.'},
+  {w:'combine',p:'/kəmˈbaɪn/',d:'结合、联合',e:'Let\'s ~ our efforts.'},
+  {w:'commit',p:'/kəˈmɪt/',d:'犯(罪)、承诺',e:'Don\'t ~ the same mistake.'},
+  {w:'communicate',p:'/kəˈmjuːnɪkeɪt/',d:'交流、沟通',e:'We need to ~ better.'},
+  {w:'community',p:'/kəˈmjuːnəti/',d:'社区、团体',e:'The ~ helped us.'},
+  {w:'compare',p:'/kəmˈpeər/',d:'比较、对比',e:'Don\'t ~ yourself to others.'},
+  {w:'compete',p:'/kəmˈpiːt/',d:'竞争、比赛',e:'They ~ for the prize.'},
+  {w:'complain',p:'/kəmˈpleɪn/',d:'抱怨、投诉',e:'Customers often ~.'},
+  {w:'complex',p:'/kəmˈpleks/',d:'复杂的',e:'This is a ~ problem.'},
+  {w:'concentrate',p:'/ˈkɒnsəntreɪt/',d:'集中、专注',e:'I need to ~.'},
+  {w:'concept',p:'/ˈkɒnsept/',d:'概念、观念',e:'That\'s an interesting ~.'},
+  {w:'concern',p:'/kənˈsɜːrn/',d:'关心、涉及',e:'This ~s everyone.'},
+  {w:'confirm',p:'/kənˈfɜːrm/',d:'确认、证实',e:'Please ~ your booking.'},
+  {w:'confuse',p:'/kənˈfjuːz/',d:'使困惑、混淆',e:'Don\'t ~ me.'},
+  {w:'connect',p:'/kəˈnekt/',d:'连接、联系',e:'Let\'s ~ on social media.'},
+  {w:'conscious',p:'/ˈkɒnʃəs/',d:'有意识的',e:'He was ~ of the danger.'},
+  {w:'consequence',p:'/ˈkɒnsɪkwəns/',d:'结果、后果',e:'Actions have ~s.'},
+  {w:'consider',p:'/kənˈsɪdər/',d:'考虑、认为',e:'Please ~ my offer.'},
+  {w:'constant',p:'/ˈkɒnstənt/',d:'不变的、持续的',e:'The noise was ~.'},
+  {w:'construct',p:'/kənˈstrʌkt/',d:'建造、构建',e:'They ~ed a new bridge.'},
+  {w:'consume',p:'/kənˈsjuːm/',d:'消费、消耗',e:'We ~ too much energy.'},
+  {w:'content',p:'/ˈkɒntent/',d:'内容、满足的',e:'I\'m ~ with my life.'},
+  {w:'continue',p:'/kənˈtɪnjuː/',d:'继续、延续',e:'Please ~ speaking.'},
+  {w:'contribute',p:'/kənˈtrɪbjuːt/',d:'贡献、捐献',e:'Everyone should ~.'},
+  {w:'convenient',p:'/kənˈviːniənt/',d:'方便的',e:'This location is ~.'},
+  {w:'convince',p:'/kənˈvɪns/',d:'说服、使确信',e:'I tried to ~ him.'},
+  {w:'cooperate',p:'/koʊˈɒpəreɪt/',d:'合作、协作',e:'Let\'s ~ on this project.'},
+  {w:'core',p:'/kɔːr/',d:'核心、要点',e:'That\'s the ~ issue.'},
+  {w:'create',p:'/kriˈeɪt/',d:'创造、创建',e:'She ~d a masterpiece.'},
+  {w:'cultivate',p:'/ˈkʌltɪveɪt/',d:'培养、耕作',e:'~ good habits.'},
+  {w:'current',p:'/ˈkʌrənt/',d:'当前的、水流',e:'The ~ situation is stable.'},
+  {w:'decade',p:'/ˈdekeɪd/',d:'十年',e:'Over the past ~...'},
+  {w:'decline',p:'/dɪˈklaɪn/',d:'下降、拒绝',e:'The population is ~ing.'},
+  {w:'decrease',p:'/dɪˈkriːs/',d:'减少、减小',e:'Sales ~d by 10%.'},
+  {w:'defeat',p:'/dɪˈfiːt/',d:'击败、失败',e:'They ~ed the enemy.'},
+  {w:'defend',p:'/dɪˈfend/',d:'防御、辩护',e:'I will ~ my position.'},
+  {w:'define',p:'/dɪˈfaɪn/',d:'定义、界定',e:'How do you ~ success?'},
+  {w:'deliver',p:'/dɪˈlɪvər/',d:'递送、发表',e:'Please ~ the package.'},
+  {w:'demand',p:'/dɪˈmænd/',d:'要求、需求',e:'There is high ~.'},
+  {w:'demonstrate',p:'/ˈdemənstreɪt/',d:'展示、证明',e:'Let me ~ how it works.'},
+  {w:'deny',p:'/dɪˈnaɪ/',d:'否认、拒绝',e:'He ~d the allegations.'},
+  {w:'depend',p:'/dɪˈpend/',d:'依赖、取决于',e:'It ~s on the weather.'},
+  {w:'describe',p:'/dɪˈskraɪb/',d:'描述、形容',e:'Can you ~ what happened?'},
+  {w:'deserve',p:'/dɪˈzɜːrv/',d:'值得、应得',e:'You ~ a break.'},
+  {w:'desire',p:'/dɪˈzaɪər/',d:'渴望、愿望',e:'I have a strong ~ to learn.'},
+  {w:'desperate',p:'/ˈdespərət/',d:'绝望的',e:'He was ~ for help.'},
+  {w:'despite',p:'/dɪˈspaɪt/',d:'尽管、不管',e:'~ the rain, we went.'},
+  {w:'destroy',p:'/dɪˈstrɔɪ/',d:'破坏、消灭',e:'The fire ~ed the house.'},
+  {w:'determine',p:'/dɪˈtɜːrmɪn/',d:'决定、确定',e:'We need to ~ the cause.'},
+  {w:'develop',p:'/dɪˈveləp/',d:'发展、开发',e:'The city ~ed rapidly.'},
+  {w:'device',p:'/dɪˈvaɪs/',d:'设备、装置',e:'This ~ can help you.'},
+  {w:'devote',p:'/dɪˈvoʊt/',d:'致力于、奉献',e:'She ~d her life to music.'},
+  {w:'discover',p:'/dɪˈskʌvər/',d:'发现、发觉',e:'Scientists ~ed a new species.'},
+  {w:'display',p:'/dɪˈspleɪ/',d:'展示、陈列',e:'The results are on ~.'},
+  {w:'distinct',p:'/dɪˈstɪŋkt/',d:'不同的、明显的',e:'There\'s a ~ difference.'},
+  {w:'distinguish',p:'/dɪˈstɪŋɡwɪʃ/',d:'区分、辨别',e:'Can you ~ the two?'},
+  {w:'distribute',p:'/dɪˈstrɪbjuːt/',d:'分配、分发',e:'Please ~ the handouts.'},
+  {w:'diverse',p:'/daɪˈvɜːrs/',d:'不同的、多样的',e:'The group is ~.'},
+  {w:'domestic',p:'/dəˈmestɪk/',d:'国内的、家庭的',e:'The ~ market is strong.'},
+  {w:'dominate',p:'/ˈdɒmɪneɪt/',d:'支配、统治',e:'They ~ the industry.'},
+  {w:'economy',p:'/ɪˈkɒnəmi/',d:'经济、节约',e:'The ~ is growing.'},
+  {w:'educate',p:'/ˈedʒukeɪt/',d:'教育、培养',e:'We must ~ the young.'},
+  {w:'efficient',p:'/ɪˈfɪʃnt/',d:'高效的',e:'This method is more ~.'},
+  {w:'emerge',p:'/ɪˈmɜːrdʒ/',d:'出现、浮现',e:'New evidence ~d.'},
+  {w:'emphasis',p:'/ˈemfəsɪs/',d:'强调、重点',e:'Put ~ on quality.'},
+  {w:'employ',p:'/ɪmˈplɔɪ/',d:'雇用、使用',e:'The company ~s 500 people.'},
+  {w:'enable',p:'/ɪˈneɪbl/',d:'使能够',e:'This will ~ you to work faster.'},
+  {w:'encounter',p:'/ɪnˈkaʊntər/',d:'遇到、遭遇',e:'I ~ed an old friend.'},
+  {w:'encourage',p:'/ɪnˈkʌrɪdʒ/',d:'鼓励、促进',e:'Teachers ~ students.'},
+  {w:'engage',p:'/ɪnˈɡeɪdʒ/',d:'从事、吸引',e:'She ~d in conversation.'},
+  {w:'enormous',p:'/ɪˈnɔːrməs/',d:'巨大的、庞大的',e:'There was an ~ demand.'},
+  {w:'ensure',p:'/ɪnˈʃʊər/',d:'确保、保证',e:'Please ~ the door is locked.'},
+  {w:'enterprise',p:'/ˈentəpraɪz/',d:'企业、事业',e:'He runs a successful ~.'},
+  {w:'establish',p:'/ɪˈstæblɪʃ/',d:'建立、确立',e:'They ~ed a new company.'},
+  {w:'estimate',p:'/ˈestɪmeɪt/',d:'估计、评估',e:'I ~ it will take 3 days.'},
+  {w:'evaluate',p:'/ɪˈvæljueɪt/',d:'评价、评估',e:'We need to ~ the results.'},
+  {w:'evident',p:'/ˈevɪdənt/',d:'明显的、明白的',e:'It was ~ that he was angry.'},
+  {w:'evolve',p:'/ɪˈvɒlv/',d:'进化、发展',e:'Species ~ over time.'},
+  {w:'examine',p:'/ɪɡˈzæmɪn/',d:'检查、考试',e:'The doctor ~d me.'},
+  {w:'exceed',p:'/ɪkˈsiːd/',d:'超过、超越',e:'Do not ~ the speed limit.'},
+  {w:'exchange',p:'/ɪksˈtʃeɪndʒ/',d:'交换、兑换',e:'Let\'s ~ ideas.'},
+  {w:'exclude',p:'/ɪkˈskluːd/',d:'排除、排斥',e:'We cannot ~ the possibility.'},
+  {w:'execute',p:'/ˈeksɪkjuːt/',d:'执行、实施',e:'~ the plan carefully.'},
+  {w:'exhibit',p:'/ɪɡˈzɪbɪt/',d:'展示、展览',e:'The museum ~s ancient art.'},
+  {w:'expand',p:'/ɪkˈspænd/',d:'扩大、膨胀',e:'The company ~ed rapidly.'},
+  {w:'experiment',p:'/ɪkˈsperɪmənt/',d:'实验、试验',e:'Let\'s run an ~.'},
+  {w:'expert',p:'/ˈekspɜːrt/',d:'专家、内行',e:'He is an ~ in this field.'},
+  {w:'explore',p:'/ɪkˈsplɔːr/',d:'探索、探险',e:'Let\'s ~ the city.'},
+  {w:'export',p:'/ɪkˈspɔːrt/',d:'出口、输出',e:'China ~s many goods.'},
+  {w:'expose',p:'/ɪkˈspoʊz/',d:'暴露、揭露',e:'Don\'t ~ yourself to the sun.'},
+  {w:'extend',p:'/ɪkˈstend/',d:'延长、扩展',e:'Please ~ the deadline.'},
+  {w:'external',p:'/ɪkˈstɜːrnl/',d:'外部的、外面的',e:'For ~ use only.'},
+  {w:'extreme',p:'/ɪkˈstriːm/',d:'极端的、极度的',e:'Don\'t go to ~s.'},
+  {w:'facility',p:'/fəˈsɪləti/',d:'设施、设备',e:'The sports ~ is excellent.'},
+  {w:'factor',p:'/ˈfæktər/',d:'因素、要素',e:'Price is a key ~.'},
+  {w:'faculty',p:'/ˈfækəlti/',d:'全体教员、才能',e:'She joined the ~ in 2020.'},
+  {w:'fade',p:'/feɪd/',d:'褪色、消失',e:'The colors ~d over time.'},
+  {w:'failure',p:'/ˈfeɪljər/',d:'失败、故障',e:'~ is the mother of success.'},
+  {w:'familiar',p:'/fəˈmɪliər/',d:'熟悉的、常见的',e:'The face looks ~.'},
+  {w:'fascinate',p:'/ˈfæsɪneɪt/',d:'使着迷',e:'The show ~d the audience.'},
+  {w:'feature',p:'/ˈfiːtʃər/',d:'特征、特色',e:'This phone has many ~s.'},
+  {w:'finance',p:'/ˈfaɪnæns/',d:'财务、金融',e:'He works in ~.'},
+  {w:'flexible',p:'/ˈfleksəbl/',d:'灵活的、柔韧的',e:'We need a ~ schedule.'},
+  {w:'forecast',p:'/ˈfɔːrkæst/',d:'预报、预测',e:'The weather ~ says rain.'},
+  {w:'foundation',p:'/faʊnˈdeɪʃn/',d:'基础、基金会',e:'The ~ of a building.'},
+  {w:'frequent',p:'/ˈfriːkwənt/',d:'频繁的、经常的',e:'He makes ~ trips.'},
+  {w:'function',p:'/ˈfʌŋkʃn/',d:'功能、作用',e:'What is its ~?'},
+  {w:'fundamental',p:'/ˌfʌndəˈmentl/',d:'基本的、根本的',e:'This is a ~ principle.'},
+  {w:'generate',p:'/ˈdʒenəreɪt/',d:'产生、生成',e:'The wind ~s electricity.'},
+  {w:'generous',p:'/ˈdʒenərəs/',d:'慷慨的、大方的',e:'She is a ~ person.'},
+  {w:'genuine',p:'/ˈdʒenjuɪn/',d:'真实的、真诚的',e:'It was a ~ apology.'},
+  {w:'global',p:'/ˈɡloʊbl/',d:'全球的、全面的',e:'We face ~ challenges.'},
+  {w:'gradual',p:'/ˈɡrædʒuəl/',d:'逐渐的、渐进的',e:'There was a ~ improvement.'},
+  {w:'guarantee',p:'/ˌɡærənˈtiː/',d:'保证、担保',e:'I ~ it will work.'},
+  {w:'harmony',p:'/ˈhɑːrməni/',d:'和谐、融洽',e:'They live in ~.'},
+  {w:'hesitate',p:'/ˈhezɪteɪt/',d:'犹豫、迟疑',e:'Don\'t ~ to ask.'},
+  {w:'highlight',p:'/ˈhaɪlaɪt/',d:'强调、突出',e:'Let me ~ the key points.'},
+  {w:'horizon',p:'/həˈraɪzn/',d:'地平线、视野',e:'Expand your ~s.'},
+  {w:'identify',p:'/aɪˈdentɪfaɪ/',d:'确认、识别',e:'Can you ~ the problem?'},
+  {w:'ignore',p:'/ɪɡˈnɔːr/',d:'忽视、不理会',e:'Don\'t ~ the warnings.'},
+  {w:'illustrate',p:'/ˈɪləstreɪt/',d:'说明、插图',e:'This example ~s my point.'},
+  {w:'imagine',p:'/ɪˈmædʒɪn/',d:'想象、设想',e:'Can you ~ a better future?'},
+  {w:'immediate',p:'/ɪˈmiːdiət/',d:'立即的、直接的',e:'We need ~ action.'},
+  {w:'impact',p:'/ˈɪmpækt/',d:'影响、冲击',e:'The ~ was huge.'},
+  {w:'implement',p:'/ˈɪmplɪment/',d:'实施、执行',e:'We will ~ the new policy.'},
+  {w:'imply',p:'/ɪmˈplaɪ/',d:'暗示、意味着',e:'What are you ~ing?'},
+  {w:'impose',p:'/ɪmˈpoʊz/',d:'强加、征收',e:'Don\'t ~ your views on me.'},
+  {w:'impress',p:'/ɪmˈpres/',d:'给…深刻印象',e:'Her speech ~ed everyone.'},
+  {w:'improve',p:'/ɪmˈpruːv/',d:'改善、提高',e:'I want to ~ my English.'},
+  {w:'incident',p:'/ˈɪnsɪdənt/',d:'事件、事故',e:'The ~ was reported.'},
+  {w:'incline',p:'/ɪnˈklaɪn/',d:'倾斜、倾向',e:'I ~ to agree with you.'},
+  {w:'indicate',p:'/ˈɪndɪkeɪt/',d:'表明、指示',e:'The results ~ improvement.'},
+  {w:'individual',p:'/ˌɪndɪˈvɪdʒuəl/',d:'个人的、个体',e:'Each ~ is unique.'},
+  {w:'inevitable',p:'/ɪnˈevɪtəbl/',d:'不可避免的',e:'Change is ~.'},
+  {w:'influence',p:'/ˈɪnfluəns/',d:'影响、势力',e:'She has a positive ~.'},
+  {w:'inform',p:'/ɪnˈfɔːrm/',d:'通知、告知',e:'Please ~ me of any changes.'},
+  {w:'initial',p:'/ɪˈnɪʃl/',d:'最初的、开始的',e:'The ~ plan didn\'t work.'},
+  {w:'initiative',p:'/ɪˈnɪʃətɪv/',d:'主动性、倡议',e:'He took the ~.'},
+  {w:'innocent',p:'/ˈɪnəsnt/',d:'无辜的、天真的',e:'He was found ~.'},
+  {w:'innovation',p:'/ˌɪnəˈveɪʃn/',d:'创新、革新',e:'Technology drives ~.'},
+  {w:'inspire',p:'/ɪnˈspaɪər/',d:'鼓舞、激发',e:'Her story ~d me.'},
+  {w:'institute',p:'/ˈɪnstɪtjuːt/',d:'机构、学院',e:'She works at a research ~.'},
+  {w:'instrument',p:'/ˈɪnstrəmənt/',d:'工具、乐器',e:'Music is a beautiful ~.'},
+  {w:'insure',p:'/ɪnˈʃʊər/',d:'保险、投保',e:'You should ~ your car.'},
+  {w:'intellectual',p:'/ˌɪntəˈlektʃuəl/',d:'智力的、知识分子',e:'He has ~ interests.'},
+  {w:'intelligent',p:'/ɪnˈtelɪdʒənt/',d:'聪明的、明智的',e:'She is very ~.'},
+  {w:'intense',p:'/ɪnˈtens/',d:'强烈的、剧烈的',e:'The heat was ~.'},
+  {w:'interact',p:'/ˌɪntərˈækt/',d:'互动、交流',e:'Students should ~ with each other.'},
+  {w:'interpret',p:'/ɪnˈtɜːrprɪt/',d:'解释、口译',e:'How do you ~ this data?'},
+  {w:'investigate',p:'/ɪnˈvestɪɡeɪt/',d:'调查、研究',e:'We need to ~ further.'},
+  {w:'involve',p:'/ɪnˈvɒlv/',d:'涉及、参与',e:'This project ~s many people.'},
+  {w:'isolate',p:'/ˈaɪsəleɪt/',d:'隔离、孤立',e:'Don\'t ~ yourself.'},
+  {w:'issue',p:'/ˈɪʃuː/',d:'问题、发行',e:'We need to address this ~.'},
+  {w:'justify',p:'/ˈdʒʌstɪfaɪ/',d:'证明…有理',e:'How can you ~ this?'},
+  {w:'knowledge',p:'/ˈnɒlɪdʒ/',d:'知识、学问',e:'~ is power.'},
 ];
 
-// Load progress
-let progress = JSON.parse(localStorage.getItem('word_progress')||'{}');
+// SM-2 algorithm
+let data = JSON.parse(localStorage.getItem('sm2_data')||'{}');
+let mode = 'all'; // all | new | review
+let queue = [];
 let idx = 0;
-let flipped = false;
+let cardEl = null;
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-let words = shuffle([...WORDS]);
 
-function save(){localStorage.setItem('word_progress',JSON.stringify(progress))}
+function qWords(){
+  let w = [...WORDS];
+  if(mode==='new') w = w.filter(w => !data[w.w]);
+  if(mode==='review') w = w.filter(w => data[w.w] && (data[w.w].next||0) <= Date.now());
+  return w;
+}
+
+function buildQueue(){queue = shuffle(qWords());idx=0;}
+
+function getStatus(w){
+  if(!data[w]) return 'new';
+  const d = data[w];
+  if(d.interval >= 21) return 'done';
+  return 'learning';
+}
+
 function render(){
-  if(idx >= words.length){
-    document.getElementById('cardArea').innerHTML='<div class="done"><h2>🎉 本轮完成！</h2><p>学习了 '+words.length+' 个单词</p><button onclick="restart()">再来一轮</button></div>';
+  buildQueue();
+  updateStats();
+  if(!queue.length){
+    document.getElementById('cardArea').innerHTML='<div class="done"><h2>🎉</h2><p>'+(mode==='review'?'暂无待复习单词':'词库已全部掌握')+'</p><button onclick="switchMode(\'all\')">全部模式</button><button class="sec" onclick="switchMode(\'review\')">复习</button></div>';
+    document.getElementById('btnArea').innerHTML='';
     return;
   }
-  const w = words[idx];
-  const known = Object.values(progress).filter(v=>v===true).length;
-  const unknown = Object.values(progress).filter(v=>v===false).length;
-  document.getElementById('totalWords').textContent = words.length;
-  document.getElementById('knownCount').textContent = known;
-  document.getElementById('unknownCount').textContent = unknown;
-  document.getElementById('progBar').style.width = (idx/words.length*100)+'%';
+  if(idx >= queue.length){idx=0;shuffle(queue);}
+  const w = queue[idx];
+  const s = getStatus(w.w);
+  const total = WORDS.length;
+  const newC = WORDS.filter(x=>!data[x.w]).length;
+  const learnC = WORDS.filter(x=>data[x.w] && data[x.w].interval < 21).length;
+  const doneC = WORDS.filter(x=>data[x.w] && data[x.w].interval >= 21).length;
+  document.getElementById('progBar').style.width = ((total-newC)/total*100)+'%';
+  const defShow = s==='done'?'show':'';
+  const egShow = s==='done'?'show':'';
   document.getElementById('cardArea').innerHTML =
-    '<div class="card" onclick="flipCard()">'+
-    '<div class="word">' + w.w + '</div>'+
-    '<div class="def" id="def">' + w.d + '</div>'+
-    '<div class="hint">点击翻转查看释义</div></div>'+
-    '<div class="btns">'+
-    '<button class="dont" onclick="rate(false)">✗ 不认识</button>'+
-    '<button class="know" onclick="rate(true)">✓ 认识</button></div>';
-  flipped = false;
-  document.getElementById('def').classList.remove('show');
+    '<div class="card" id="mainCard" onclick="flip()"><div class="word">'+w.w+'</div><div class="phonetic">'+w.p+'</div>'+
+    '<div class="def show" id="def">'+w.d+'</div><div class="eg show" id="eg">'+w.e+'</div></div>';
+  document.getElementById('btnArea').innerHTML =
+    '<button class="dont" onclick="rate(0)">✗ 不认识</button>'+
+    '<button class="hard" onclick="rate(1)">⚠ 模糊</button>'+
+    '<button class="good" onclick="rate(2)">✓ 记得</button>'+
+    '<button class="easy" onclick="rate(3)">★ 简单</button>';
+  document.getElementById('mainCard').onclick=flip;
 }
-function flipCard(){flipped=!flipped;document.getElementById('def').classList.toggle('show',flipped)}
-function rate(k){progress[words[idx].w]=k;save();idx++;render();}
-function restart(){progress={};idx=0;words=shuffle([...WORDS]);save();render();}
+
+function flip(){
+  document.getElementById('def').classList.toggle('show');
+  document.getElementById('eg').classList.toggle('show');
+}
+
+function rate(q){
+  const w = queue[idx];
+  if(!data[w.w]) data[w.w] = {interval:0,reps:0,ef:2.5,next:0,last:0};
+  const d = data[w.w];
+  if(q < 2){ // fail
+    d.interval = 1;
+    d.reps = 0;
+  } else {
+    if(d.reps === 0) d.interval = 1;
+    else if(d.reps === 1) d.interval = 6;
+    else d.interval = Math.round(d.interval * d.ef);
+    d.reps++;
+  }
+  d.ef = Math.max(1.3, d.ef + (0.1 - (2-q)*(0.08 + (2-q)*0.02)));
+  d.next = Date.now() + d.interval * 86400000;
+  d.last = Date.now();
+  localStorage.setItem('sm2_data',JSON.stringify(data));
+
+  // Animate
+  const c = document.getElementById('mainCard');
+  if(c){
+    c.classList.add(q>=2?'slide-right':'slide-left');
+    setTimeout(()=>{idx++;render();},250);
+  } else {idx++;render();}
+}
+
+function updateStats(){
+  const newC = WORDS.filter(x=>!data[x.w]).length;
+  const learnC = WORDS.filter(x=>data[x.w] && data[x.w].interval < 21).length;
+  const doneC = WORDS.filter(x=>data[x.w] && data[x.w].interval >= 21).length;
+  document.getElementById('sTotal').textContent = WORDS.length;
+  document.getElementById('sNew').textContent = newC;
+  document.getElementById('sLearn').textContent = learnC;
+  document.getElementById('sDone').textContent = doneC;
+}
+
+function switchMode(m){mode=m;buildQueue();render();document.getElementById('modeBtn').textContent={all:'全部',new:'新词',review:'复习'}[m];}
+function toggleMode(){const modes=['all','new','review'];const i=modes.indexOf(mode);switchMode(modes[(i+1)%3]);}
+
 render();
 </script>
 </body>
