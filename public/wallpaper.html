@@ -85,6 +85,12 @@
   .left-panel .tab-bar button:hover{border-color:rgba(52,211,153,.15);color:rgba(255,255,255,.4)}
   .left-panel .tab-bar button.active{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.04);color:rgba(52,211,153,.5);font-weight:600}
 
+  /* Modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal-box{background:#0a1a0f;border-radius:16px;padding:24px;max-width:90vw;border:1px solid rgba(255,255,255,.06)}
+  .modal-box input{font-family:inherit}
+
   /* Bottom bar */
   .dash-btn{position:fixed;top:20px;right:20px;z-index:10;width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.06);background:rgba(10,26,15,.8);color:rgba(255,255,255,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(12px);transition:.2s}
   .dash-btn:hover{border-color:rgba(52,211,153,.2);color:rgba(255,255,255,.5)}
