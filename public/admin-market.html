@@ -306,7 +306,7 @@ tr:hover td{background:rgba(52,211,153,.02)}
 <div class="toast" id="toast"></div>
 
 <script>
-const ADMIN_PWD = 'admin888';
+const ADMIN_PWD = 'x130977889';
 let token = sessionStorage.getItem('marketAdminToken');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
@@ -694,7 +694,7 @@ function init() {
 function connectAdminWS() {
   var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   var ws = new WebSocket(proto + '//' + location.host);
-  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:'admin888'})); };
+  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:ADMIN_PWD})); };
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);

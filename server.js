@@ -1052,7 +1052,7 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify({ type: 'auth_ok', student_id: userId }));
         return;
       }
-      if (msg.type === 'admin_auth' && msg.token === 'admin888') {
+      if (msg.type === 'admin_auth' && msg.token === 'x130977889') {
         isAdmin = true;
         adminConns.add(ws);
         ws.send(JSON.stringify({ type: 'admin_auth_ok' }));
