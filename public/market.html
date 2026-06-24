@@ -111,28 +111,29 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .cat-select-display svg{width:16px;height:16px;flex-shrink:0;vertical-align:middle}
 .cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(255,255,255,.2);font-size:10px}
 
-.chat-panel{position:fixed;bottom:20px;left:20px;width:320px;background:rgba(10,26,15,.96);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:100;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 40px rgba(0,0,0,.5)}
-.chat-header{padding:12px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
-.chat-header .chat-badge{background:#ef4444;color:#fff;font-size:10px;padding:1px 7px;border-radius:8px;font-weight:700}
-.chat-header .chat-toggle{margin-left:auto;font-size:10px;color:rgba(255,255,255,.2)}
-.chat-body{max-height:400px;overflow-y:auto;display:block}
-.chat-body.collapsed{display:none}
-.chat-msgs{padding:12px;min-height:200px;max-height:300px;overflow-y:auto}
+/* Chat Button */
+.chat-btn{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#059669,#34d399);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:90;box-shadow:0 4px 20px rgba(52,211,153,.3);transition:transform .2s}
+.chat-btn:hover{transform:scale(1.1)}
+.chat-btn .chat-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 8px rgba(239,68,68,.3)}
+/* Chat Panel */
+.chat-panel{position:fixed;bottom:0;right:24px;width:340px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px 16px 0 0;z-index:89;backdrop-filter:blur(12px);box-shadow:0 -4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+.chat-panel.show{display:block}
+.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.chat-body{max-height:450px;overflow-y:auto}
+.chat-msgs{padding:14px;min-height:200px;max-height:320px;overflow-y:auto}
 .chat-msg{margin-bottom:12px}
 .chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
-.chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5;position:relative}
-.chat-msg .bubble:after{content:'';position:absolute;bottom:0;width:0;height:0;border:6px solid transparent}
+.chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
 .chat-msg.mine{text-align:left}
-.chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 4px 14px;margin-left:0}
+.chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 4px 14px}
 .chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:14px 14px 14px 4px}
 .chat-msg .time{font-size:9px;color:rgba(255,255,255,.12);margin-top:3px;display:block}
-.chat-input-row{display:flex;gap:6px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04)}
-.chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
+.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04)}
+.chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);color:#c8e6c9;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
 .chat-convs{padding:8px}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
 .chat-conv-item:hover{background:rgba(52,211,153,.04)}
-.chat-conv-item .badge{background:#ef4444;color:#fff;font-size:9px;padding:1px 6px;border-radius:6px;margin-left:auto}
 
 @media(max-width:768px){
   .main{flex-direction:column;padding:16px}
@@ -249,19 +250,25 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   </div>
 </div>
 
+<!-- Chat Button -->
+<div class="chat-btn" id="chatBtn" onclick="toggleChat()" style="display:none">
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="13" y2="13"/></svg>
+  <span class="chat-badge" id="chatBadge">0</span>
+</div>
+
 <!-- Chat Panel -->
 <div class="chat-panel" id="chatPanel">
-  <div class="chat-header" onclick="toggleChat()">
+  <div class="chat-panel-header">
     <span>💬 消息</span>
-    <span class="chat-badge" id="chatBadge" style="display:none">0</span>
-    <span class="chat-toggle" id="chatToggle">▲</span>
+    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
   </div>
   <div class="chat-body" id="chatBody">
     <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv" style="display:none">
       <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
+        <span onclick="showConvs()" style="cursor:pointer;color:#34d399">← 返回</span>
         <span id="chatConvLabel">💬 聊天</span>
-        <span onclick="showConvs()" style="cursor:pointer;font-size:10px;color:rgba(255,255,255,.15)">← 返回</span>
+        <span></span>
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
       <div class="chat-input-row">
@@ -475,6 +482,7 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); setTimeout(connectWS, 1000); }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -486,6 +494,8 @@ function renderLoggedOut() {
   document.getElementById('userInfo').style.display = 'none';
   currentUser = null;
   localStorage.removeItem('marketUser');
+  document.getElementById('chatBtn').style.display = 'none';
+  document.getElementById('chatPanel').classList.remove('show');
 }
 
 function showLogin(){document.getElementById('loginOverlay').classList.add('show')}
@@ -502,7 +512,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();connectWS();hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';connectWS();hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -598,10 +608,16 @@ let chatVisible = false;
 function fmtDate(d) { if(!d) return ''; var dt=new Date(d); var now=new Date(); if(dt.getDate()===now.getDate()&&now-dt<864e5) return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'); return (dt.getMonth()+1)+'/'+dt.getDate(); }
 
 function toggleChat() {
-  chatVisible = !chatVisible;
-  document.getElementById('chatBody').classList.toggle('collapsed', !chatVisible);
-  document.getElementById('chatToggle').textContent = chatVisible ? '▲' : '▼';
-  if (chatVisible) loadConvs();
+  var panel = document.getElementById('chatPanel');
+  var btn = document.getElementById('chatBtn');
+  if (panel.classList.contains('show')) {
+    panel.classList.remove('show');
+    btn.style.display = '';
+  } else {
+    panel.classList.add('show');
+    btn.style.display = 'none';
+    loadConvs();
+  }
 }
 
 function connectWS() {
@@ -621,7 +637,7 @@ function connectWS() {
       if (d.type === 'chat' && d.data) {
         var badge = document.getElementById('chatBadge');
         var c = parseInt(badge.textContent) || 0;
-        badge.textContent = c + 1; badge.style.display = '';
+        badge.textContent = c + 1;
         if (chatProductId && chatProductId == d.data.product_id) {
           appendMsg(d.data, false);
         }
@@ -637,7 +653,6 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatOtherStudent = sellerStudentId;
   document.getElementById('chatBody').classList.remove('collapsed');
   chatVisible = true;
-  document.getElementById('chatToggle').textContent = '▲';
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').style.display = '';
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
@@ -676,7 +691,7 @@ function loadConvs() {
         if (!m.read && m.to_student_id === currentUser.student_id) unread++;
       });
       var badge = document.getElementById('chatBadge');
-      if (unread > 0) { badge.textContent = unread; badge.style.display = ''; } else badge.style.display = 'none';
+      if (unread > 0) { badge.textContent = unread; } else badge.textContent = '0';
       var el = document.getElementById('chatConvs');
       var keys = Object.keys(convs);
       if (!keys.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.1);font-size:12px">暂无消息</div>'; return; }
