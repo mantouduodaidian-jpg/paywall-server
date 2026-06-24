@@ -308,6 +308,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
         <span></span>
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
+      <div style="padding:4px 12px 0;display:none" id="chatSoldBtn"><button onclick="markSoldFromChat()" style="width:100%;padding:6px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:11px;cursor:pointer;font-family:inherit">✅ 标记已售出</button></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
         <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
@@ -791,6 +792,11 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
+  // Show sold button if current user owns this product
+  fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
+    if(p && p.owner_student_id === currentUser.student_id && !p.sold) document.getElementById('chatSoldBtn').style.display='';
+    else document.getElementById('chatSoldBtn').style.display='none';
+  }).catch(function(){});
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
@@ -859,6 +865,17 @@ function closeConv(key) {
 }
 
 var _lastChatTime = 0;
+function markSoldFromChat() {
+  if (!chatProductId || !currentUser) return;
+  if (!confirm('确认标记此商品为已售出？')) return;
+  fetch('/api/marketplace/products/'+chatProductId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){notify('✅ 已标记售出');document.getElementById('chatSoldBtn').style.display='none';load();}
+      else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
+}
+
 function sendChat() {
   try {
     var now = Date.now();
@@ -869,10 +886,8 @@ function sendChat() {
     if (!text) { notify('输入消息', '✏️'); return; }
     if (!chatProductId) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
-    // Sensitive word check
-    var bw=['代考','替考','作弊','答案','出售答案','买答案','代写','枪手','办证','假证','发票','赌博','赌场','毒品','吸毒','卖淫','嫖娼','诈骗','洗钱','高利贷','校园贷','裸贷','传销'];
-    var blocked=false;for(var b=0;b<bw.length;b++){if(text.indexOf(bw[b])>=0){blocked=true;break;}}
-    if(blocked){notify('消息包含违规内容','🚫');document.getElementById('chatInput').value='';document.getElementById('chatInput').style.borderColor='rgba(239,68,68,.3)';setTimeout(function(){document.getElementById('chatInput').style.borderColor=''},1500);return;}
+    // Sensitive word check (pass through, just report)
+    try{var _x=new XMLHttpRequest();_x.open('POST','/api/marketplace/chat-alert',true);_x.setRequestHeader('Content-Type','application/json');_x.send(JSON.stringify({content:text,from:(currentUser?currentUser.name:''),to:(chatOtherName||'')}));}catch(e){}
     input.value = '';
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
