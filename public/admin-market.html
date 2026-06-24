@@ -514,13 +514,13 @@ async function approveVer(id) {
   rows.forEach(function(row) {
     var cell = row.cells[0];
     if (cell && parseInt(cell.textContent) === id) {
-      row.cells[4].innerHTML = '<span class="badge badge-green">已通过</span>';
-      row.cells[6].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+id+',\'...\')">🗑️ 删除</button></span>';
+      row.cells[5].innerHTML = '<span class="badge badge-green">已通过</span>';
+      row.cells[7].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+id+',\'...\')">🗑️ 删除</button></span>';
     }
   });
   // Fetch in background
   await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
-  setTimeout(function() { loadVers(); loadOverview(); }, 200);
+  setTimeout(function() { loadVers(); loadOverview(); }, 500);
 }
 let rejectingVerId = null;
 function rejectVer(id) { rejectingVerId = id; document.getElementById('rejectVerModal').classList.add('show'); }
@@ -537,12 +537,12 @@ async function confirmRejectVer() {
   rows.forEach(function(row) {
     var cell = row.cells[0];
     if (cell && parseInt(cell.textContent) === rejectingVerId) {
-      row.cells[4].innerHTML = '<span class="badge badge-red">未通过</span>';
-      row.cells[6].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+rejectingVerId+',\'...\')">🗑️ 删除</button></span>';
+      row.cells[5].innerHTML = '<span class="badge badge-red">未通过</span>';
+      row.cells[7].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+rejectingVerId+',\'...\')">🗑️ 删除</button></span>';
     }
   });
   await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId,reason:fullReason})});
-  setTimeout(function() { loadVers(); loadOverview(); }, 200);
+  setTimeout(function() { loadVers(); loadOverview(); }, 500);
 }
 async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
