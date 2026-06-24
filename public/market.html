@@ -137,33 +137,32 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .contact-item:hover{background:rgba(52,211,153,.04)}
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;height:500px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);overflow:hidden;display:none;flex-direction:column}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
 #contactsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
 #contactsOverlay.show{display:block}
-.chat-panel.show{display:flex}
-.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);display:flex;justify-content:space-between;align-items:center}
-.chat-body{flex:1;display:flex;flex-direction:column;min-height:0}
+.chat-panel.show{display:block}
+.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.chat-body{max-height:500px;display:flex;flex-direction:column}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
-.chat-search-area{padding:8px 8px 0;flex-shrink:0}
-.chat-search-area input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
-.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
-.chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
-.chat-conv.show{display:flex}
-.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;flex-shrink:0}
-.chat-conv-item:hover{background:rgba(52,211,153,.04)}
-.chat-msgs{padding:14px;flex:1;overflow-y:auto;min-height:0}
-.chat-msg{margin-bottom:12px;flex-shrink:0}
+.chat-msgs{padding:14px;min-height:80px;flex:1;overflow-y:auto}
+.chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
+.chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
+.chat-msg{margin-bottom:12px}
 .chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
 .chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
 .chat-msg.mine{text-align:right}
 .chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 14px 4px}
 .chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:4px 14px 14px 14px}
 .chat-msg .time{font-size:9px;color:rgba(255,255,255,.12);margin-top:3px;display:block}
-.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04);flex-shrink:0}
+.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04)}
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);color:#c8e6c9;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
+.chat-convs{padding:8px}
+.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
+.chat-conv-item:hover{background:rgba(52,211,153,.04)}
 
 @media(max-width:768px){
   .main{flex-direction:column;padding:12px}
@@ -179,11 +178,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh;touch-action:auto;display:flex;flex-direction:column}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:92vh;touch-action:auto;display:flex;flex-direction:column}
   .chat-panel.show{display:flex}
-  .chat-body{position:absolute;top:52px;bottom:0;left:0;right:0}
+  .chat-body{flex:1;overflow-y:auto;max-height:none}
   .chat-msgs{flex:1;min-height:60px;max-height:none}
-  .chat-conv{height:auto;flex:1}
   .contact-sidebar{max-height:100vh;touch-action:auto;z-index:201}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
   .chat-input-row input{font-size:16px}
@@ -333,10 +331,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
   </div>
   <div class="chat-body" id="chatBody">
-    <div class="chat-search-area">
-      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()">
+    <div style="padding:8px 8px 0">
+      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
     </div>
-    <div class="chat-convs" id="chatConvs"><div style="text-align:center;padding:20px;color:rgba(52,211,153,.3);font-size:11px">加载联系人...</div></div>
+    <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv" style="display:none">
       <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
         <span onclick="showConvs()" style="cursor:pointer;color:#34d399">← 返回</span>
@@ -844,7 +842,7 @@ function toggleChat() {
     btn.style.display = 'none';
     bd.classList.add('show');
     document.body.style.overflow = 'hidden';
-    loadConvs();
+    setTimeout(loadConvs, 50);
   }
 }
 
@@ -884,15 +882,13 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
-  // Safety: ensure elements exist
-  try {
-    document.getElementById('chatPanel').classList.add('show');
-    document.getElementById('chatBtn').style.display = 'none';
-    document.getElementById('chatConvs').style.display = 'none';
-    document.getElementById('chatConv').classList.add('show');
-    document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
-    document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
-  } catch(e) { notify('打开聊天失败', '❌'); return; }
+  // Show panel immediately
+  document.getElementById('chatPanel').classList.add('show');
+  document.getElementById('chatBtn').style.display = 'none';
+  document.getElementById('chatConvs').style.display = 'none';
+  document.getElementById('chatConv').style.display = '';
+  document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
+  document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
   startChatPoll();
   // Load messages async
   setTimeout(function() {
@@ -912,38 +908,36 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
 function showConvs() {
   stopChatPoll();
   document.getElementById('chatConvs').style.display = '';
-  document.getElementById('chatConv').classList.remove('show');
+  document.getElementById('chatConv').style.display = 'none';
   chatProductId = null;
   loadConvs();
 }
 
-var _loadingConvs = false;
 function loadConvs() {
-  if (!currentUser || _loadingConvs) return;
-  _loadingConvs = true;
+  if (!currentUser) return;
   var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
   fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
     .then(function(r) { return r.json(); })
     .then(function(contacts) {
-      _loadingConvs = false;
       var arr = Array.isArray(contacts) ? contacts : [];
+      // Filter by search
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
+      // Count unread
+      var unread = 0;
       var el = document.getElementById('chatConvs');
       var badge = document.getElementById('chatBadge');
-      el.innerHTML = '';
       if (!arr.length) {
         el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
         badge.textContent = '0'; return;
       }
-      var totalUnread = 0;
       el.innerHTML = arr.map(function(c) {
-        totalUnread += (c.unread || 0);
-        var name = (c.name || c.student_id || '').replace(/'/g,'');
-        var badgeHtml = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
-        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',&apos;'+c.student_id+'&apos;,&apos;'+name+'&apos;,&apos;&apos;)">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+name+'</span>'+badgeHtml+'</div>';
+        var sid = c.student_id;
+        var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
+        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
       }).join('');
+      var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
       badge.textContent = totalUnread > 0 ? totalUnread : '0';
-    }).catch(function(e){_loadingConvs=false;console.warn(e);})
+    });
 }
 
 function closeConv(key) {
@@ -1064,7 +1058,6 @@ function sendChat() {
     if (now - _lastChatTime < 1000) { notify('发送太快，请稍等', '⏳'); return; }
     _lastChatTime = now;
     var input = document.getElementById('chatInput');
-    if (!input) { notify('聊天尚未就绪', '⚠️'); return; }
     var text = input.value.trim();
     if (!text) { notify('输入消息', '✏️'); return; }
     if (!chatProductId) { notify('请先选择对话', '💬'); return; }
