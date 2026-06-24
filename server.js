@@ -830,7 +830,8 @@ app.delete('/api/marketplace/blocked-words/:id', async (req, res) => {
 app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
   try {
     const { content, from, to } = req.body;
-    const words = ['微信','电话','转账','银行卡','支付宝','QQ','私下交易','加我','联系我'];
+    let words = ['微信','电话','转账','银行卡','支付宝','QQ','私下交易','加我','联系我'];
+    try { const r = await fetch(SB('blocked_words?select=word'), { headers: SB_HEADERS }); const d = await r.json(); if (d.length) words = d.map(w => w.word); } catch(e) {}
     const found = words.filter(w => content?.includes(w));
     if (found.length) {
       await fetch(SB('chat_alerts'), { method: 'POST', headers: SB_HEADERS2, body: JSON.stringify({ content: content?.slice(0,200), from_name: from||'', to_name: to||'', words: found.join(','), created_at: new Date().toISOString() }) });
