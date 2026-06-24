@@ -1150,8 +1150,11 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
 
 app.post('/api/marketplace/messages/read', express.json(), async (req, res) => {
   try {
-    const { product_id, student_id } = req.body;
-    await fetch(SB('messages?product_id=eq.'+product_id+'&to_student_id=eq.'+student_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ read: true }) });
+    const { product_id, student_id, from_student_id } = req.body;
+    let readUrl = SB('messages?to_student_id=eq.'+student_id+'&read=eq.false');
+    if (from_student_id) readUrl = SB('messages?to_student_id=eq.'+student_id+'&from_student_id=eq.'+from_student_id+'&read=eq.false');
+    else if (product_id) readUrl = SB('messages?product_id=eq.'+product_id+'&to_student_id=eq.'+student_id);
+    await fetch(readUrl, { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ read: true }) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
