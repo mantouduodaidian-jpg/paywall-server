@@ -317,7 +317,7 @@ tr:hover td{background:rgba(52,211,153,.02)}
 <div class="toast" id="toast"></div>
 
 <script>
-let token = sessionStorage.getItem('marketAdminToken');
+let token = localStorage.getItem('marketAdminToken');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
 
@@ -333,7 +333,7 @@ function login() {
     .then(function(r) { return r.json(); })
     .then(function(d) {
       if (d.ok && d.token) {
-        token = d.token; sessionStorage.setItem('marketAdminToken', d.token);
+        token = d.token; localStorage.setItem('marketAdminToken', d.token);
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
         init();
@@ -344,7 +344,7 @@ function login() {
     });
 }
 function logout() {
-  sessionStorage.removeItem('marketAdminToken');
+  localStorage.removeItem('marketAdminToken');
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
 }
