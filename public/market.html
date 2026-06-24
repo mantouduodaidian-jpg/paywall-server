@@ -15,6 +15,9 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .ann-bar.show{display:flex}
 .ann-bar .ann-dot{width:6px;height:6px;border-radius:50%;background:#34d399;flex-shrink:0}
 .ann-bar .ann-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.promo-bar{background:linear-gradient(135deg,rgba(251,191,36,.08),rgba(251,191,36,.02));border-bottom:1px solid rgba(251,191,36,.1);padding:7px 24px;font-size:12px;color:rgba(255,255,255,.5);display:flex;align-items:center;gap:8px;overflow:hidden;cursor:pointer}
+.promo-bar:hover{background:rgba(251,191,36,.06)}
+.promo-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ===== Header ===== */
 .header{background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.04);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -135,6 +138,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
 .chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+#contactsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+#contactsOverlay.show{display:block}
 .chat-panel.show{display:block}
 .chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
 .chat-body{max-height:500px;overflow-y:auto}
@@ -193,6 +198,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <div class="ann-bar" id="annBar">
   <span class="ann-dot"></span>
   <span class="ann-text" id="annText"></span>
+</div>
+<!-- Promotions Bar -->
+<div class="promo-bar" id="promoBar" style="display:none">
+  <span style="font-size:12px">🎁</span>
+  <span class="promo-text" id="promoText"></span>
 </div>
 
 <!-- Header -->
@@ -468,6 +478,19 @@ async function loadAnn() {
     if (arr.length) {
       document.getElementById('annText').textContent = arr[0].title + (arr[0].content ? ' — ' + arr[0].content : '');
       document.getElementById('annBar').classList.add('show');
+    }
+  } catch(e) {}
+}
+async function loadPromos() {
+  try {
+    const r = await fetch('/api/marketplace/promotions');
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    if (arr.length) {
+      var texts = arr.map(function(p) { return '🎁 ' + p.title + (p.desc ? ' — ' + p.desc : '') + (p.contact ? ' 📞' + p.contact : ''); });
+      document.getElementById('promoText').textContent = texts[0];
+      document.getElementById('promoBar').style.display = 'flex';
+      document.getElementById('promoBar').onclick = function() { window.open('https://weixin://dl/business/?t='+encodeURIComponent(arr[0].contact||''), '_blank'); };
     }
   } catch(e) {}
 }
@@ -1124,6 +1147,7 @@ try {
 loadCats();
 load(false);
 loadAnn();
+loadPromos();
 startProductPoll();
 </script>
 <svg style="display:none">
