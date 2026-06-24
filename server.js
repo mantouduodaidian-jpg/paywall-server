@@ -826,6 +826,27 @@ app.delete('/api/marketplace/blocked-words/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Chat Alert API ======
+app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
+  try {
+    const { content, from, to } = req.body;
+    const words = ['微信','电话','转账','银行卡','支付宝','QQ','私下交易','加我','联系我'];
+    const found = words.filter(w => content?.includes(w));
+    if (found.length) {
+      await fetch(SB('chat_alerts'), { method: 'POST', headers: SB_HEADERS2, body: JSON.stringify({ content: content?.slice(0,200), from_name: from||'', to_name: to||'', words: found.join(','), created_at: new Date().toISOString() }) });
+      notifyAdmin('chat_alert', { from, to, words: found });
+    }
+    res.json({ ok: true });
+  } catch(e) { res.json({ ok: false }); }
+});
+
+app.get('/api/marketplace/chat-alerts', async (req, res) => {
+  try {
+    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*'), { headers: SB_HEADERS2 });
+    res.json(await r.json());
+  } catch(e) { res.json([]); }
+});
+
 // ====== CSV Export ======
 app.get('/api/marketplace/export/:type', async (req, res) => {
   try {
