@@ -289,7 +289,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <div class="chat-msgs" id="chatMsgs"></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
-        <button class="btn btn-primary btn-sm" onclick="sendChat()">发送</button>
+        <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:8px;color:#fff;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" title="发送"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
     </div>
   </div>
@@ -798,7 +798,8 @@ function sendChat() {
   _lastChatTime = now;
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
-  if (!text || !chatProductId || !currentUser || !wsChat) return;
+  if (!text || !chatProductId || !currentUser) { notify('无法发送', '⚠️'); return; }
+  if (!wsChat || wsChat.readyState !== 1) { notify('连接中...', '⏳'); setTimeout(connectWS, 100); return; }
   input.value = '';
   var toStudent = chatOtherStudent || '';
   wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:toStudent,to_name:chatOtherName||''}));

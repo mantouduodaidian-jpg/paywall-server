@@ -22,6 +22,16 @@
   .stats .s .n{font-size:16px;font-weight:700}
   .stats .s .l{font-size:10px;color:rgba(255,255,255,.2);margin-top:1px}
 
+  .goal-bar{height:4px;background:rgba(255,255,255,.04);border-radius:4px;margin-bottom:14px;overflow:hidden;cursor:pointer;position:relative}
+  .goal-bar .f{height:100%;border-radius:4px;background:linear-gradient(90deg,#059669,#34d399);transition:width .4s}
+  .goal-bar .lbl{position:absolute;right:0;top:-16px;font-size:10px;color:rgba(255,255,255,.12)}
+  .goal-set{display:none;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:12px;padding:12px 16px;margin-bottom:14px}
+  .goal-set.show{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .goal-set input{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:13px;width:60px;outline:none;font-family:inherit}
+  .goal-set button{padding:6px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:12px;cursor:pointer;font-weight:600}
+  .goal-set .close{border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.25)}
+  .goal-set .lbl2{font-size:12px;color:rgba(255,255,255,.2)}
+
   .prog{height:3px;background:rgba(255,255,255,.04);border-radius:3px;margin-bottom:20px;overflow:hidden}
   .prog .f{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .4s}
 
@@ -73,9 +83,23 @@
 
   <div class="stats">
     <div class="s"><div class="n" id="sTotal">0</div><div class="l">总</div></div>
+    <div class="s"><div class="n" style="color:#34d399" id="sStreak">0</div><div class="l">🔥 连续</div></div>
     <div class="s"><div class="n" style="color:#60a5fa" id="sNew">0</div><div class="l">新词</div></div>
     <div class="s"><div class="n" style="color:#fbbf24" id="sLearn">0</div><div class="l">学习中</div></div>
     <div class="s"><div class="n" style="color:#34d399" id="sDone">0</div><div class="l">已掌握</div></div>
+  </div>
+
+  <!-- Goal bar -->
+  <div class="goal-bar" onclick="showGoalSet()" title="点击设置每日目标">
+    <div class="f" id="goalFill"></div>
+    <div class="lbl" id="goalLabel">--/--</div>
+  </div>
+  <div class="goal-set" id="goalSet">
+    <span class="lbl2">每日目标</span>
+    <input type="number" id="goalInput" min="1" max="200" value="20">
+    <span class="lbl2">个单词</span>
+    <button onclick="saveGoal()">确定</button>
+    <button class="close" onclick="hideGoalSet()">✕</button>
   </div>
 
   <div class="prog"><div class="f" id="progBar"></div></div>
@@ -316,10 +340,50 @@ const WORDS = [
 
 // SM-2 algorithm
 let data = JSON.parse(localStorage.getItem('sm2_data')||'{}');
-let mode = 'all'; // all | new | review
+let goal = parseInt(localStorage.getItem('word_goal')||'20');
+let streak = JSON.parse(localStorage.getItem('word_streak')||'{"count":0,"last":""}');
+let todayCount = 0;
+let mode = 'all';
 let queue = [];
 let idx = 0;
-let cardEl = null;
+
+function updateGoal(){
+  const today = new Date().toDateString();
+  if(streak.last === today) todayCount = data._today||0;
+  else {todayCount=0;data._today=0;localStorage.setItem('sm2_data',JSON.stringify(data));streak.last='';}
+  const d = goal>0 ? todayCount/goal : 0;
+  document.getElementById('goalFill').style.width = Math.min(100,d*100)+'%';
+  document.getElementById('goalLabel').textContent = todayCount+'/'+goal;
+}
+function showGoalSet(){
+  document.getElementById('goalInput').value=goal;
+  document.getElementById('goalSet').classList.add('show');
+}
+function hideGoalSet(){document.getElementById('goalSet').classList.remove('show')}
+function saveGoal(){
+  const v = parseInt(document.getElementById('goalInput').value);
+  if(v>0){goal=v;localStorage.setItem('word_goal',String(v));hideGoalSet();updateGoal();}
+}
+
+function trackStudy(){
+  const today = new Date().toDateString();
+  if(streak.last !== today){
+    if(streak.last){
+      const yest = new Date();
+      yest.setDate(yest.getDate()-1);
+      const yestStr = yest.toDateString();
+      if(streak.last === yestStr) streak.count++;
+      else streak.count = 1;
+    } else streak.count = 1;
+    streak.last = today;
+    data._today = 0;
+    localStorage.setItem('word_streak',JSON.stringify(streak));
+  }
+  data._today = (data._today||0) + 1;
+  todayCount = data._today;
+  localStorage.setItem('sm2_data',JSON.stringify(data));
+  updateGoal();
+}
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 
@@ -374,6 +438,7 @@ function flip(){
 }
 
 function rate(q){
+  trackStudy();
   const w = queue[idx];
   if(!data[w.w]) data[w.w] = {interval:0,reps:0,ef:2.5,next:0,last:0};
   const d = data[w.w];
