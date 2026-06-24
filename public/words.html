@@ -405,7 +405,7 @@ function getStatus(w){
 
 function render(){
   buildQueue();
-  updateStats();
+  updateStats();updateGoal();
   if(!queue.length){
     document.getElementById('cardArea').innerHTML='<div class="done"><h2>🎉</h2><p>'+(mode==='review'?'暂无待复习单词':'词库已全部掌握')+'</p><button onclick="switchMode(\'all\')">全部模式</button><button class="sec" onclick="switchMode(\'review\')">复习</button></div>';
     document.getElementById('btnArea').innerHTML='';
@@ -469,6 +469,7 @@ function updateStats(){
   const learnC = WORDS.filter(x=>data[x.w] && data[x.w].interval < 21).length;
   const doneC = WORDS.filter(x=>data[x.w] && data[x.w].interval >= 21).length;
   document.getElementById('sTotal').textContent = WORDS.length;
+  document.getElementById('sStreak').textContent = streak.count+'天';
   document.getElementById('sNew').textContent = newC;
   document.getElementById('sLearn').textContent = learnC;
   document.getElementById('sDone').textContent = doneC;
