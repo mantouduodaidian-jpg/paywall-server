@@ -279,16 +279,18 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 </div>
 
 <!-- Login Modal -->
-<div class="pub-overlay" id="loginOverlay">
-  <div class="pub-box" style="max-width:400px">
-    <h2>🔑 登录</h2>
-    <input type="text" id="loginId" placeholder="学号 *">
-    <input type="password" id="loginPhone" placeholder="电话（密码）*">
-    <div style="font-size:12px;color:rgba(255,255,255,.15);margin-bottom:10px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399">立即认证</a></div>
+<div class="pub-overlay" id="loginOverlay" onclick="if(event.target===this)hideLogin()">
+  <div class="pub-box" style="max-width:400px;text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">🔑</div>
+    <h2 style="font-size:18px;color:rgba(255,255,255,.6);margin-bottom:4px">欢迎回来</h2>
+    <p style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
+    <input type="text" id="loginId" placeholder="学号">
+    <input type="password" id="loginPhone" placeholder="电话">
+    <div style="font-size:12px;color:rgba(255,255,255,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
     <div class="btns">
-      <button class="submit" onclick="doLogin()">登录</button>
-      <button class="cancel" onclick="hideLogin()">取消</button>
+      <button class="submit" onclick="doLogin()" style="padding:12px">登录</button>
     </div>
+    <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(255,255,255,.15);text-decoration:none">稍后再说</a></div>
   </div>
 </div>
 
@@ -447,6 +449,7 @@ async function publish(){
 
 // ====== Report ======
 function showReport(id) {
+  if (!currentUser) { notify('请先登录后举报', '🔑'); showLogin(); return; }
   reportingProductId = id;
   document.getElementById('reportOverlay').classList.add('show');
 }
@@ -510,7 +513,7 @@ function logout(){
 }
 
 function showLoginForPub() {
-  if (!currentUser) { notify('请先登录再发布', '⚠️'); showLogin(); return false; }
+  if (!currentUser) { notify('请先登录再发布', '🔑'); showLogin(); return false; }
   return true;
 }
 
@@ -629,6 +632,7 @@ function connectWS() {
 }
 
 function openChat(productId, sellerStudentId, sellerName, productTitle) {
+  if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   document.getElementById('chatBody').classList.remove('collapsed');
