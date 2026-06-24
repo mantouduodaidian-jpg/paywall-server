@@ -283,7 +283,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 </div>
 
 <!-- Chat Panel -->
-<div class="chat-panel" id="chatPanel">
+<div class="chat-panel" id="chatPanel" onclick="event.stopPropagation()">
   <div class="chat-panel-header">
     <span>💬 最近对话</span>
     <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
@@ -331,7 +331,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 </div>
 
 <!-- Contact Sidebar -->
-<div class="contact-sidebar" id="contactSidebar">
+<div class="contact-sidebar" id="contactSidebar" onclick="event.stopPropagation()">
   <div class="contact-sidebar-header">
     <span>👥 全部联系人</span>
     <span onclick="toggleContacts()" style="cursor:pointer;font-size:14px;color:rgba(255,255,255,.2)">✕</span>
@@ -445,6 +445,8 @@ async function load(reset) {
     const list = document.getElementById('productList');
     if (reset !== false) {
       if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
+      list.innerHTML = '';
+    } else {
       list.innerHTML = '';
     }
     data.forEach(function(p) {
