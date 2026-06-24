@@ -773,7 +773,11 @@ function closeConv(key) {
   loadConvs();
 }
 
+var _lastChatTime = 0;
 function sendChat() {
+  var now = Date.now();
+  if (now - _lastChatTime < 1000) { notify('发送太快，请稍等', '⏳'); return; }
+  _lastChatTime = now;
   var input = document.getElementById('chatInput');
   var text = input.value.trim();
   if (!text || !chatProductId || !currentUser || !wsChat) return;
