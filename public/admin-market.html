@@ -683,10 +683,29 @@ function fmtDateTime(t) { if (!t) return '-'; const d=new Date(t); return (d.get
 function init() {
   loadOverview();
   loadCats();
+  connectAdminWS();
 }
 
-// Auto-refresh badges every 8s
-setInterval(() => loadOverview(), 8000);
+// WebSocket for instant updates
+function connectAdminWS() {
+  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var ws = new WebSocket(proto + '//' + location.host);
+  ws.onopen = function() { ws.send(JSON.stringify({type:'admin_auth',token:'admin888'})); };
+  ws.onmessage = function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.type === 'admin_new_verification' || d.type === 'admin_new_product') {
+        // Refresh everything
+        loadOverview();
+        loadProds();
+        loadVers();
+        loadReports();
+        toast('🔔 有新' + (d.type === 'admin_new_verification' ? '认证申请' : '商品') + '，已刷新');
+      }
+    } catch(e) {}
+  };
+  ws.onclose = function() { setTimeout(connectAdminWS, 5000); };
+}
 </script>
 <svg style="display:none">
   <defs>

@@ -617,6 +617,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
       });
       addLog('user_register', 'verification', student_id, name);
+        notifyAdmin('new_verification', { student_id, name });
       return res.json({ ok: true, msg: '✅ 认证已提交，等待管理员审核' });
     }
 
@@ -925,6 +926,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
+        notifyAdmin('new_product', { id: t?.id, title });
     res.json(t ? JSON.parse(JSON.stringify(t)) : { ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1027,9 +1029,16 @@ const PORT = process.env.PORT || 3456;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 const onlineUsers = new Map();
+const adminConns = new Set();
+
+function notifyAdmin(event, data) {
+  const msg = JSON.stringify({ type: 'admin_' + event, data: data || {} });
+  adminConns.forEach(ws => { try { ws.send(msg); } catch(e) {} });
+}
 
 wss.on('connection', (ws, req) => {
   let userId = null;
+  let isAdmin = false;
   ws.on('message', async (raw) => {
     try {
       const msg = JSON.parse(raw.toString());
@@ -1039,25 +1048,29 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify({ type: 'auth_ok', student_id: userId }));
         return;
       }
+      if (msg.type === 'admin_auth' && msg.token === 'admin888') {
+        isAdmin = true;
+        adminConns.add(ws);
+        ws.send(JSON.stringify({ type: 'admin_auth_ok' }));
+        return;
+      }
       if (msg.type === 'chat' && msg.product_id && msg.content && userId) {
-        // Save to Supabase
         const r = await fetch(SB('messages'), {
           method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
           body: JSON.stringify({ product_id: msg.product_id, from_student_id: userId, from_name: msg.from_name||'', to_student_id: msg.to_student_id||'', content: msg.content, read: false })
         });
         const saved = await r.json();
         const msgData = { type: 'chat', data: saved };
-        // Send to recipient if online
         if (msg.to_student_id && onlineUsers.has(msg.to_student_id)) {
           onlineUsers.get(msg.to_student_id).send(JSON.stringify(msgData));
         }
-        // Confirm to sender
         ws.send(JSON.stringify(msgData));
       }
     } catch(e) { console.error('ws error:', e.message); }
   });
   ws.on('close', () => {
     if (userId) onlineUsers.delete(userId);
+    if (isAdmin) adminConns.delete(ws);
   });
 });
 
