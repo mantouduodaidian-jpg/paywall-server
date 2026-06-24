@@ -439,7 +439,8 @@ async function load(reset) {
   try {
     const r = await fetch(url); const json = await r.json();
     const data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
-    const total = json.total || data.length;
+    var searchVal = document.getElementById('searchInput').value.trim();
+    const total = searchVal ? data.length : (json.total || data.length);
     document.getElementById('statCount').textContent = total;
     document.getElementById('resultLabel').textContent = (selCat||'全部')+(search?' · "'+search+'"':'')+' · '+total+' 件';
     const list = document.getElementById('productList');
