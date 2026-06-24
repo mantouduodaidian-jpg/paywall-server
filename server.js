@@ -965,13 +965,38 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
 // ====== Messages API ======
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
-    const { product_id, student_id } = req.query;
+    const { product_id, student_id, other_student_id } = req.query;
     let url = SB('messages?order=created_at.asc&select=*');
     if (product_id) url = SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select=*');
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
-    if (student_id) data = (Array.isArray(data) ? data : []).filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
-    res.json(data);
+    let arr = Array.isArray(data) ? data : [];
+    if (student_id) arr = arr.filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
+    if (other_student_id) arr = arr.filter(m => m.from_student_id === other_student_id || m.to_student_id === other_student_id);
+    res.json(arr);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Get unique contacts for a user
+app.get('/api/marketplace/contacts', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.json([]);
+    const r = await fetch(SB('messages?select=*&order=created_at.desc'), { headers: SB_HEADERS });
+    let data = await r.json();
+    let arr = Array.isArray(data) ? data : [];
+    let mine = arr.filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
+    let seen = {}, contacts = [];
+    mine.forEach(function(m) {
+      var otherId = m.from_student_id === student_id ? m.to_student_id : m.from_student_id;
+      var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
+      if (!otherId) return;
+      if (!seen[otherId]) {
+        seen[otherId] = true;
+        contacts.push({ student_id: otherId, name: otherName || otherId, last_message: m.content, last_time: m.created_at, product_id: m.product_id });
+      }
+    });
+    res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
