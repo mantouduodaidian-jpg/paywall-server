@@ -57,6 +57,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .card .info .meta{display:flex;gap:6px;font-size:10px;color:rgba(255,255,255,.2);flex-wrap:wrap}
 .card .info .meta .tag{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.04)}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:rgba(239,68,68,.15);color:#ef4444;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;backdrop-filter:blur(4px)}
+.card .mine-badge{position:absolute;top:8px;left:8px;background:rgba(52,211,153,.15);color:#34d399;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;backdrop-filter:blur(4px)}
 .status-badge{font-size:10px;padding:2px 8px;border-radius:4px;display:inline-block}
 .status-badge.pending{background:rgba(251,191,36,.1);color:#fbbf24}
 .status-badge.approved{background:rgba(52,211,153,.1);color:#34d399}
@@ -201,7 +202,6 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
       <a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.2);font-size:11px;text-decoration:none">退出</a>
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
-    <a href="#" class="dash" id="myBtn" onclick="showMyProducts();return false" style="display:none">我的</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
   </div>
 </div>
@@ -407,13 +407,15 @@ async function loadCats() {
     const r = await fetch('/api/marketplace/categories');
     const cats = await r.json();
     const arr = Array.isArray(cats) ? cats : [];
-    const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' +
+    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')">👤 我的</div>' : '';
+    const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' + mineCat +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
     // Restore saved category highlight
     if (selCat) {
       document.querySelectorAll('#catList .cat').forEach(function(el) {
         if (selCat === '') el.classList.toggle('active', el.textContent.includes('全部'));
+        else if (selCat === '__mine__') el.classList.toggle('active', el.textContent.includes('我的'));
         else el.classList.toggle('active', el.textContent.includes(selCat));
       });
     }
@@ -466,7 +468,8 @@ async function load(reset) {
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
-  if (selCat) url += '&category='+selCat;
+  if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
+  else if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
   try {
     const r = await fetch(url); const json = await r.json();
@@ -487,7 +490,8 @@ async function load(reset) {
       div.className = 'card';
       div.onclick = function() { showDetail(p.id); };
       div.innerHTML = '<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div><div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div><div class="meta"><span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
-        (p.sold?'<div class="sold-badge">已售罄</div>':'');
+        (p.sold?'<div class="sold-badge">已售罄</div>':'')+
+        (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
       list.appendChild(div);
     });
     // Page navigation (fixed position, always same spot)
@@ -609,13 +613,11 @@ if (currentUser) { document.getElementById('chatBtn').style.display = ''; docume
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
-  document.getElementById('myBtn').style.display = '';
   document.getElementById('userInfo').style.display = 'flex';
   document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户');
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
-  document.getElementById('myBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'none';
   currentUser = null;
   localStorage.removeItem('marketUser');
@@ -900,8 +902,11 @@ function sendChat() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
     if (!text) { notify('输入消息', '✏️'); return; }
-    if (!chatProductId) { notify('请先选择对话', '💬'); return; }
-    if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
+    // Sensitive word check
+    if(!window._bwWords||!window._bwWords.length){try{var _r=new XMLHttpRequest();_r.open("GET","/api/marketplace/blocked-words",false);_r.send();window._bwWords=JSON.parse(_r.responseText||"[]").map(function(w){return w.word;});}catch(e){window._bwWords=[];}}
+    var _found=window._bwWords.filter(function(w){return text.indexOf(w)>=0;});
+    if(_found.length){notify("⚠️ 对话含敏感词："+_found.join(","),"📢");}
+    try{var _x=new XMLHttpRequest();_x.open("POST","/api/marketplace/chat-alert",true);_x.setRequestHeader("Content-Type","application/json");_x.send(JSON.stringify({content:text,from:(currentUser?currentUser.name:""),to:(chatOtherName||"")}));}catch(e){}
     // Sensitive word check (pass through, just report)
     try{var _x=new XMLHttpRequest();_x.open('POST','/api/marketplace/chat-alert',true);_x.setRequestHeader('Content-Type','application/json');_x.send(JSON.stringify({content:text,from:(currentUser?currentUser.name:''),to:(chatOtherName||'')}));}catch(e){}
     input.value = '';
