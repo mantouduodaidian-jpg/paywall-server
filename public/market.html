@@ -434,6 +434,8 @@ const PAGE_SIZE = 10;
 async function load(reset) {
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>'; }
   const search = document.getElementById('searchInput').value.trim();
+  // Save state
+  try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
   if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
@@ -966,6 +968,21 @@ function appendMsg(m, isHistory) {
 }
 
 // ====== Init ======
+// Restore state
+try {
+  var saved = JSON.parse(localStorage.getItem('marketState'));
+  if (saved) {
+    if (saved.cat) { selCat = saved.cat; }
+    if (saved.search) { document.getElementById('searchInput').value = saved.search; }
+    if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
+  }
+} catch(e) {}
+// Highlight saved category
+if (selCat) {
+  document.querySelectorAll('#catList .cat').forEach(function(el) {
+    el.classList.toggle('active', el.textContent.includes(selCat));
+  });
+}
 loadCats();
 loadAnn();
 load();
