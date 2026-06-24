@@ -918,7 +918,7 @@ function showConvs() {
 }
 
 function loadConvs() {
-  console.log("loadConvs called", currentUser);
+  console.warn("CHAT:loadConvs called",currentUser);
   if (!currentUser) return;
   var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
   fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
