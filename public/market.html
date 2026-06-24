@@ -137,17 +137,24 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .contact-item:hover{background:rgba(52,211,153,.04)}
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);overflow:hidden;display:none;flex-direction:column;max-height:500px}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;height:500px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);overflow:hidden;display:none;flex-direction:column}
 #contactsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
 #contactsOverlay.show{display:block}
 .chat-panel.show{display:flex}
-.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);flex-shrink:0}
-.chat-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);flex-shrink:0;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);display:flex;justify-content:space-between;align-items:center}
+.chat-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
+.chat-search-area{padding:8px 8px 0;flex-shrink:0}
+.chat-search-area input{width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0}
+.chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
+.chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
+.chat-conv.show{display:flex}
+.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;flex-shrink:0}
+.chat-conv-item:hover{background:rgba(52,211,153,.04)}
 .chat-msgs{padding:14px;flex:1;overflow-y:auto;min-height:0}
-.chat-msg{margin-bottom:12px}
+.chat-msg{margin-bottom:12px;flex-shrink:0}
 .chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
 .chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
 .chat-msg.mine{text-align:right}
@@ -157,11 +164,6 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04);flex-shrink:0}
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);color:#c8e6c9;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
-.chat-convs{padding:8px;flex:1;overflow-y:auto}
-.chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
-.chat-conv.show{display:flex}
-.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
-.chat-conv-item:hover{background:rgba(52,211,153,.04)}
 
 @media(max-width:768px){
   .main{flex-direction:column;padding:12px}
@@ -331,8 +333,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
   </div>
   <div class="chat-body" id="chatBody">
-    <div style="padding:8px 8px 0">
-      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
+    <div class="chat-search-area">
+      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()">
     </div>
     <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv" style="display:none">
