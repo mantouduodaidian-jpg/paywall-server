@@ -425,8 +425,9 @@ async function loadProds() {
 }
 
 async function approveProd(id) {
+  toast('✅ 已通过');
   await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved',listed:true,verified:true})});
-  toast('✅ 已通过'); loadProds(); loadOverview();
+  loadProds(); loadOverview();
 }
 function showReject(id) { rejectingProdId = id; document.getElementById('rejectProdModal').classList.add('show'); }
 function closeRejectProd() { rejectingProdId = null; document.getElementById('rejectProdModal').classList.remove('show'); }
@@ -437,8 +438,9 @@ async function confirmReject() {
   toast('已拒绝'); closeRejectProd(); loadProds(); loadOverview();
 }
 async function toggleListed(id, currently) {
+  toast(currently?'已下架':'已上架');
   await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:!currently})});
-  toast(currently?'已下架':'已上架'); loadProds(); loadOverview();
+  loadProds(); loadOverview();
 }
 async function markSold(id) {
   if (!confirm('确认标记为已售出？')) return;
@@ -501,8 +503,20 @@ async function loadVers() {
   } catch(e) {}
 }
 async function approveVer(id) {
+  // Optimistic update - show immediately
+  toast('✅ 已通过');
+  // Update the button row instantly
+  var rows = document.querySelectorAll('#verTbody tr');
+  rows.forEach(function(row) {
+    var cell = row.cells[0];
+    if (cell && parseInt(cell.textContent) === id) {
+      row.cells[4].innerHTML = '<span class="badge badge-green">已通过</span>';
+      row.cells[6].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+id+',\'...\')">🗑️ 删除</button></span>';
+    }
+  });
+  // Fetch in background
   await fetch('/api/verify/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,productIds:[]})});
-  toast('✅ 已通过'); loadVers(); loadOverview();
+  setTimeout(function() { loadVers(); loadOverview(); }, 200);
 }
 let rejectingVerId = null;
 function rejectVer(id) { rejectingVerId = id; document.getElementById('rejectVerModal').classList.add('show'); }
@@ -511,9 +525,20 @@ async function confirmRejectVer() {
   if (!rejectingVerId) return;
   const reason = document.getElementById('rejectVerReason').value;
   const detail = document.getElementById('rejectVerDetail').value.trim();
-  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId})});
-  toast('✕ 未通过：' + reason + (detail?' - '+detail:''));
-  closeRejectVer(); loadVers(); loadOverview();
+  const fullReason = reason + (detail ? ' - '+detail : '');
+  toast('✕ 未通过：'+fullReason);
+  closeRejectVer();
+  // Optimistic update
+  var rows = document.querySelectorAll('#verTbody tr');
+  rows.forEach(function(row) {
+    var cell = row.cells[0];
+    if (cell && parseInt(cell.textContent) === rejectingVerId) {
+      row.cells[4].innerHTML = '<span class="badge badge-red">未通过</span>';
+      row.cells[6].innerHTML = '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+rejectingVerId+',\'...\')">🗑️ 删除</button></span>';
+    }
+  });
+  await fetch('/api/verify/reject',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:rejectingVerId,reason:fullReason})});
+  setTimeout(function() { loadVers(); loadOverview(); }, 200);
 }
 async function delVer(id, name) {
   if (!confirm('删除「'+name+'」的认证？')) return;
