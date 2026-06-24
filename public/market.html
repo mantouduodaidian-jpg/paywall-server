@@ -681,7 +681,7 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
+if (currentUser) { if (window.innerWidth > 768) document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -711,7 +711,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();if(window.innerWidth > 768) document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
