@@ -710,13 +710,27 @@ function loadConvs() {
         var other = m.from_student_id === currentUser.student_id ? (m.to_student_id||'') : (m.from_name||m.from_student_id||'');
         return other.toLowerCase().includes(search);
       });
+      var closed = JSON.parse(localStorage.getItem('closedConvs') || '[]');
+      if (closed.length) keys = keys.filter(function(k) {
+        var m = convs[k];
+        var convKey = m.product_id + '-' + (m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id);
+        return !closed.includes(convKey);
+      });
       if (!keys.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.1);font-size:12px">暂无消息</div>'; return; }
       el.innerHTML = keys.map(function(k) {
         var m = convs[k];
         var other = m.from_student_id === currentUser.student_id ? (m.to_student_id||'对方') : (m.from_name||m.from_student_id);
-        return '<div class="chat-conv-item" onclick="openChat('+m.product_id+',\''+(m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id)+'\',\''+esc(other)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(other)+'</span><span style="font-size:10px;color:rgba(255,255,255,.15)">'+fmtDate(m.created_at)+'</span></div>';
+        var convKey = m.product_id + '-' + (m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id);
+        return '<div class="chat-conv-item" onclick="openChat('+m.product_id+',\''+(m.from_student_id === currentUser.student_id ? m.to_student_id : m.from_student_id)+'\',\''+esc(other)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(other)+'</span><span onclick="event.stopPropagation();closeConv(\''+convKey+'\')" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.15);padding:0 4px">✕</span><span style="font-size:10px;color:rgba(255,255,255,.15);margin-left:4px">'+fmtDate(m.created_at)+'</span></div>';
       }).join('');
     });
+}
+
+function closeConv(key) {
+  var closed = JSON.parse(localStorage.getItem('closedConvs') || '[]');
+  if (!closed.includes(key)) closed.push(key);
+  localStorage.setItem('closedConvs', JSON.stringify(closed));
+  loadConvs();
 }
 
 function sendChat() {
