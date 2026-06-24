@@ -1140,7 +1140,7 @@ wss.on('connection', (ws, req) => {
       if (msg.type === 'chat' && msg.product_id && msg.content && userId) {
         const r = await fetch(SB('messages'), {
           method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ product_id: msg.product_id, from_student_id: userId, from_name: msg.from_name||'', to_student_id: msg.to_student_id||'', content: msg.content, read: false })
+          body: JSON.stringify({ product_id: msg.product_id, from_student_id: userId, from_name: msg.from_name||'', to_student_id: msg.to_student_id||'', to_name: msg.to_name||'', content: msg.content, read: false })
         });
         const saved = await r.json();
         const msgData = { type: 'chat', data: saved };

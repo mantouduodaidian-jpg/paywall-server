@@ -452,7 +452,7 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '<span class="contact" style="opacity:.3;cursor:default">已售罄</span>')+
+      (!p.sold ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '<span class="contact" style="opacity:.3;cursor:default">已售罄</span>')+
       '<button class="close" onclick="hideDetail()">关闭</button></div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
     document.getElementById('detailModal').classList.add('show');
@@ -637,6 +637,7 @@ function previewImg(input) {
 let wsChat = null;
 let chatProductId = null;
 let chatOtherStudent = null;
+let chatOtherName = '';
 let chatVisible = false;
 
 function fmtDate(d) { if(!d) return ''; var dt=new Date(d); var now=new Date(); if(dt.getDate()===now.getDate()&&now-dt<864e5) return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'); return (dt.getMonth()+1)+'/'+dt.getDate(); }
@@ -661,6 +662,7 @@ function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   wsChat = new WebSocket(proto + '//' + location.host);
   wsChat.onopen = function() {
+    document.getElementById('chatBadge').textContent = '0';
     wsChat.send(JSON.stringify({type:'auth', student_id: currentUser.student_id}));
   };
   wsChat.onmessage = function(e) {
@@ -685,8 +687,11 @@ function connectWS() {
 
 function openChat(productId, sellerStudentId, sellerName, productTitle) {
   if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
+  if (sellerStudentId === 'unknown') { notify('卖家信息不完整，暂无法联系', '⚠️'); return; }
+  if (sellerStudentId === currentUser.student_id) { notify('这是你自己的商品', '👤'); return; }
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
+  chatOtherName = sellerName;
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
@@ -758,7 +763,7 @@ function sendChat() {
   if (!text || !chatProductId || !currentUser || !wsChat) return;
   input.value = '';
   var toStudent = chatOtherStudent || '';
-  wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:toStudent}));
+  wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:toStudent,to_name:chatOtherName||''}));
 }
 
 function appendMsg(m, isHistory) {
