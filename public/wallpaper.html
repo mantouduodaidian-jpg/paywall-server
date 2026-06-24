@@ -172,6 +172,7 @@
   <div class="left-overlay" id="leftOverlay" onclick="toggleLeft()"></div>
   <div class="left-overlay" id="pomoOverlay" onclick="togglePomo()"></div>
   <div class="left-overlay" id="vaultOverlay" onclick="toggleVault()"></div>
+  <div class="left-overlay" id="bulkOverlay" onclick="toggleBulk()"></div>
   <div class="left-panel" id="bulkPanel" style="width:380px">
     <button class="close" onclick="toggleBulk()">✕</button>
     <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:12px">📋 批量导入</div>
@@ -330,7 +331,7 @@ function renderVault(){
 async function vCopy(id){const i=vaultItems.find(x=>x.id===id);if(!i)return;const p=vEnc(i.password);try{await navigator.clipboard.writeText(p)}catch(e){}}
 async function vDel(id){if(!confirm('删除？'))return;try{await fetch('/api/vault/'+id,{method:'DELETE'});loadVault()}catch(e){}}
 function vaultAdd(){const n=prompt('名称');if(!n)return;const u=prompt('用户名');const p=prompt('密码');if(!p)return;fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(n),username:btoa(u||''),password:btoa(p)})}).then(()=>loadVault());}
-function toggleBulk(){document.getElementById('bulkPanel').classList.toggle('open');document.getElementById('vaultOverlay').classList.toggle('show')}
+function toggleBulk(){document.getElementById('bulkPanel').classList.toggle('open');document.getElementById('bulkOverlay').classList.toggle('show')}
 function vaultBulk(){toggleBulk();document.getElementById('bulkInput').value=''}
 async function doBulk(){
   const text=document.getElementById('bulkInput').value.trim();if(!text)return;
