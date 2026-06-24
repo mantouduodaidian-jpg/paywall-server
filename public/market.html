@@ -157,8 +157,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
   .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:60vh}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
+  .chat-msgs{min-height:120px;max-height:200px}
+  .chat-input-row input{font-size:16px}
+  .chat-input-row button{padding:10px 18px;font-size:14px}
+  #pageNav{margin-top:8px!important;padding:8px 0!important}
   .header{padding:12px 16px}
   .header .logo{font-size:17px}
   .header .sub{font-size:10px}
@@ -424,7 +428,7 @@ function setCat(c) {
 }
 
 let pageOffset = 0;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 async function load(reset) {
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>'; }
@@ -451,23 +455,23 @@ async function load(reset) {
         (p.sold?'<div class="sold-badge">已售罄</div>':'');
       list.appendChild(div);
     });
-    // Page navigation
+    // Page navigation (fixed position, always same spot)
     var totalPages = Math.ceil(total / PAGE_SIZE);
     var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
     var nav = document.getElementById('pageNav');
     if (!nav) {
       nav = document.createElement('div');
       nav.id = 'pageNav';
-      nav.style.cssText = 'text-align:right;padding:8px 0;grid-column:1/-1;display:flex;gap:4px;justify-content:flex-end;align-items:center';
+      nav.style.cssText = 'text-align:right;padding:12px 0;margin-top:16px;display:flex;gap:4px;justify-content:flex-end;align-items:center;border-top:1px solid rgba(255,255,255,.04)';
       list.parentNode.appendChild(nav);
     }
     var navHtml = '';
-    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:6px">‹ 上一页</a>';
+    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.06);border-radius:5px">‹</a>';
     for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
-      if (i === currentPage) navHtml += '<span style="background:rgba(52,211,153,.1);color:#34d399;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600">'+i+'</span>';
-      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(255,255,255,.25);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.04);border-radius:6px">'+i+'</a>';
+      if (i === currentPage) navHtml += '<span style="background:rgba(52,211,153,.1);color:#34d399;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600">'+i+'</span>';
+      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(255,255,255,.25);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.04);border-radius:5px">'+i+'</a>';
     }
-    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.06);border-radius:6px">下一页 ›</a>';
+    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.06);border-radius:5px">›</a>';
     nav.innerHTML = navHtml;
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
 }
