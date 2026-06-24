@@ -133,10 +133,29 @@
   .bottom-bar a:hover { color: rgba(255,255,255,.25); }
 
   @media (max-width:640px) {
-    .container { padding: 20px; }
-    .top-bar .greeting { font-size: 20px; }
-    .top-bar .time { font-size: 32px; }
-    .icons-grid { gap: 12px; grid-template-columns: repeat(4, 1fr); }
+    .container { padding: 16px; gap: 12px; }
+    .top-bar { margin-bottom: 20px; flex-direction: row; }
+    .top-bar .greeting { font-size: 18px; }
+    .top-bar .greeting .weather { font-size: 11px; }
+    .top-bar .time { font-size: 24px; }
+    .top-bar .time .date { font-size: 11px; }
+    .icons-grid { gap: 6px; grid-template-columns: repeat(3, 1fr); }
+    .icon-link { padding: 10px 4px; }
+    .icon-link svg { width: 32px; height: 32px; }
+    .icon-link .lbl { font-size: 10px; }
+    .daily-section { margin-top: 16px; }
+    .left-btn, .dash-btn { width: 32px; height: 32px; }
+    .left-btn svg, .dash-btn svg { width: 16px; height: 16px; }
+    .left-panel { width: 100% !important; left: -105% !important; }
+    .left-panel.open { left: 0 !important; }
+    .dash-panel { width: 100%; right: -105%; }
+    .dash-panel.open { right: 0; }
+    .bottom-bar { font-size: 10px; gap: 12px; }
+  }
+  @media (max-width:400px) {
+    .icons-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    .top-bar .time { font-size: 20px; }
+    .icon-link svg { width: 28px; height: 28px; }
   }
   .btn svg{width:20px;height:20px;display:block;margin:0 auto 4px}.btn{padding:8px 12px;border-radius:10px;text-decoration:none;color:rgba(255,255,255,.3);font-size:11px;transition:.2s;text-align:center}.btn:hover{background:rgba(255,255,255,.03);color:rgba(255,255,255,.5)}
 </style>
