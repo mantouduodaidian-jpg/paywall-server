@@ -407,7 +407,7 @@ async function loadCats() {
     const r = await fetch('/api/marketplace/categories');
     const cats = await r.json();
     const arr = Array.isArray(cats) ? cats : [];
-    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')">👤 我的</div>' : '';
+    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#a7f3d0" stroke-width="1.5"/></svg> 我的</div>' : '';
     const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' + mineCat +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
