@@ -332,7 +332,10 @@ let vaultItems=[],vaultMaster='';
 function toggleVault(){
   const p=document.getElementById('vaultPanel');
   p.classList.toggle('open');document.getElementById('vaultOverlay').classList.toggle('show');
-  if(p.classList.contains('open')&&!vaultMaster)document.getElementById('vaultLockModal').classList.add('show');
+  if(p.classList.contains('open')){
+    if(vaultMaster)loadVault();
+    else document.getElementById('vaultLockModal').classList.add('show');
+  }
 }
 function closeVaultLock(){document.getElementById('vaultLockModal').classList.remove('show')}
 function vaultUnlock(){
