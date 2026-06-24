@@ -623,12 +623,28 @@ function previewImg(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
-  document.getElementById('fImageName').textContent = file.name;
+  document.getElementById('fImageName').textContent = file.name + ' (压缩中...)';
   const reader = new FileReader();
   reader.onload = function(e) {
-    window._uploadedImages = [e.target.result];
-    document.getElementById('fImagePreviewImg').src = e.target.result;
-    document.getElementById('fImagePreview').style.display = '';
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 800, maxH = 800;
+      var w = img.width, h = img.height;
+      if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var quality = 0.6;
+      var dataUrl = canvas.toDataURL('image/jpeg', quality);
+      while (dataUrl.length > 200*1024 && quality > 0.1) { quality -= 0.1; dataUrl = canvas.toDataURL('image/jpeg', quality); }
+      window._uploadedImages = [dataUrl];
+      document.getElementById('fImagePreviewImg').src = dataUrl;
+      document.getElementById('fImagePreview').style.display = '';
+      var sizeKB = Math.round(dataUrl.length / 1024);
+      document.getElementById('fImageName').textContent = file.name + ' (' + sizeKB + 'KB)';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
