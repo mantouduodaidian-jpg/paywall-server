@@ -548,7 +548,7 @@ async function submitReport(){
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; startUnreadPoll(); }
 
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
@@ -578,7 +578,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -860,6 +860,32 @@ function startChatPoll() {
 }
 function stopChatPoll() {
   if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
+}
+
+var _unreadTimer = null;
+function startUnreadPoll() {
+  if (_unreadTimer) clearInterval(_unreadTimer);
+  if (!currentUser) return;
+  var lastCheck = 0;
+  _unreadTimer = setInterval(function() {
+    if (!currentUser) { clearInterval(_unreadTimer); _unreadTimer = null; return; }
+    fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var arr = Array.isArray(data)?data:[];
+        var unread = 0;
+        var latest = 0;
+        arr.forEach(function(m) {
+          var t = new Date(m.created_at).getTime();
+          if (t > latest) latest = t;
+          if (m.to_student_id === currentUser.student_id && !m.read) unread++;
+        });
+        if (latest > lastCheck) { lastCheck = latest; }
+        var badge = document.getElementById('chatBadge');
+        if (unread > 0) { badge.textContent = unread; }
+        else { badge.textContent = '0'; }
+      }).catch(function(){});
+  }, 3000);
 }
 
 function appendMsg(m, isHistory) {
