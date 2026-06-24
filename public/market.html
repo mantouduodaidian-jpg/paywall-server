@@ -296,7 +296,7 @@ async function loadCats() {
     // Populate category select + display
     var sel = document.getElementById('fCat');
     sel.innerHTML = '<option value="">分类</option>' +
-      arr.map(c => '<option value="'+esc(c.name)+'">'+(CAT_ICONS_EMOJI[c.name]||'')+' '+esc(c.name)+'</option>').join('');
+      arr.map(c => '<option value="'+esc(c.name)+'">'+esc(c.name)+'</option>').join('');
     sel.onchange = function() {
       var val = sel.value;
       var name = val || '分类';
