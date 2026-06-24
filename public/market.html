@@ -134,11 +134,17 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .contact-item:hover{background:rgba(52,211,153,.04)}
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:88px;left:24px;width:340px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
 .chat-panel.show{display:block}
 .chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
-.chat-body{max-height:450px;overflow-y:auto}
-.chat-msgs{padding:14px;min-height:200px;max-height:320px;overflow-y:auto}
+.chat-body{max-height:500px;overflow-y:auto}
+.chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
+.chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
+.chat-msgs{padding:14px;min-height:250px;max-height:400px;overflow-y:auto}
+.chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
+.chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
+.chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-msg{margin-bottom:12px}
 .chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
 .chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
