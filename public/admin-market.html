@@ -718,7 +718,8 @@ async function loadPromos() {
         '<td><input type="number" value="'+(p.sort_order||0)+'" style="width:40px;padding:2px 4px;border-radius:4px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:11px;outline:none" onchange="updatePromoSort('+p.id+',this.value)"></td>'+
         '<td><span class="badge '+(p.active?'badge-green':'badge-gray')+'">'+(p.active?'显示':'隐藏')+'</span></td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
-        '<button class="btn btn-ghost btn-sm" onclick="togglePromo('+p.id+','+p.active+')">'+(p.active?'🔕 隐藏':'🔔 显示')+'</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="editPromo('+p.id+')">✏️</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="togglePromo('+p.id+','+p.active+')">'+(p.active?'🔕':'🔔')+'</button>'+
         '<button class="btn btn-red btn-sm" onclick="delPromo('+p.id+',\''+esc(p.title)+'\')">🗑️</button></span></td></tr>').join('');
   } catch(e) {}
 }
@@ -728,6 +729,14 @@ async function addPromo() {
   await fetch('/api/marketplace/promotions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:document.getElementById('promoDesc').value.trim(),contact:document.getElementById('promoContact').value.trim()})});
   document.getElementById('promoTitle').value='';document.getElementById('promoDesc').value='';document.getElementById('promoContact').value='';
   toast('✅ 已添加'); loadPromos();
+}
+async function editPromo(id) {
+  var title = prompt('标题：', '');
+  if (!title) return;
+  var desc = prompt('描述：', '');
+  var contact = prompt('联系方式：', '');
+  await fetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:desc||'',contact:contact||''})});
+  toast('✅ 已更新'); loadPromos();
 }
 async function togglePromo(id, active) {
   await fetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({active:!active})});
