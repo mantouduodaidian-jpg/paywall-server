@@ -389,24 +389,54 @@ function setCat(c) {
   load();
 }
 
-async function load() {
-  document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>';
+let pageOffset = 0;
+const PAGE_SIZE = 20;
+
+async function load(reset) {
+  if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>'; }
   const search = document.getElementById('searchInput').value.trim();
-  let url = '/api/marketplace/products';
-  if (selCat) url += '?category='+selCat;
-  if (search) url += (selCat?'&':'?')+'search='+encodeURIComponent(search);
+  let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
+  if (selCat) url += '&category='+selCat;
+  if (search) url += '&search='+encodeURIComponent(search);
   try {
-    const r = await fetch(url); const data = await r.json();
-    document.getElementById('statCount').textContent = data.length;
-    document.getElementById('resultLabel').textContent = (selCat||'全部')+(search?' · "'+search+'"':'')+' · '+data.length+' 件';
+    const r = await fetch(url); const json = await r.json();
+    const data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+    const total = json.total || data.length;
+    document.getElementById('statCount').textContent = total;
+    document.getElementById('resultLabel').textContent = (selCat||'全部')+(search?' · "'+search+'"':'')+' · '+total+' 件';
     const list = document.getElementById('productList');
-    if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
-    list.innerHTML = data.map(p =>
-      '<div class="card" onclick="showDetail('+p.id+')"><div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div><div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div><div class="meta"><span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
-      (p.sold?'<div class="sold-badge">已售罄</div>':'')+
-      '</div>'
-    ).join('');
+    if (reset !== false) {
+      if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
+      list.innerHTML = '';
+    }
+    data.forEach(function(p) {
+      var div = document.createElement('div');
+      div.className = 'card';
+      div.onclick = function() { showDetail(p.id); };
+      div.innerHTML = '<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div><div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div><div class="meta"><span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
+        (p.sold?'<div class="sold-badge">已售罄</div>':'');
+      list.appendChild(div);
+    });
+    // Add load more button if there are more results
+    var nextOffset = pageOffset + PAGE_SIZE;
+    var loadMore = document.getElementById('loadMoreBtn');
+    if (nextOffset < total) {
+      if (!loadMore) {
+        loadMore = document.createElement('div');
+        loadMore.id = 'loadMoreBtn';
+        loadMore.style.cssText = 'text-align:center;padding:16px;grid-column:1/-1';
+        loadMore.innerHTML = '<a href="#" onclick="loadMore();return false" style="color:rgba(255,255,255,.2);font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.06);padding:8px 24px;border-radius:8px;display:inline-block">加载更多 ↓</a>';
+        list.parentNode.appendChild(loadMore);
+      }
+    } else if (loadMore) {
+      loadMore.remove();
+    }
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
+}
+
+function loadMore() {
+  pageOffset += PAGE_SIZE;
+  load(false);
 }
 
 // ====== Detail ======

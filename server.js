@@ -941,16 +941,27 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin } = req.query;
-    let url = SB('products?order=created_at.desc&select=*');
-    // Admin sees all, public sees only approved+listed
-    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=created_at.desc&select=*');
-    if (category && admin) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*');
-    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=created_at.desc&select=*');
+    const { category, search, admin, limit, offset } = req.query;
+    const pageSize = parseInt(limit) || 20;
+    const pageOffset = parseInt(offset) || 0;
+    // Get total count first
+    let countUrl = SB('products?select=id');
+    if (!admin) countUrl = SB('products?status=eq.approved&listed=eq.true&select=id');
+    if (category && admin) countUrl = SB('products?category=eq.'+category+'&select=id');
+    if (category && !admin) countUrl = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+    const countR = await fetch(countUrl, { headers: SB_HEADERS });
+    let countData = await countR.json();
+    let total = Array.isArray(countData) ? countData.length : 0;
+
+    // Get page
+    let url = SB('products?order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (category && admin) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
-    if (search) data = data.filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
-    res.json(data);
+    if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
+    res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
