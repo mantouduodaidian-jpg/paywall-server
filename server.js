@@ -570,13 +570,14 @@ app.patch('/api/marketplace/products/:id', express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
-    const { verified, status, listed, sold, reject_reason, title, price, category, desc, quality, contact } = req.body;
+    const { verified, status, listed, sold, reject_reason, pinned, title, price, category, desc, quality, contact } = req.body;
     const fields = {};
     if (verified !== undefined) fields.verified = verified;
     if (status !== undefined) fields.status = status;
     if (listed !== undefined) fields.listed = listed;
     if (sold !== undefined) fields.sold = sold;
     if (reject_reason !== undefined) fields.reject_reason = reject_reason;
+    if (pinned !== undefined) fields.pinned = pinned;
     if (title !== undefined) fields.title = title;
     if (price !== undefined) fields.price = parseFloat(price);
     if (category !== undefined) fields.category = category;
@@ -1058,13 +1059,13 @@ app.get('/api/marketplace/products', async (req, res) => {
     let total = Array.isArray(countData) ? countData.length : 0;
 
     // Get page
-    let url = SB('products?order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (category && admin) url = SB('products?category=eq.'+category+'&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    let url = SB('products?order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (category && admin) url = SB('products?category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
     }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();

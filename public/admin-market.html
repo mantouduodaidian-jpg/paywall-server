@@ -435,6 +435,7 @@ async function loadProds() {
         '<td style="text-align:center"><span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
           (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
+          (p.pinned ? '<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>' : '<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+
           (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
           (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
           '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
@@ -461,6 +462,10 @@ async function toggleListed(id, currently) {
   toast(currently?'已下架':'已上架');
   await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:!currently})});
   loadProds(); loadOverview();
+}
+async function togglePin(id, pin) {
+  await fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:pin})});
+  toast(pin?'✅ 已置顶':'已取消置顶'); loadProds();
 }
 async function markSold(id) {
   if (!confirm('确认标记为已售出？')) return;
