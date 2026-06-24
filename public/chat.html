@@ -672,6 +672,9 @@ function toggleMic(){
 
 async function send(){
   const text=chatInput.value.trim(); if(!text||sendBtn.disabled) return;
+  // Sensitive word check
+  var bw=['代考','替考','作弊','答案','出售答案','买答案','代写','枪手','办证','假证','发票','赌博','赌场','毒品','吸毒','卖淫','嫖娼','诈骗','洗钱','高利贷','校园贷','裸贷','传销'];
+  for(var b=0;b<bw.length;b++){if(text.indexOf(bw[b])>=0){chatInput.value='';chatInput.style.borderColor='rgba(239,68,68,.3)';setTimeout(function(){chatInput.style.borderColor=''},1500);return;}}
   // Try WebSocket streaming first
   if (ws && ws.readyState === WebSocket.OPEN) {
     chatInput.value='';chatInput.style.height='auto';sendBtn.disabled=true;
