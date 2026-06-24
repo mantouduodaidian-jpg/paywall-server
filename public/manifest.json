@@ -1,7 +1,7 @@
 {
-  "name": "林间小语",
-  "short_name": "林间小语",
-  "description": "AI Chat · 记账 · 仪表盘",
+  "name": "富之林",
+  "short_name": "富之林",
+  "description": "林间小语 · 记账 · 严选 · 番茄钟",
   "start_url": "/wallpaper.html",
   "display": "standalone",
   "background_color": "#0a1a0f",
