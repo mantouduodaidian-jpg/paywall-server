@@ -142,11 +142,11 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 #contactsOverlay.show{display:block}
 .chat-panel.show{display:block}
 .chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
-.chat-body{max-height:500px;overflow-y:auto}
+.chat-body{max-height:500px;display:flex;flex-direction:column}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
-.chat-msgs{padding:14px;min-height:250px;max-height:400px;overflow-y:auto}
+.chat-msgs{padding:14px;min-height:80px;flex:1;overflow-y:auto}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
