@@ -607,6 +607,52 @@ app.delete('/api/marketplace/products/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Promotions API ======
+app.get('/api/marketplace/promotions', async (req, res) => {
+  try {
+    const { all } = req.query;
+    let url = all ? SB('promotions?order=sort_order.asc&select=*') : SB('promotions?active=eq.true&order=sort_order.asc&select=*');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/promotions', express.json(), async (req, res) => {
+  try {
+    const { title, desc, contact, image, sort_order } = req.body;
+    if (!title) return res.status(400).json({ error: 'title required' });
+    const r = await fetch(SB('promotions'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ title, desc: desc||'', contact: contact||'', image: image||'', sort_order: sort_order||0, active: true })
+    });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.put('/api/marketplace/promotions/:id', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, desc, contact, image, sort_order, active } = req.body;
+    const fields = {};
+    if (title !== undefined) fields.title = title;
+    if (desc !== undefined) fields.desc = desc;
+    if (contact !== undefined) fields.contact = contact;
+    if (image !== undefined) fields.image = image;
+    if (sort_order !== undefined) fields.sort_order = sort_order;
+    if (active !== undefined) fields.active = active;
+    await fetch(SB('promotions?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/promotions/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await fetch(SB('promotions?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Login API ======
 app.post('/api/marketplace/login', express.json(), async (req, res) => {
   try {
