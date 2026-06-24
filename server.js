@@ -181,6 +181,10 @@ app.put('/api/vault/:id', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.delete('/api/vault/clear', async (req, res) => {
+  try { await fetch(SB('vault?id=gt.0'), { method: 'DELETE', headers: SB_HEADERS2 }); res.json({ ok: true }); } catch(e) { res.json({ ok: false }); }
+});
+
 app.delete('/api/vault/:id', async (req, res) => {
   try {
     await fetch(SB('vault?id=eq.'+req.params.id), { method: 'DELETE', headers: SB_HEADERS2 });

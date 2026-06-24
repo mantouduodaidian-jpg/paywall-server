@@ -191,7 +191,7 @@
   <div class="left-panel" id="vaultPanel">
     <button class="close" onclick="toggleVault()">✕</button>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4)">🔐 密码</div>
+      <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4)">🔐 密码 <span style="font-size:10px;font-weight:400;color:rgba(255,255,255,.08);cursor:pointer" onclick="if(confirm('清空所有密码？')){fetch('/api/vault/clear',{method:'DELETE'}).then(()=>loadVault())}">清空</span></div>
       <div style="display:flex;gap:4px">
         <button onclick="vaultAdd()" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.25);font-size:11px;cursor:pointer">+</button>
         <button onclick="toggleBulk()" style="padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.15);font-size:11px;cursor:pointer">📋</button>
@@ -342,6 +342,7 @@ function vaultUnlock(){
   const p=document.getElementById('vaultPwd').value;
   if(!p)return;
   vaultMaster=p;
+  try{sessionStorage.setItem('vaultMaster',p)}catch(e){}
   document.getElementById('vaultLockModal').classList.remove('show');
   loadVault();
 }
@@ -385,6 +386,9 @@ function switchTab(t){
   document.getElementById('leftQuotes').style.display=t==='quotes'?'block':'none';
   document.getElementById('leftNews').style.display=t==='news'?'block':'none';
 }
+
+// Restore vault master from session
+try{const vm=sessionStorage.getItem('vaultMaster');if(vm)vaultMaster=vm;}catch(e){}
 
 // Weather (cached)
 const wc=JSON.parse(localStorage.getItem('_weather')||'{}');
