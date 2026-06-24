@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>背单词</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a1a0f;color:#c8e6c9;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+  .card{width:340px;min-height:280px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:24px;padding:32px 24px;text-align:center;cursor:pointer;transition:all .3s;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+  .card:hover{border-color:rgba(52,211,153,.12)}
+  .card .word{font-size:32px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:16px;transition:all .3s}
+  .card .def{font-size:16px;color:rgba(255,255,255,.35);line-height:1.7;display:none;max-width:90%}
+  .card .def.show{display:block}
+  .card .hint{font-size:12px;color:rgba(255,255,255,.1);margin-top:auto;padding-top:20px}
+
+  .btns{display:flex;gap:12px;margin-top:20px}
+  .btns button{width:100px;padding:12px;border-radius:14px;border:none;font-size:14px;cursor:pointer;font-weight:600;transition:all .15s;font-family:inherit}
+  .btns button:active{transform:scale(.95)}
+  .btns .know{background:rgba(52,211,153,.12);color:#34d399}
+  .btns .know:hover{background:rgba(52,211,153,.2)}
+  .btns .dont{background:rgba(239,68,68,.1);color:#f87171}
+  .btns .dont:hover{background:rgba(239,68,68,.18)}
+
+  .stats{display:flex;gap:16px;margin-bottom:24px;font-size:13px;color:rgba(255,255,255,.15)}
+  .stats span{display:flex;align-items:center;gap:4px}
+
+  .prog{width:340px;height:3px;background:rgba(255,255,255,.04);border-radius:3px;margin-bottom:24px;overflow:hidden}
+  .prog .f{height:100%;border-radius:3px;background:linear-gradient(90deg,#059669,#34d399);transition:width .4s;width:0%}
+
+  .done{text-align:center;padding:40px}
+  .done h2{font-size:24px;color:rgba(255,255,255,.2);margin-bottom:8px}
+  .done p{font-size:14px;color:rgba(255,255,255,.08)}
+  .done button{margin-top:20px;padding:10px 28px;border-radius:12px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:14px;cursor:pointer;font-weight:600}
+</style>
+</head>
+<body>
+<div class="stats">
+  <span>📚 <span id="totalWords">0</span></span>
+  <span>✅ <span id="knownCount">0</span></span>
+  <span>❌ <span id="unknownCount">0</span></span>
+</div>
+<div class="prog"><div class="f" id="progBar"></div></div>
+<div id="cardArea"></div>
+
+<script>
+const WORDS = [
+  { w: 'abandon', d: '放弃、遗弃' }, { w: 'ability', d: '能力、才能' }, { w: 'abroad', d: '在国外、到国外' },
+  { w: 'absence', d: '缺席、不在' }, { w: 'absolute', d: '绝对的、完全的' }, { w: 'absorb', d: '吸收、吸引' },
+  { w: 'abstract', d: '抽象的、摘要' }, { w: 'abundant', d: '丰富的、充裕的' }, { w: 'abuse', d: '滥用、虐待' },
+  { w: 'academic', d: '学术的、学院的' }, { w: 'accelerate', d: '加速、促进' }, { w: 'access', d: '通道、接近' },
+  { w: 'accident', d: '事故、意外' }, { w: 'accommodate', d: '容纳、提供住宿' }, { w: 'accompany', d: '陪伴、伴随' },
+  { w: 'accomplish', d: '完成、实现' }, { w: 'accurate', d: '准确的、精确的' }, { w: 'accuse', d: '指控、指责' },
+  { w: 'achieve', d: '达到、取得' }, { w: 'acknowledge', d: '承认、确认' }, { w: 'acquire', d: '获得、学到' },
+  { w: 'adapt', d: '适应、改编' }, { w: 'adequate', d: '足够的、适当的' }, { w: 'adjust', d: '调整、调节' },
+  { w: 'admire', d: '钦佩、羡慕' }, { w: 'admit', d: '承认、准许进入' }, { w: 'adopt', d: '采纳、收养' },
+  { w: 'advance', d: '前进、进步' }, { w: 'advantage', d: '优势、有利条件' }, { w: 'advertise', d: '做广告、宣传' },
+  { w: 'affair', d: '事务、事件' }, { w: 'affect', d: '影响、感动' }, { w: 'afford', d: '负担得起、提供' },
+  { w: 'agency', d: '代理、机构' }, { w: 'aggressive', d: '侵略的、好斗的' }, { w: 'agree', d: '同意、赞成' },
+  { w: 'agriculture', d: '农业、农学' }, { w: 'alarm', d: '警报、惊恐' }, { w: 'allow', d: '允许、准许' },
+  { w: 'alternative', d: '替代的、选择' }, { w: 'amaze', d: '使惊奇、使惊愕' }, { w: 'ambition', d: '雄心、野心' },
+  { w: 'amount', d: '数量、总额' }, { w: 'amuse', d: '逗乐、使开心' }, { w: 'analyze', d: '分析、解析' },
+  { w: 'announce', d: '宣布、通告' }, { w: 'annual', d: '每年的、年度的' }, { w: 'anxiety', d: '焦虑、忧虑' },
+  { w: 'apparent', d: '明显的、表面的' }, { w: 'appeal', d: '呼吁、吸引' }, { w: 'appetite', d: '食欲、胃口' },
+  { w: 'appliance', d: '电器、器具' }, { w: 'application', d: '申请、应用' }, { w: 'apply', d: '申请、应用' },
+  { w: 'appoint', d: '任命、指定' }, { w: 'appreciate', d: '感激、欣赏' }, { w: 'approach', d: '接近、方法' },
+  { w: 'appropriate', d: '适当的、合适的' }, { w: 'approve', d: '批准、赞成' }, { w: 'argue', d: '争论、辩论' },
+  { w: 'arrange', d: '安排、整理' }, { w: 'arrest', d: '逮捕、阻止' }, { w: 'article', d: '文章、物品' },
+  { w: 'aspect', d: '方面、层面' }, { w: 'assemble', d: '集合、组装' }, { w: 'assess', d: '评估、评定' },
+  { w: 'assign', d: '分配、指派' }, { w: 'assist', d: '帮助、协助' }, { w: 'assume', d: '假设、承担' },
+  { w: 'atmosphere', d: '大气、气氛' }, { w: 'attach', d: '附上、贴上' }, { w: 'attempt', d: '尝试、企图' },
+  { w: 'attend', d: '参加、出席' }, { w: 'attitude', d: '态度、看法' }, { w: 'attract', d: '吸引、引起' },
+  { w: 'authority', d: '权威、当局' }, { w: 'available', d: '可用的、有效的' }, { w: 'average', d: '平均的、普通' },
+  { w: 'avoid', d: '避免、回避' }, { w: 'aware', d: '意识到的、知道的' }, { w: 'balance', d: '平衡、余额' },
+  { w: 'bargain', d: '讨价还价、便宜货' }, { w: 'barrier', d: '障碍、屏障' }, { w: 'behave', d: '表现、举止' },
+  { w: 'belief', d: '信念、信仰' }, { w: 'belong', d: '属于、归属' }, { w: 'benefit', d: '利益、好处' },
+  { w: 'bitter', d: '苦的、痛苦的' }, { w: 'blame', d: '责备、责怪' }, { w: 'bother', d: '打扰、烦恼' },
+  { w: 'boundary', d: '边界、界限' }, { w: 'brilliant', d: '灿烂的、杰出的' }, { w: 'budget', d: '预算、经费' },
+  { w: 'burden', d: '负担、重担' }, { w: 'calculate', d: '计算、估计' }, { w: 'campaign', d: '运动、战役' },
+  { w: 'capable', d: '有能力的' }, { w: 'capacity', d: '容量、能力' }, { w: 'capture', d: '捕获、夺取' },
+  { w: 'career', d: '职业、生涯' }, { w: 'catalog', d: '目录、系列' }, { w: 'celebrate', d: '庆祝、赞美' },
+  { w: 'challenge', d: '挑战、质疑' }, { w: 'character', d: '性格、角色' }, { w: 'charge', d: '收费、控告' },
+  { w: 'cheat', d: '欺骗、作弊' }, { w: 'circumstance', d: '环境、情况' }, { w: 'claim', d: '声称、要求' },
+  { w: 'classify', d: '分类、归类' }, { w: 'climate', d: '气候、风气' }, { w: 'coach', d: '教练、指导' },
+  { w: 'collapse', d: '倒塌、崩溃' }, { w: 'combine', d: '结合、联合' }, { w: 'comfort', d: '安慰、舒适' },
+  { w: 'command', d: '命令、指挥' }, { w: 'comment', d: '评论、意见' }, { w: 'commerce', d: '商业、贸易' },
+  { w: 'commit', d: '犯（罪）、承诺' }, { w: 'communicate', d: '交流、沟通' }, { w: 'community', d: '社区、团体' },
+  { w: 'companion', d: '同伴、伙伴' }, { w: 'compare', d: '比较、对比' }, { w: 'compete', d: '竞争、比赛' },
+  { w: 'complain', d: '抱怨、投诉' }, { w: 'complete', d: '完成、完整的' }, { w: 'complex', d: '复杂的、综合的' },
+  { w: 'compose', d: '组成、创作' }, { w: 'concentrate', d: '集中、专注' }, { w: 'concept', d: '概念、观念' },
+  { w: 'concern', d: '关心、涉及' }, { w: 'conclude', d: '总结、结束' }, { w: 'condition', d: '条件、状况' },
+  { w: 'conduct', d: '行为、引导' }, { w: 'conference', d: '会议、讨论会' }, { w: 'confident', d: '自信的、确信的' },
+  { w: 'confirm', d: '确认、证实' }, { w: 'conflict', d: '冲突、矛盾' }, { w: 'confuse', d: '使困惑、混淆' },
+  { w: 'connect', d: '连接、联系' }, { w: 'conscious', d: '有意识的、清醒的' }, { w: 'consequence', d: '结果、后果' },
+  { w: 'conserve', d: '保存、节约' }, { w: 'consider', d: '考虑、认为' }, { w: 'consist', d: '由…组成' },
+  { w: 'constant', d: '不变的、持续的' }, { w: 'construct', d: '建造、构建' }, { w: 'consume', d: '消费、消耗' },
+  { w: 'contact', d: '联系、接触' }, { w: 'contain', d: '包含、容纳' }, { w: 'contemporary', d: '当代的、同时代的' },
+  { w: 'content', d: '内容、满足的' }, { w: 'contest', d: '竞赛、争夺' }, { w: 'continue', d: '继续、延续' },
+  { w: 'contract', d: '合同、收缩' }, { w: 'contrast', d: '对比、差异' }, { w: 'contribute', d: '贡献、捐献' },
+  { w: 'control', d: '控制、管理' }, { w: 'controversial', d: '有争议的' }, { w: 'convenient', d: '方便的、便利的' },
+  { w: 'convince', d: '说服、使确信' }, { w: 'cooperate', d: '合作、协作' }, { w: 'cope', d: '应付、处理' },
+  { w: 'core', d: '核心、要点' }, { w: 'correct', d: '正确的、纠正' }, { w: 'correspond', d: '对应、通信' },
+  { w: 'council', d: '委员会、理事会' }, { w: 'counsel', d: '建议、律师' }, { w: 'count', d: '计数、重要' },
+  { w: 'counter', d: '柜台、反驳' }, { w: 'couple', d: '一对、夫妇' }, { w: 'course', d: '课程、过程' },
+  { w: 'court', d: '法庭、球场' }, { w: 'cover', d: '覆盖、包括' }, { w: 'crash', d: '碰撞、崩溃' },
+  { w: 'create', d: '创造、创建' }, { w: 'creature', d: '生物、动物' }, { w: 'credit', d: '信用、学分' },
+  { w: 'crime', d: '犯罪、罪行' }, { w: 'crisis', d: '危机、危急关头' }, { w: 'criterion', d: '标准、准则' },
+  { w: 'critical', d: '批评的、关键的' }, { w: 'cultivate', d: '培养、耕作' }, { w: 'culture', d: '文化、文明' },
+  { w: 'cure', d: '治愈、治疗' }, { w: 'curious', d: '好奇的、求知的' }, { w: 'current', d: '当前的、水流' },
+  { w: 'custom', d: '习惯、海关' }, { w: 'damage', d: '损害、损坏' }, { w: 'debt', d: '债务、欠款' },
+  { w: 'decade', d: '十年、十年期' }, { w: 'decay', d: '腐烂、衰退' }, { w: 'deceive', d: '欺骗、蒙骗' },
+  { w: 'declare', d: '宣布、声明' }, { w: 'decline', d: '下降、拒绝' }, { w: 'decorate', d: '装饰、装潢' },
+  { w: 'decrease', d: '减少、减小' }, { w: 'dedicate', d: '致力于、奉献' }, { w: 'defeat', d: '击败、失败' },
+  { w: 'defend', d: '防御、辩护' }, { w: 'define', d: '定义、界定' }, { w: 'definite', d: '明确的、肯定的' },
+  { w: 'degree', d: '程度、学位' }, { w: 'delay', d: '延迟、推迟' }, { w: 'deliberate', d: '故意的、深思熟虑' },
+  { w: 'delicate', d: '精致的、微妙的' }, { w: 'deliver', d: '递送、发表' }, { w: 'demand', d: '要求、需求' },
+  { w: 'demonstrate', d: '展示、证明' }, { w: 'deny', d: '否认、拒绝' }, { w: 'depart', d: '离开、出发' },
+  { w: 'depend', d: '依赖、取决于' }, { w: 'deposit', d: '存款、押金' }, { w: 'depress', d: '使沮丧、压抑' },
+  { w: 'derive', d: '源于、获得' }, { w: 'describe', d: '描述、形容' }, { w: 'deserve', d: '值得、应得' },
+  { w: 'desire', d: '渴望、愿望' }, { w: 'desperate', d: '绝望的、拼命的' }, { w: 'despite', d: '尽管、不管' },
+  { w: 'destination', d: '目的地、终点' }, { w: 'destroy', d: '破坏、消灭' }, { w: 'detect', d: '察觉、发现' },
+  { w: 'determine', d: '决定、确定' }, { w: 'develop', d: '发展、开发' }, { w: 'device', d: '设备、装置' },
+  { w: 'devote', d: '致力于、奉献' }, { w: 'diagram', d: '图表、示意图' }, { w: 'discipline', d: '纪律、学科' },
+  { w: 'discover', d: '发现、发觉' }, { w: 'discuss', d: '讨论、论述' }, { w: 'dismiss', d: '解散、解雇' },
+  { w: 'display', d: '展示、陈列' }, { w: 'dispose', d: '处理、处置' }, { w: 'dispute', d: '争论、纠纷' },
+  { w: 'distinct', d: '不同的、明显的' }, { w: 'distinguish', d: '区分、辨别' }, { w: 'distribute', d: '分配、分发' },
+  { w: 'disturb', d: '打扰、扰乱' }, { w: 'diverse', d: '不同的、多样的' }, { w: 'document', d: '文件、文档' },
+  { w: 'domestic', d: '国内的、家庭的' }, { w: 'dominate', d: '支配、统治' }, { w: 'doubt', d: '怀疑、疑问' },
+  { w: 'draft', d: '草稿、草案' }, { w: 'drain', d: '排水、耗尽' }, { w: 'drama', d: '戏剧、剧本' },
+  { w: 'drastic', d: '激烈的、急剧的' }, { w: 'economy', d: '经济、节约' }, { w: 'edition', d: '版本、版次' },
+  { w: 'educate', d: '教育、培养' }, { w: 'efficient', d: '高效的、有效率的' },
+];
+
+// Load progress
+let progress = JSON.parse(localStorage.getItem('word_progress')||'{}');
+let idx = 0;
+let flipped = false;
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+let words = shuffle([...WORDS]);
+
+function save(){localStorage.setItem('word_progress',JSON.stringify(progress))}
+function render(){
+  if(idx >= words.length){
+    document.getElementById('cardArea').innerHTML='<div class="done"><h2>🎉 本轮完成！</h2><p>学习了 '+words.length+' 个单词</p><button onclick="restart()">再来一轮</button></div>';
+    return;
+  }
+  const w = words[idx];
+  const known = Object.values(progress).filter(v=>v===true).length;
+  const unknown = Object.values(progress).filter(v=>v===false).length;
+  document.getElementById('totalWords').textContent = words.length;
+  document.getElementById('knownCount').textContent = known;
+  document.getElementById('unknownCount').textContent = unknown;
+  document.getElementById('progBar').style.width = (idx/words.length*100)+'%';
+  document.getElementById('cardArea').innerHTML =
+    '<div class="card" onclick="flipCard()">'+
+    '<div class="word">' + w.w + '</div>'+
+    '<div class="def" id="def">' + w.d + '</div>'+
+    '<div class="hint">点击翻转查看释义</div></div>'+
+    '<div class="btns">'+
+    '<button class="dont" onclick="rate(false)">✗ 不认识</button>'+
+    '<button class="know" onclick="rate(true)">✓ 认识</button></div>';
+  flipped = false;
+  document.getElementById('def').classList.remove('show');
+}
+function flipCard(){flipped=!flipped;document.getElementById('def').classList.toggle('show',flipped)}
+function rate(k){progress[words[idx].w]=k;save();idx++;render();}
+function restart(){progress={};idx=0;words=shuffle([...WORDS]);save();render();}
+render();
+</script>
+</body>
+</html>

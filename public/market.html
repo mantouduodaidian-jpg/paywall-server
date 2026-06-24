@@ -136,12 +136,25 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-conv-item:hover{background:rgba(52,211,153,.04)}
 
 @media(max-width:768px){
-  .main{flex-direction:column;padding:16px}
+  .main{flex-direction:column;padding:12px}
   .sidebar{width:100%}
   .sidebar .cats{display:flex;gap:6px;overflow-x:auto}
-  .sidebar .cats .cat{white-space:nowrap;flex-shrink:0}
+  .sidebar .cats .cat{white-space:nowrap;flex-shrink:0;font-size:12px;padding:6px 10px}
   .sidebar .stats{display:none}
-  .grid{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .card .info{padding:8px 10px}
+  .card .info .title{font-size:13px}
+  .card .info .price{font-size:17px}
+  .pub-box{padding:20px;margin:10px auto}
+  .pub-box .row{flex-wrap:wrap}
+  .pub-box .row input,.pub-box .row select{min-width:100%}
+  .modal-box{margin:10px;max-width:100%}
+  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0}
+  .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
+  .header{padding:12px 16px}
+  .header .logo{font-size:17px}
+  .header .sub{font-size:10px}
+  .header .actions a{padding:6px 14px;font-size:12px}
 }
 </style>
 </head>
