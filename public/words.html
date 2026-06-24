@@ -419,11 +419,9 @@ function render(){
   const learnC = WORDS.filter(x=>data[x.w] && data[x.w].interval < 21).length;
   const doneC = WORDS.filter(x=>data[x.w] && data[x.w].interval >= 21).length;
   document.getElementById('progBar').style.width = ((total-newC)/total*100)+'%';
-  const defShow = s==='done'?'show':'';
-  const egShow = s==='done'?'show':'';
   document.getElementById('cardArea').innerHTML =
     '<div class="card" id="mainCard" onclick="flip()"><div class="word">'+w.w+'</div><div class="phonetic">'+w.p+'</div>'+
-    '<div class="def show" id="def">'+w.d+'</div><div class="eg show" id="eg">'+w.e+'</div></div>';
+    '<div class="def" id="def">'+w.d+'</div><div class="eg" id="eg">'+w.e+'</div></div>';
   document.getElementById('btnArea').innerHTML =
     '<button class="dont" onclick="rate(0)">✗ 不认识</button>'+
     '<button class="hard" onclick="rate(1)">⚠ 模糊</button>'+
