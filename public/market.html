@@ -977,13 +977,13 @@ try {
     if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
   }
 } catch(e) {}
-// Highlight saved category
+loadCats();
+// Highlight saved category (after loadCats re-renders the list)
 if (selCat) {
   document.querySelectorAll('#catList .cat').forEach(function(el) {
     el.classList.toggle('active', el.textContent.includes(selCat));
   });
 }
-loadCats();
 loadAnn();
 load(false);
 startProductPoll();
