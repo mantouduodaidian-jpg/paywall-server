@@ -547,7 +547,7 @@ async function submitReport(){
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
-if (currentUser) { renderLoggedIn(); setTimeout(connectWS, 1000); }
+if (currentUser) { renderLoggedIn(); }
 if (currentUser) { document.getElementById('chatBtn').style.display = ''; }
 
 function renderLoggedIn() {
@@ -578,7 +578,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';connectWS();hideLogin();notify('登录成功', '✅');}
+    if(d.ok&&d.user){currentUser=d.user;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';hideLogin();notify('登录成功', '✅');}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -767,9 +767,11 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
         }
       });
   }, 100);
+  startChatPoll();
 }
 
 function showConvs() {
+  stopChatPoll();
   document.getElementById('chatConvs').style.display = '';
   document.getElementById('chatConv').style.display = 'none';
   chatProductId = null;
@@ -829,10 +831,35 @@ function sendChat() {
     if (!text) { notify('输入消息', '✏️'); return; }
     if (!chatProductId) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
-    if (!wsChat || wsChat.readyState !== 1) { notify('连接中...', '⏳'); setTimeout(connectWS, 100); return; }
     input.value = '';
-    wsChat.send(JSON.stringify({type:'chat',product_id:chatProductId,content:text,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||''}));
+    fetch('/api/marketplace/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:text})
+    }).then(function(r){return r.json();}).then(function(m){
+      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:text,created_at:new Date().toISOString()}, false); }
+    }).catch(function(e){notify('发送失败','❌');});
   } catch(e) { notify('发送出错', '❌'); console.error(e); }
+}
+
+var _chatPollTimer = null;
+function startChatPoll() {
+  stopChatPoll();
+  if (!chatProductId || !currentUser) return;
+  var lastId = 0;
+  _chatPollTimer = setInterval(function() {
+    if (!chatProductId || !currentUser) { stopChatPoll(); return; }
+    fetch('/api/marketplace/messages?product_id='+chatProductId+'&student_id='+currentUser.student_id+'&other_student_id='+(chatOtherStudent||''))
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var arr = Array.isArray(data)?data:[];
+        arr.forEach(function(m) {
+          if (m.id > lastId) { lastId = m.id; appendMsg(m, true); }
+        });
+      }).catch(function(){});
+  }, 2000);
+}
+function stopChatPoll() {
+  if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
 }
 
 function appendMsg(m, isHistory) {
