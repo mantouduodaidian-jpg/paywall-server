@@ -911,7 +911,7 @@ function sendChat() {
     // Sensitive word check
     if(!window._bwWords||!window._bwWords.length){try{var _r=new XMLHttpRequest();_r.open("GET","/api/marketplace/blocked-words",false);_r.send();window._bwWords=JSON.parse(_r.responseText||"[]").map(function(w){return w.word;});}catch(e){window._bwWords=[];}}
     var _found=window._bwWords.filter(function(w){return text.indexOf(w)>=0;});
-    if(_found.length){notify("⚠️ 对话含敏感词："+_found.join(","),"📢");}
+    if(_found.length){notify("对话含敏感词："+_found.join(","),"🌲");}
     try{var _x=new XMLHttpRequest();_x.open("POST","/api/marketplace/chat-alert",true);_x.setRequestHeader("Content-Type","application/json");_x.send(JSON.stringify({content:text,from:(currentUser?currentUser.name:""),to:(chatOtherName||"")}));}catch(e){}
     // Sensitive word check (pass through, just report)
     try{var _x=new XMLHttpRequest();_x.open('POST','/api/marketplace/chat-alert',true);_x.setRequestHeader('Content-Type','application/json');_x.send(JSON.stringify({content:text,from:(currentUser?currentUser.name:''),to:(chatOtherName||'')}));}catch(e){}
