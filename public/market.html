@@ -979,7 +979,14 @@ try {
 } catch(e) {}
 loadCats();
 // Restore category/search/page state
-if (selCat) { setCat(selCat); } else { load(false); }
+if (selCat) {
+  // Apply highlight manually without resetting page
+  document.querySelectorAll('#catList .cat').forEach(function(el) {
+    if (selCat === '') el.classList.toggle('active', el.textContent.includes('全部'));
+    else el.classList.toggle('active', el.textContent.includes(selCat));
+  });
+}
+load(false);
 loadAnn();
 startProductPoll();
 </script>
