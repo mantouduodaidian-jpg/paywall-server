@@ -173,15 +173,14 @@
   <div class="left-overlay" id="leftOverlay" onclick="toggleLeft()"></div>
   <div class="left-overlay" id="pomoOverlay" onclick="togglePomo()"></div>
   <div class="left-overlay" id="vaultOverlay" onclick="toggleVault()"></div>
-  <div class="left-overlay" id="bulkOverlay" onclick="toggleBulk()"></div>
-  <div class="left-panel" id="bulkPanel" style="width:380px;left:-400px">
-    <button class="close" onclick="toggleBulk()">✕</button>
-    <div style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:12px">📋 批量导入</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.15);margin-bottom:8px">每行一个：名称 | 用户名 | 密码（用 | 分隔）</div>
-    <textarea id="bulkInput" style="width:100%;height:200px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:13px;font-family:monospace;outline:none;resize:vertical" placeholder="微信 | 138xxxx | mypass&#10;支付宝 | email@qq.com | 123456&#10;..."></textarea>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="doBulk()" style="flex:1;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;cursor:pointer;font-weight:600">导入</button>
-      <button onclick="toggleBulk()" style="padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.3);font-size:13px;cursor:pointer">取消</button>
+  <!-- Vault unlock modal -->
+  <div class="modal-overlay" id="vaultLockModal">
+    <div class="modal-box" style="text-align:center;max-width:360px">
+      <div style="font-size:32px;margin-bottom:10px">🔐</div>
+      <div style="font-size:16px;color:rgba(255,255,255,.3);margin-bottom:14px">输入主密码</div>
+      <input type="password" id="vaultPwd" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:16px;outline:none;font-family:inherit;text-align:center;margin-bottom:12px" onkeydown="if(event.key==='Enter')vaultUnlock()">
+      <button onclick="vaultUnlock()" style="width:100%;padding:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:15px;cursor:pointer;font-weight:600">解锁</button>
+      <div style="margin-top:8px;font-size:12px;color:rgba(255,255,255,.08);cursor:pointer" onclick="closeVaultLock()">取消</div>
     </div>
   </div>
   <div class="left-panel" id="vaultPanel">
@@ -194,6 +193,14 @@
       </div>
     </div>
     <div id="vaultList"><div class="loading" style="text-align:center;padding:20px;color:rgba(255,255,255,.06);font-size:13px">加载中...</div></div>
+    <div id="vaultBulkSection" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.04)">
+      <div style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:6px">📋 批量导入</div>
+      <textarea id="bulkInput" style="width:100%;height:120px;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;font-family:monospace;outline:none;resize:none" placeholder="微信 | 138xxxx | mypass&#10;支付宝 | email@qq.com | 123456"></textarea>
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button onclick="doBulk()" style="flex:1;padding:6px;border-radius:6px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:11px;cursor:pointer;font-weight:600">导入</button>
+        <button onclick="toggleBulk()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.2);font-size:11px;cursor:pointer">收起</button>
+      </div>
+    </div>
   </div>
   <div class="left-panel" id="pomoPanel">
     <button class="close" onclick="togglePomo()">✕</button>
@@ -317,8 +324,19 @@ pUpdate();
 
 // Vault
 let vaultItems=[],vaultMaster='';
-function toggleVault(){document.getElementById('vaultPanel').classList.toggle('open');document.getElementById('vaultOverlay').classList.toggle('show');if(document.getElementById('vaultPanel').classList.contains('open')&&!vaultMaster)setTimeout(vaultPrompt,300);}
-function vaultPrompt(){const p=prompt('主密码');if(p){vaultMaster=p;loadVault();}else toggleVault();}
+function toggleVault(){
+  const p=document.getElementById('vaultPanel');
+  p.classList.toggle('open');document.getElementById('vaultOverlay').classList.toggle('show');
+  if(p.classList.contains('open')&&!vaultMaster)document.getElementById('vaultLockModal').classList.add('show');
+}
+function closeVaultLock(){document.getElementById('vaultLockModal').classList.remove('show')}
+function vaultUnlock(){
+  const p=document.getElementById('vaultPwd').value;
+  if(!p)return;
+  vaultMaster=p;
+  document.getElementById('vaultLockModal').classList.remove('show');
+  loadVault();
+}
 async function loadVault(){try{const r=await fetch('/api/vault');vaultItems=await r.json();renderVault();}catch(e){}}
 function vEnc(s){if(!vaultMaster||!s)return '';try{let r='';const t=decodeURIComponent(escape(atob(s)));for(let i=0;i<t.length;i++)r+=String.fromCharCode(t.charCodeAt(i)^vaultMaster.charCodeAt(i%vaultMaster.length));return r}catch(e){return ''}}
 function renderVault(){
@@ -332,8 +350,11 @@ function renderVault(){
 async function vCopy(id){const i=vaultItems.find(x=>x.id===id);if(!i)return;const p=vEnc(i.password);try{await navigator.clipboard.writeText(p)}catch(e){}}
 async function vDel(id){if(!confirm('删除？'))return;try{await fetch('/api/vault/'+id,{method:'DELETE'});loadVault()}catch(e){}}
 function vaultAdd(){const n=prompt('名称');if(!n)return;const u=prompt('用户名');const p=prompt('密码');if(!p)return;fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(n),username:btoa(u||''),password:btoa(p)})}).then(()=>loadVault());}
-function toggleBulk(){document.getElementById('bulkPanel').classList.toggle('open');document.getElementById('bulkOverlay').classList.toggle('show')}
-function vaultBulk(){toggleBulk();document.getElementById('bulkInput').value=''}
+function toggleBulk(){
+  const s=document.getElementById('vaultBulkSection');
+  s.style.display=s.style.display==='none'?'block':'none';
+  if(s.style.display==='block')document.getElementById('bulkInput').value='';
+}
 async function doBulk(){
   const text=document.getElementById('bulkInput').value.trim();if(!text)return;
   const lines=text.split('\n').filter(l=>l.trim());
@@ -346,7 +367,7 @@ async function doBulk(){
     try{await fetch('/api/vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:btoa(n),username:btoa(u),password:btoa(p)})});ok++;}catch(e){fail++;}
   }
   alert('导入完成：成功 '+ok+' 条'+(fail?'，失败 '+fail+' 条':''));
-  toggleBulk();loadVault();
+  document.getElementById('vaultBulkSection').style.display='none';loadVault();
 }
 
 function switchTab(t){
