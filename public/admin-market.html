@@ -532,6 +532,14 @@ function login() {
         if (d.school) { localStorage.setItem('adminSchool', d.school); localStorage.setItem('adminSchoolName', d.schoolName || ''); }
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
+        // Show school selector for super admin
+        if (d.role === 'admin' && d.schools) {
+          SCHOOL_LIST = d.schools;
+          localStorage.setItem('schoolList', JSON.stringify(d.schools));
+          var sel = document.getElementById('schoolSelector');
+          sel.style.display = 'inline-block';
+          sel.innerHTML = '<option value="">所有学校</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'">'+s.name+'</option>'; }).join('');
+        }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
         init(); applyRole();
@@ -555,6 +563,19 @@ function logout() {
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
 }
+// School list for super admin
+var SCHOOL_LIST = [];
+try { var sl = localStorage.getItem('schoolList'); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) {}
+
+function switchSchool(code) {
+  localStorage.setItem('adminSchool', code);
+  var sn = '';
+  SCHOOL_LIST.forEach(function(s) { if (s.code === code) sn = s.name; });
+  localStorage.setItem('adminSchoolName', sn);
+  document.getElementById('headerSchool').textContent = code ? '- ' + sn : '';
+  refreshAll();
+}
+
 // 自动检测 token 有效再进后台
 async function autoLogin() {
   if (!token) return;
