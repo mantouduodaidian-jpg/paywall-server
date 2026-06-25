@@ -430,7 +430,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 
 
 <!-- Full Image Modal -->
-<div class="modal-overlay" id="fullImgModal" onclick="if(event.target===this)hideFullImage()">
+<div class="modal-overlay" id="fullImgModal" onclick="hideFullImage()" style="z-index:300">
   <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
     <img id="fullImgContent" style="max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.3)">
   </div>
