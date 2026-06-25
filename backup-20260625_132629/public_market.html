@@ -163,12 +163,6 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 
-.card-blur{position:relative;overflow:hidden}
-.card-blur .card-login-overlay{position:absolute;inset:0;background:rgba(5,15,8,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;opacity:0;transition:opacity .25s}
-.card-blur:hover .card-login-overlay,.card-blur:active .card-login-overlay{opacity:1}
-.card-blur .info{filter:blur(3px);pointer-events:none}
-.card-blur .img{filter:blur(4px)}
-
 @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
 .skeleton{background:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%);background-size:400px 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
 .skeleton-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;overflow:hidden}
@@ -654,14 +648,8 @@ async function load(reset) {
     }
     data.forEach(function(p) {
       var div = document.createElement('div');
-      div.className = 'card' + (!currentUser ? ' card-blur' : '');
-      if (!currentUser) {
-        var overlay = document.createElement('div');
-        overlay.className = 'card-login-overlay';
-        overlay.innerHTML = '<svg viewBox="0 0 28 28" width="32" height="32"><path d="M6 2h12l4 4v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1" stroke-linejoin="round"/><path d="M18 2v4h4" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".8" stroke-linejoin="round"/><polygon points="14 8 17.5 12.5 14 17 10.5 12.5" fill="url(#lo2)" stroke="#a7f3d0" stroke-width=".8" stroke-linejoin="round"/></svg><div style="font-size:11px;margin-top:6px;color:rgba(52,211,153,.4);font-weight:500">登录查看</div>';
-        div.appendChild(overlay);
-      }
-      div.onclick = function() { if (!currentUser) { hideDetail();notify('请登录查看商品', '🔑'); showLogin(); return; } showDetail(p.id); };
+      div.className = 'card';
+      div.onclick = function() { showDetail(p.id); };
       var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(255,255,255,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
       var typeTag = p.item_type === 'rent' ? '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>' : '';
       div.innerHTML = '<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
