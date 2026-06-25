@@ -1349,6 +1349,19 @@ app.post('/api/marketplace/messages/read', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Account Check API ======
+app.get('/api/marketplace/check-account', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.json({ ok: false });
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,status"), { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    const valid = arr.some(function(v) { return v.status === 'approved'; });
+    res.json({ ok: valid });
+  } catch(e) { res.json({ ok: false }); }
+});
+
 // ====== Expenses API ======
 app.get('/api/expenses', async (req, res) => {
   try {

@@ -1528,6 +1528,15 @@ if (visSel && SCHOOLS) {
   var savedSchool = localStorage.getItem('visitorSchool');
   if (savedSchool) visSel.value = savedSchool;
 }
+// Account check - verify current user still exists
+if (currentUser) {
+  fetch('/api/marketplace/check-account?student_id='+currentUser.student_id)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if (!d.ok) { notify('账号已被删除，已自动退出', '⚠️'); renderLoggedOut(); location.reload(); }
+    }).catch(function(){});
+}
+
 // School selection changes
 document.getElementById('visitorSchool').onchange = function() {
   localStorage.setItem('visitorSchool', this.value);
