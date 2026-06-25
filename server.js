@@ -1008,7 +1008,7 @@ app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/chat-alerts', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 };
     res.json(await r.json());
   } catch(e) { res.json([]); }
 });
@@ -1018,7 +1018,7 @@ app.get('/api/marketplace/export/:type', schoolScope, async (req, res) => {
   try {
     const type = req.params.type;
     if (type === 'products') {
-      const r = await fetch(SB('products?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS });
+      const r = await fetch(SB('products?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS });
       const data = await r.json();
       const rows = Array.isArray(data) ? data : [];
       const header = 'ID,标题,价格,分类,描述,联系方式,品质,状态,上架,已售,创建时间\n';
@@ -1029,7 +1029,7 @@ app.get('/api/marketplace/export/:type', schoolScope, async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename=products.csv');
       res.send('﻿' + csv);
     } else if (type === 'reports') {
-      const r = await fetch(SB('reports?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS });
+      const r = await fetch(SB('reports?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS });
       const data = await r.json();
       const rows = Array.isArray(data) ? data : [];
       const header = 'ID,商品ID,原因,详情,联系方式,状态,创建时间\n';
