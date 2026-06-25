@@ -754,7 +754,7 @@ async function loadProds() {
           (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
           (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
           '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
-          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
+          (p.pinned?'<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>':'<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+'<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
         '</span></td></tr>';
     }).join('');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
@@ -853,7 +853,7 @@ async function loadRentals() {
         '<td style="text-align:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
           (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
-          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
+          (p.pinned?'<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>':'<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+'<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
         '</td></tr>';
     }).join('');
   } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
