@@ -368,7 +368,21 @@ function logout() {
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
 }
-if (token) { document.getElementById('loginGate').style.display = 'none'; document.getElementById('app').classList.add('show'); init(); }
+if (token) { document.getElementById('loginGate').style.display = 'none'; document.getElementById('app').classList.add('show'); init(); checkToken(); }
+
+// 自动检测 token 有效，无效弹回登录
+async function checkToken() {
+  try {
+    const r = await fetch('/api/marketplace/admin/stats', {headers:{'Authorization':'Bearer '+token}});
+    if (!r.ok) throw new Error('unauthorized');
+  } catch(e) {
+    token = null;
+    localStorage.removeItem('marketAdminToken');
+    document.getElementById('app').classList.remove('show');
+    document.getElementById('loginGate').style.display = 'flex';
+    document.getElementById('loginPwd').value = '';
+  }
+}
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
