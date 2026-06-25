@@ -410,6 +410,8 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
+        <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+        <label for="chatImageInput" style="cursor:pointer;font-size:18px;color:rgba(0,0,0,.2);padding:4px;flex-shrink:0;line-height:1" title="发送图片">📷</label>
         <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
       </div>
     </div>
@@ -1251,6 +1253,36 @@ function confirmRejectTrade() {
     }).catch(function(){});
 }
 
+function sendChatImage(input) {
+  var file = input.files && input.files[0];
+  if (!file || !chatProductId || !currentUser) return;
+  if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 600, maxH = 600;
+      var w = img.width, h = img.height;
+      if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+      var content = '[img]' + dataUrl;
+      input.value = '';
+      fetch('/api/marketplace/messages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:content})
+      }).then(function(r){return r.json();}).then(function(m){
+        if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:content,created_at:new Date().toISOString()}, false); }
+      }).catch(function(){notify('发送失败','❌');});
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
 function sendChat() {
   try {
     var now = Date.now();
@@ -1407,7 +1439,11 @@ function appendMsg(m, isHistory) {
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
   if (m.id) div.setAttribute('data-msgid', m.id);
-  div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+  if (m.content && m.content.startsWith('[img]')) {
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble"><img src="'+m.content.replace('[img]','')+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block"></div><span class="time">'+timeStr+'</span>';
+  } else {
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+  }
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
 }
