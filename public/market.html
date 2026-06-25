@@ -966,5 +966,545 @@ function previewStudentCard(input) {
   const reader = new FileReader();
   reader.onload = function(e) { window._cardImage = e.target.result; };
   reader.readAsDataURL(file);
-  input.value = "";
 }
+
+// ====== Image Upload ======
+window._uploadedImages = [];
+function previewImg(input) {
+  var files = Array.from(input.files || []).slice(0, 4);
+  if (!files.length) return;
+  document.getElementById('fImageName').textContent = files.length + '张图片 (压缩中...)';
+  window._uploadedImages = [];
+  var loaded = 0;
+  files.forEach(function(file) {
+    if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var maxW = 800, maxH = 800;
+        var w = img.width, h = img.height;
+        if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var quality = 0.6;
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        while (dataUrl.length > 200*1024 && quality > 0.1) { quality -= 0.1; dataUrl = canvas.toDataURL('image/jpeg', quality); }
+        window._uploadedImages.push(dataUrl);
+        loaded++;
+        if (loaded === files.length) {
+          document.getElementById('fImageName').textContent = files.length + '张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
+        }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ====== Chat ======
+let wsChat = null;
+let chatProductId = null;
+let chatOtherStudent = null;
+let chatOtherName = '';
+let chatVisible = false;
+
+function fmtDate(d) { if(!d) return ''; var dt=new Date(d); var now=new Date(); if(dt.getDate()===now.getDate()&&now-dt<864e5) return String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0'); return (dt.getMonth()+1)+'/'+dt.getDate(); }
+
+function toggleChat() {
+  var panel = document.getElementById('chatPanel');
+  var btn = document.getElementById('chatBtn');
+  var bd = document.getElementById('chatBackdrop');
+  if (panel.classList.contains('show')) {
+    panel.classList.remove('show');
+    btn.style.display = '';
+    bd.classList.remove('show');
+    document.body.style.overflow = '';
+  } else {
+    panel.classList.add('show');
+    btn.style.display = 'none';
+    bd.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    setTimeout(loadConvs, 50);
+  }
+}
+
+
+function connectWS() {
+  if (!currentUser) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  wsChat = new WebSocket(proto + '//' + location.host);
+  wsChat.onerror = function(e) { console.error('WS error', e); };
+  wsChat.onopen = function() {
+    document.getElementById('chatBadge').textContent = '0';
+    wsChat.send(JSON.stringify({type:'auth', student_id: currentUser.student_id}));
+  };
+  wsChat.onmessage = function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.type === 'product_update') {
+        load();
+        return;
+      }
+      if (d.type === 'chat' && d.data) {
+        var badge = document.getElementById('chatBadge');
+        var c = parseInt(badge.textContent) || 0;
+        badge.textContent = c + 1;
+        if (chatProductId && chatProductId == d.data.product_id) {
+          appendMsg(d.data, false);
+        }
+      }
+    } catch(e) {}
+  };
+  wsChat.onclose = function() { setTimeout(connectWS, 3000); };
+}
+
+function openChat(productId, sellerStudentId, sellerName, productTitle) {
+  if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
+  if (sellerStudentId === 'unknown') { notify('卖家信息不完整', '⚠️'); return; }
+  chatProductId = productId;
+  chatOtherStudent = sellerStudentId;
+  chatOtherName = sellerName;
+  if (sellerStudentId === 'kefu_001') {
+    document.getElementById('chatConvLabel').textContent = '💬 校园严选客服';
+  } else if (productId) {
+    fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
+      fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
+        var arr = Array.isArray(vers)?vers:[];
+        var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
+        var nick = (seller && seller.nickname) ? seller.nickname : sellerName;
+        if (p && p.trade_status === 'completed') {
+          document.getElementById('chatConvLabel').textContent = '💬 ' + nick + (sellerName && nick !== sellerName ? '('+sellerName+')' : '');
+        } else {
+          document.getElementById('chatConvLabel').textContent = '💬 ' + (nick || '买家');
+        }
+      }).catch(function(){});
+    }).catch(function(){});
+  } else {
+    document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
+  }
+  document.getElementById('chatPanel').classList.add('show');
+  document.getElementById('chatBtn').style.display = 'none';
+  document.getElementById('chatConvs').style.display = 'none';
+  document.getElementById('chatConv').classList.add('show');
+  document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
+  document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerStudentId === 'kefu_001' ? '校园严选客服' : sellerName);
+  startChatPoll();
+  setTimeout(function() {
+    fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var arr = Array.isArray(data) ? data : [];
+        document.getElementById('chatMsgs').innerHTML = '';
+        arr.forEach(function(m) { appendMsg(m, true); });
+        var msgs = document.getElementById('chatMsgs');
+        msgs.scrollTop = msgs.scrollHeight;
+        fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_student_id:sellerStudentId,student_id:currentUser.student_id})});
+      }).catch(function(){});
+  }, 100);
+}
+
+function showConvs() {
+  stopChatPoll();
+  document.getElementById('chatConvs').style.display = '';
+  document.getElementById('chatConv').classList.remove('show');
+  chatProductId = null;
+  loadConvs();
+}
+
+function loadConvs() {
+  if (!currentUser) return;
+  var search = (document.getElementById('chatSearch').value || '').trim().toLowerCase();
+  fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
+    .then(function(r) { return r.json(); })
+    .then(function(contacts) {
+      var arr = Array.isArray(contacts) ? contacts : [];
+      // Filter by search
+      if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
+      // Count unread
+      var unread = 0;
+      var el = document.getElementById('chatConvs');
+      var badge = document.getElementById('chatBadge');
+      if (!arr.length) {
+        el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(0,0,0,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
+        badge.textContent = '0'; return;
+      }
+      el.innerHTML = arr.map(function(c) {
+        var sid = c.student_id;
+        var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
+        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
+      }).join('');
+      var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
+      badge.textContent = totalUnread > 0 ? totalUnread : '0';
+    });
+}
+
+function closeConv(key) {
+  var closed = JSON.parse(localStorage.getItem('closedConvs') || '[]');
+  if (!closed.includes(key)) closed.push(key);
+  localStorage.setItem('closedConvs', JSON.stringify(closed));
+  loadConvs();
+}
+
+var _lastChatTime = 0;
+function updateTradeButtons(p) {
+  var actions = document.getElementById('tradeActions');
+  var status = document.getElementById('tradeStatus');
+  var buyerBtn = document.getElementById('tradeBuyer');
+  var sellerBtns = document.getElementById('tradeSeller');
+  actions.style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
+  if (!p || p.sold) return;
+  var isOwner = currentUser && p.owner_student_id === currentUser.student_id;
+  var isBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
+
+  actions.style.display = 'flex';
+
+  if (isOwner && p.trade_status === 'trading') {
+    // Seller sees confirm/cancel for active trade
+    status.style.display = ''; status.innerHTML = '👤 ' + esc(p.trade_buyer_name||'买家') + ' 想购买';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
+    sellerBtns.style.display = 'flex';
+  } else if (isBuyer && p.trade_status === 'trading') {
+    // Buyer sees waiting message
+    status.style.display = ''; status.innerHTML = '⏳ 等待卖家确认';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
+  } else if (isOwner && p.trade_status === 'completed') {
+    status.style.display = ''; status.innerHTML = '✅ 交易成功 🎉';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
+  } else if (!isOwner && p.trade_status === 'completed') {
+    status.style.display = ''; status.innerHTML = '✅ 交易成功 🎉';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
+  } else if (!isOwner && p.trade_status !== 'trading' && p.trade_status !== 'completed') {
+    // Normal buyer sees request button
+    buyerBtn.style.display = '';
+  } else if (isOwner && !p.trade_status) {
+    // Seller with no pending trade - nothing to show
+    actions.style.display = 'none';
+  }
+}
+
+function requestTrade() {
+  if (!chatProductId || !currentUser) return;
+  fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId,buyer_id:currentUser.student_id,buyer_name:currentUser.name})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('已发送购买请求', '🤝');
+        // Send chat message
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'🤝 我想购买此商品'})
+        }).catch(function(){});
+        // Reload product to update buttons
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
+}
+
+function confirmTrade() {
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/confirm', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('✅ 交易成功');
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✅ 交易成功'})
+        }).catch(function(){});
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);load();}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
+}
+
+function cancelTrade() {
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/cancel', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('已取消交易');
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✕ 已取消交易'})
+        }).catch(function(){});
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      } else notify('操作失败','❌');
+    }).catch(function(){notify('操作失败','❌');});
+}
+
+function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
+function closeRejectTrade() { document.getElementById('rejectTradeModal').classList.remove('show'); }
+function confirmRejectTrade() {
+  var reason = document.getElementById('rejectTradeReason').value;
+  var detail = document.getElementById('rejectTradeDetail').value.trim();
+  var msg = reason + (detail ? ' - '+detail : '');
+  if (!chatProductId) return;
+  fetch('/api/marketplace/trade/cancel', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        notify('已拒绝交易','✕');
+        fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'✕ 拒绝交易：'+msg})
+        }).catch(function(){});
+        closeRejectTrade();
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
+      }
+    }).catch(function(){});
+}
+
+function sendChatImage(input) {
+  var file = input.files && input.files[0];
+  if (!file || !chatProductId || !currentUser) return;
+  if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 600, maxH = 600;
+      var w = img.width, h = img.height;
+      if (w > maxW || h > maxH) { var r = Math.min(maxW/w, maxH/h); w = Math.round(w*r); h = Math.round(h*r); }
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+      var content = '[img]' + dataUrl;
+      input.value = '';
+      fetch('/api/marketplace/messages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:content})
+      }).then(function(r){return r.json();}).then(function(m){
+        if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:content,created_at:new Date().toISOString()}, false); }
+      }).catch(function(){notify('发送失败','❌');});
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function sendChat() {
+  try {
+    var now = Date.now();
+    if (now - _lastChatTime < 1000) { notify('发送太快，请稍等', '⏳'); return; }
+    _lastChatTime = now;
+    var input = document.getElementById('chatInput');
+    var text = input.value.trim();
+    if (!text) { notify('输入消息', '✏️'); return; }
+    if (chatProductId === null || chatProductId === undefined) { notify('请先选择对话', '💬'); return; }
+    if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
+    input.value = '';
+    fetch('/api/marketplace/messages', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:text})
+    }).then(function(r){return r.json();}).then(function(m){
+      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:text,created_at:new Date().toISOString()}, false); }
+    }).catch(function(e){notify('发送失败','❌');});
+  } catch(e) { notify('发送出错', '❌'); console.error(e); }
+}
+
+var _chatPollTimer = null;
+function startChatPoll() {
+  stopChatPoll();
+  if (chatProductId === null || chatProductId === undefined || !currentUser) return;
+  var lastId = 0;
+  _chatPollTimer = setInterval(function() {
+    if ((chatProductId === null || chatProductId === undefined) || !currentUser) { stopChatPoll(); return; }
+    var url = '/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+(chatOtherStudent||'');
+    if (lastId) url += '&since_id='+lastId;
+    fetch(url)
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var arr = Array.isArray(data)?data:[];
+        arr.forEach(function(m) {
+          if (m.id > lastId) { lastId = m.id; appendMsg(m, true); }
+        });
+      }).catch(function(){});
+  }, 1000);
+}
+function stopChatPoll() {
+  if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
+}
+
+function toggleContacts() {
+  var s = document.getElementById('contactSidebar');
+  var o = document.getElementById('contactsOverlay');
+  s.classList.toggle('show');
+  if (o) o.classList.toggle('show', s.classList.contains('show'));
+  if (s.classList.contains('show')) loadContacts();
+}
+function loadContacts() {
+  if (!currentUser) return;
+  var search = (document.getElementById('contactSearch').value || '').trim().toLowerCase();
+  fetch('/api/marketplace/contacts?student_id='+currentUser.student_id)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var arr = Array.isArray(data)?data:[];
+      if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
+      var el = document.getElementById('contactList');
+      if (!arr.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(0,0,0,.1);font-size:12px">暂无联系人</div>'; return; }
+      el.innerHTML = arr.map(function(c) {
+        var unBadge = (c.unread && c.unread > 0) ? '<span class="badge">'+c.unread+'</span>' : '';
+        return '<div class="contact-item" onclick="closeContacts();openChat('+c.product_id+',\''+c.student_id+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
+      }).join('');
+    });
+}
+function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
+
+var _unreadTimer = null;
+function startUnreadPoll() {
+  if (_unreadTimer) clearInterval(_unreadTimer);
+  if (!currentUser) return;
+  var lastCheck = 0;
+  _unreadTimer = setInterval(function() {
+    if (!currentUser) { clearInterval(_unreadTimer); _unreadTimer = null; return; }
+    fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
+      .then(function(r){return r.json();})
+      .then(function(data){
+        var arr = Array.isArray(data)?data:[];
+        var unread = 0;
+        var latest = 0;
+        arr.forEach(function(m) {
+          var t = new Date(m.created_at).getTime();
+          if (t > latest) latest = t;
+          if (m.to_student_id === currentUser.student_id && !m.read) unread++;
+        });
+        if (latest > lastCheck) { lastCheck = latest; }
+        var badge = document.getElementById('chatBadge');
+        if (unread > 0) { badge.textContent = unread; playMsgSound(); }
+        else { badge.textContent = '0'; }
+        // Also update conv list if open
+        if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
+      }).catch(function(){});
+  }, 2000);
+}
+
+var _productTimer = null;
+function startProductPoll() {
+  if (_productTimer) clearInterval(_productTimer);
+  var lastCount = 0;
+  _productTimer = setInterval(function() {
+    fetch('/api/marketplace/products?limit=1&offset=0')
+      .then(function(r){return r.json();})
+      .then(function(json){
+        var total = json.total || (Array.isArray(json)?json.length:0);
+        if (lastCount > 0 && total !== lastCount) { load(); }
+        lastCount = total;
+      }).catch(function(){});
+  }, 5000);
+}
+
+function showMyProducts() {
+  document.getElementById('myOverlay').classList.add('show');
+  loadMyProducts();
+}
+function hideMyProducts() { document.getElementById('myOverlay').classList.remove('show'); }
+function loadMyProducts() {
+  if (!currentUser) return;
+  fetch('/api/marketplace/products?owner='+currentUser.student_id+'&limit=50&offset=0')
+    .then(function(r){return r.json();})
+    .then(function(json){
+      var data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      var el = document.getElementById('myProductList');
+      if (!data.length) { el.innerHTML = '<div class="empty" style="padding:30px">还没有发布过商品</div>'; return; }
+      el.innerHTML = '<div style="display:grid;gap:8px">' + data.map(function(p){
+        var statusMap = {pending:'待审核',approved:'已上架',rejected:'未通过'};
+        var sLabel = p.sold ? '已售罄' : (statusMap[p.status]||p.status);
+        var sClass = p.sold ? 'sold' : p.status;
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 12px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="status-badge '+sClass+'">'+sLabel+'</span></div>';
+      }).join('') + '</div>';
+    }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
+}
+
+function appendMsg(m, isHistory) {
+  var el = document.getElementById('chatMsgs');
+  if (!el) return;
+  // Dedup by checking if message already exists
+  if (m.id && el.querySelector('[data-msgid="'+m.id+'"]')) return;
+  var mine = currentUser && m.from_student_id === currentUser.student_id;
+  var d = new Date(m.created_at);
+  var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  var name = m.from_name || (mine ? '我' : '对方');
+  // Try to show nickname
+  if (!mine) {
+    fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
+      var arr = Array.isArray(vers)?vers:[];
+      var sender = arr.find(function(v){ return v.student_id === m.from_student_id; });
+      if (sender && sender.nickname) {
+        var msgDiv = el.lastChild;
+        if (msgDiv) { var s = msgDiv.querySelector('.sender'); if (s) s.textContent = sender.nickname; }
+      }
+    }).catch(function(){});
+  }
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
+  if (m.id) div.setAttribute('data-msgid', m.id);
+  if (m.content && m.content.startsWith('[img]')) {
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble"><img src="'+m.content.replace('[img]','')+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block"></div><span class="time">'+timeStr+'</span>';
+  } else {
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+  }
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ====== Init ======
+// Restore state
+try {
+  var saved = JSON.parse(localStorage.getItem('marketState'));
+  if (saved) {
+    if (saved.cat) { selCat = saved.cat; }
+    if (saved.search) { document.getElementById('searchInput').value = saved.search; }
+    if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
+  }
+} catch(e) {}
+// Populate school selector
+var schoolSel = document.getElementById('vSchool');
+if (schoolSel && SCHOOLS) {
+  SCHOOLS.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    schoolSel.appendChild(opt);
+  });
+}
+// Populate visitor school selector
+var visSel = document.getElementById('visitorSchool');
+if (visSel && SCHOOLS) {
+  SCHOOLS.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    visSel.appendChild(opt);
+  });
+  // Restore saved selection
+  var savedSchool = localStorage.getItem('visitorSchool');
+  if (savedSchool) visSel.value = savedSchool;
+}
+// School selection changes
+document.getElementById('visitorSchool').onchange = function() {
+  localStorage.setItem('visitorSchool', this.value);
+  load();
+};
+loadCats();
+load(false);
+loadAnn();
+loadPromos();
+startProductPoll();
+</script>
+<svg style="display:none">
+  <defs>
+    <linearGradient id="gF" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ecfdf5"/><stop offset="15%" stop-color="#a7f3d0"/>
+      <stop offset="50%" stop-color="#6ee7b7"/><stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a7f3d0"/><stop offset="40%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="lo2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6ee7b7"/><stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+</svg>
+</body>
+</html>
+
