@@ -272,8 +272,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <span style="font-size:13px;color:rgba(0,0,0,.2)" id="resultLabel">全部商品</span>
       <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
     </div>
-    <div class="grid" id="productList"><div class="empty">加载中...</div></div>
-    <div id="pageNavContainer" style="text-align:right;padding:12px 0;border-top:1px solid rgba(0,0,0,.04)"></div>
+    <div style="position:relative;min-height:300px">
+      <div class="grid" id="productList"><div class="empty">加载中...</div></div>
+      <div id="pageNavContainer" style="padding:12px 0;border-top:1px solid rgba(0,0,0,.04);margin-top:16px;display:flex;justify-content:flex-end"></div>
+    </div>
   </div>
 </div>
 
@@ -709,7 +711,7 @@ async function load(reset) {
     document.getElementById('sellerClear').style.display = sellerFilter ? 'inline' : 'none';
     const list = document.getElementById('productList');
     if (reset !== false) {
-      if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
+      if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; if (navContainer) navContainer.innerHTML = ''; return; }
       list.innerHTML = '';
     } else {
       list.innerHTML = '';
@@ -731,25 +733,20 @@ async function load(reset) {
         (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
       list.appendChild(div);
     });
-    // Page navigation (fixed position, always same spot)
+    // Page navigation
     var totalPages = Math.ceil(total / PAGE_SIZE);
     var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
-    var nav = document.getElementById('pageNav');
     var navContainer = document.getElementById('pageNavContainer');
-    if (!nav) {
-      nav = document.createElement('div');
-      nav.id = 'pageNav';
-      nav.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;align-items:center';
-      if (navContainer) navContainer.appendChild(nav);
+    if (navContainer) {
+      var navHtml = '';
+      if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">‹</a>';
+      for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
+        if (i === currentPage) navHtml += '<span style="background:rgba(96,184,142,.1);color:#60b88e;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600">'+i+'</span>';
+        else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(0,0,0,.25);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.04);border-radius:5px">'+i+'</a>';
+      }
+      if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">›</a>';
+      navContainer.innerHTML = navHtml;
     }
-    var navHtml = '';
-    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">‹</a>';
-    for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
-      if (i === currentPage) navHtml += '<span style="background:rgba(52,211,153,.1);color:#34d399;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600">'+i+'</span>';
-      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(0,0,0,.25);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.04);border-radius:5px">'+i+'</a>';
-    }
-    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">›</a>';
-    nav.innerHTML = navHtml;
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
 }
 
