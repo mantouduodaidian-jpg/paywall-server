@@ -7,93 +7,94 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#051008,#0a1a0f,#0d2216);color:#c8e6c9;min-height:100vh}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#f0f0f0;color:#4a4a4a;min-height:100vh}
 
-.login-gate{position:fixed;inset:0;background:linear-gradient(135deg,#051008,#0a1a0f,#0d2216);display:flex;align-items:center;justify-content:center;z-index:100}
-.login-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:48px;width:380px;text-align:center;backdrop-filter:blur(12px)}
-.login-box h1{font-size:24px;color:#6ee7b7;margin-bottom:6px}
-.login-box .sub{color:rgba(255,255,255,.2);font-size:13px;margin-bottom:28px}
-.login-box input{width:100%;padding:14px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.25);color:#c8e6c9;font-size:15px;outline:none;font-family:inherit;margin-bottom:14px;transition:all.2s}
-.login-box input:focus{border-color:rgba(52,211,153,.4);box-shadow:0 0 20px rgba(52,211,153,.06)}
-.login-box .btn{width:100%;padding:14px;border:none;border-radius:14px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all.2s}
-.login-box .btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 25px rgba(52,211,153,.2)}
-.login-box .error{color:#ef4444;font-size:12px;margin-top:10px;display:none}
+.login-gate{position:fixed;inset:0;background:#f0f0f0;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#fff;border-radius:20px;padding:48px;width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.login-box h1{font-size:24px;color:#4e9e80;margin-bottom:6px}
+.login-box .sub{color:#aaa;font-size:13px;margin-bottom:28px}
+.login-box input{width:100%;padding:14px 18px;border-radius:12px;border:2px solid #e8e8e8;background:#fafafa;color:#4a4a4a;font-size:15px;outline:none;font-family:inherit;margin-bottom:14px;transition:all.2s}
+.login-box input:focus{border-color:#bce0cc;background:#fff}
+.login-box .btn{width:100%;padding:14px;border:none;border-radius:12px;background:#4e9e80;color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:all.2s}
+.login-box .btn:hover{background:#60b88e;transform:translateY(-1px);box-shadow:0 4px 12px rgba(78,158,128,.25)}
+.login-box .error{color:#e74c3c;font-size:12px;margin-top:10px;display:none}
 
 .app{display:none;max-width:1400px;margin:0 auto;padding:24px}
 .app.show{display:block}
 
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:16px;padding:16px 20px;backdrop-filter:blur(8px)}
-.header h1{font-size:22px;background:linear-gradient(135deg,#6ee7b7,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header .sub{font-size:12px;color:rgba(255,255,255,.15)}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.header h1{font-size:20px;color:#4e9e80}
+.header .sub{font-size:12px;color:#aaa}
 .header .actions{display:flex;gap:8px;align-items:center}
 .header .actions a,.header .actions button{padding:8px 16px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:600;transition:all.15s;cursor:pointer;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
-.header .actions .btn-outline{background:rgba(255,255,255,.04);color:rgba(255,255,255,.4)}
-.header .actions .btn-outline:hover{background:rgba(255,255,255,.08)}
-.header .actions .btn-danger{background:rgba(239,68,68,.1);color:#ef4444}
+.header .actions .btn-outline{background:#f5f5f5;color:#888}
+.header .actions .btn-outline:hover{background:#eee}
+.header .actions .btn-danger{background:rgba(231,76,60,.08);color:#e74c3c}
 
-.tabs{display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.04);flex-wrap:wrap;background:rgba(255,255,255,.015);border-radius:12px 12px 0 0;padding:4px 4px 0}
-.tab{padding:10px 18px;cursor:pointer;font-size:12px;font-weight:500;color:rgba(255,255,255,.25);transition:all.2s;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;border-radius:8px 8px 0 0}
-.tab:hover{color:rgba(255,255,255,.45);background:rgba(52,211,153,.04)}
-.tab.active{color:#34d399;border-bottom-color:#34d399;background:rgba(52,211,153,.08)}
-.tab .badge{display:inline-block;background:rgba(239,68,68,.2);color:#ef4444;font-size:9px;padding:1px 6px;border-radius:6px;margin-left:4px}
+.tabs{display:flex;gap:2px;margin-bottom:20px;flex-wrap:wrap;background:#fff;border-radius:12px;padding:4px 4px 0;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.tab{padding:10px 18px;cursor:pointer;font-size:12px;font-weight:500;color:#999;transition:all.2s;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;border-radius:8px 8px 0 0}
+.tab:hover{color:#4e9e80;background:rgba(78,158,128,.04)}
+.tab.active{color:#4e9e80;border-bottom-color:#4e9e80;background:rgba(78,158,128,.06)}
+.tab .badge{display:inline-block;background:rgba(231,76,60,.12);color:#e74c3c;font-size:9px;padding:1px 6px;border-radius:6px;margin-left:4px}
 
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
-.stat-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px;transition:all.2s;backdrop-filter:blur(4px)}
-.stat-card:hover{border-color:rgba(52,211,153,.1);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.stat-card{background:#fff;border-radius:14px;padding:18px;transition:all.2s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06)}
 .stat-card .num{font-size:26px;font-weight:700}
-.stat-card .num.green{color:#34d399}
-.stat-card .num.yellow{color:#fbbf24}
-.stat-card .num.red{color:#ef4444}
-.stat-card .num.blue{color:#60a5fa}
-.stat-card .label{font-size:10px;color:rgba(255,255,255,.2);margin-top:4px;letter-spacing:.3px}
+.stat-card .num.green{color:#4e9e80}
+.stat-card .num.yellow{color:#c4a84c}
+.stat-card .num.red{color:#e74c3c}
+.stat-card .num.blue{color:#5b9bd5}
+.stat-card .label{font-size:10px;color:#aaa;margin-top:4px;letter-spacing:.3px}
 
-.section{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:18px;margin-bottom:16px;backdrop-filter:blur(4px)}
+.section{background:#fff;border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
-.toolbar input{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:none;flex:1;min-width:100px;transition:all.2s}
-.toolbar input:focus{border-color:rgba(52,211,153,.3);box-shadow:0 0 15px rgba(52,211,153,.04)}
-.toolbar select{padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:none;font-family:inherit;transition:all.2s}
-.toolbar select:focus{border-color:rgba(52,211,153,.3)}
-.toolbar select option{background:#0a1a0f;color:#c8e6c9}
+.toolbar input{padding:8px 14px;border-radius:10px;border:2px solid #e8e8e8;background:#fafafa;color:#4a4a4a;font-size:12px;outline:none;flex:1;min-width:100px;transition:all.2s}
+.toolbar input:focus{border-color:#bce0cc;background:#fff}
+.toolbar select{padding:8px 14px;border-radius:10px;border:2px solid #e8e8e8;background:#fafafa;color:#4a4a4a;font-size:12px;outline:none;font-family:inherit;transition:all.2s}
+.toolbar select:focus{border-color:#bce0cc}
+.toolbar select option{background:#fff;color:#4a4a4a}
 
 .btn{padding:8px 16px;border:none;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;transition:all.2s;display:inline-flex;align-items:center;gap:4px;font-family:inherit}
-.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.btn-primary{background:linear-gradient(135deg,#059669,#34d399);color:#fff}
-.btn-ghost{background:rgba(255,255,255,.04);color:rgba(255,255,255,.4)}
-.btn-ghost:hover{background:rgba(255,255,255,.08)}
-.btn-green{background:rgba(52,211,153,.12);color:#34d399}
-.btn-green:hover{background:rgba(52,211,153,.2);box-shadow:0 4px 12px rgba(52,211,153,.1)}
-.btn-red{background:rgba(239,68,68,.12);color:#ef4444}
-.btn-red:hover{background:rgba(239,68,68,.2);box-shadow:0 4px 12px rgba(239,68,68,.1)}
-.btn-yellow{background:rgba(251,191,36,.1);color:#fbbf24}
-.btn-yellow:hover{background:rgba(251,191,36,.2);box-shadow:0 4px 12px rgba(251,191,36,.1)}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.btn-primary{background:#4e9e80;color:#fff}
+.btn-primary:hover{background:#60b88e}
+.btn-ghost{background:#f5f5f5;color:#888}
+.btn-ghost:hover{background:#eee}
+.btn-green{background:rgba(78,158,128,.1);color:#4e9e80}
+.btn-green:hover{background:rgba(78,158,128,.18);box-shadow:0 4px 12px rgba(78,158,128,.1)}
+.btn-red{background:rgba(231,76,60,.08);color:#e74c3c}
+.btn-red:hover{background:rgba(231,76,60,.15);box-shadow:0 4px 12px rgba(231,76,60,.08)}
+.btn-yellow{background:rgba(196,168,76,.1);color:#c4a84c}
+.btn-yellow:hover{background:rgba(196,168,76,.18);box-shadow:0 4px 12px rgba(196,168,76,.08)}
 .btn-sm{padding:5px 10px;font-size:10px;border-radius:6px}
 
-.table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid rgba(255,255,255,.03)}
+.table-wrap{overflow-x:auto;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid #eee}
 table{width:100%;border-collapse:collapse;font-size:11px}
-th{text-align:left;color:rgba(255,255,255,.2);font-weight:500;padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px;white-space:nowrap;position:sticky;top:0;background:#0d2216;text-transform:uppercase;letter-spacing:.5px}
-td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.02);vertical-align:middle;transition:all.1s}
+th{text-align:left;color:#aaa;font-weight:500;padding:10px 10px;border-bottom:2px solid #f0f0f0;font-size:10px;white-space:nowrap;position:sticky;top:0;background:#fff;text-transform:uppercase;letter-spacing:.5px}
+td{padding:10px 10px;border-bottom:1px solid #f5f5f5;vertical-align:middle;transition:all.1s}
 tr{transition:all.1s}
-tr:hover td{background:rgba(52,211,153,.03)}
+tr:hover td{background:#f8fcf9}
 
 .badge{font-size:10px;padding:3px 10px;border-radius:6px;display:inline-block;font-weight:500}
-.badge-green{background:rgba(52,211,153,.12);color:#34d399}
-.badge-yellow{background:rgba(251,191,36,.12);color:#fbbf24}
-.badge-red{background:rgba(239,68,68,.12);color:#ef4444}
-.badge-gray{background:rgba(255,255,255,.05);color:rgba(255,255,255,.3)}
-.badge-blue{background:rgba(96,165,250,.12);color:#60a5fa}
+.badge-green{background:rgba(78,158,128,.1);color:#4e9e80}
+.badge-yellow{background:rgba(196,168,76,.1);color:#c4a84c}
+.badge-red{background:rgba(231,76,60,.1);color:#e74c3c}
+.badge-gray{background:#f5f5f5;color:#bbb}
+.badge-blue{background:rgba(91,155,213,.1);color:#5b9bd5}
 
-.empty{padding:40px;text-align:center;color:rgba(255,255,255,.05);font-size:13px}
+.empty{padding:40px;text-align:center;color:#ccc;font-size:13px}
 
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:12px 28px;border-radius:14px;font-size:13px;border:1px solid rgba(255,255,255,.08);transition:all.4s;z-index:100;opacity:0;backdrop-filter:blur(12px)}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#fff;padding:12px 28px;border-radius:14px;font-size:13px;border:1px solid #e8e8e8;transition:all.4s;z-index:100;opacity:0;box-shadow:0 4px 20px rgba(0,0,0,.08)}
 .toast.show{opacity:1}
 
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;overflow-y:auto;padding:20px}
 .modal-overlay.show{display:block}
-.modal{background:#0d2216;border-radius:20px;max-width:480px;margin:50px auto;border:1px solid rgba(255,255,255,.08);padding:28px;backdrop-filter:blur(12px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
-.modal h2{font-size:16px;color:rgba(255,255,255,.5);margin-bottom:16px}
-.modal input,.modal select,.modal textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.25);color:#c8e6c9;font-size:12px;outline:none;font-family:inherit;margin-bottom:10px;transition:all.2s}
-.modal input:focus,.modal textarea:focus{border-color:rgba(52,211,153,.3);box-shadow:0 0 15px rgba(52,211,153,.04)}
+.modal{background:#fff;border-radius:16px;max-width:480px;margin:50px auto;padding:28px;box-shadow:0 10px 40px rgba(0,0,0,.1)}
+.modal h2{font-size:16px;color:#888;margin-bottom:16px}
+.modal input,.modal select,.modal textarea{width:100%;padding:10px 14px;border-radius:10px;border:2px solid #e8e8e8;background:#fafafa;color:#4a4a4a;font-size:12px;outline:none;font-family:inherit;margin-bottom:10px;transition:all.2s}
+.modal input:focus,.modal textarea:focus{border-color:#bce0cc;background:#fff}
 .modal textarea{min-height:80px;resize:vertical}
 .modal .btns{display:flex;gap:8px;margin-top:12px}
 .modal .btns button{flex:1;padding:10px;border-radius:10px;border:none;font-size:12px;cursor:pointer;font-weight:600;font-family:inherit;transition:all.2s}
@@ -102,7 +103,12 @@ tr:hover td{background:rgba(52,211,153,.03)}
 .modal .row>*{flex:1}
 
 /* Kefu chat */
-.kefu-contact:hover{background:rgba(52,211,153,.05)!important}
+.kefu-contact:hover{background:#f0f9f4!important}
+.kefu-contact{color:#4a4a4a}
+
+#kefuMsgs{color:#4a4a4a}
+#kefuChatHeader{color:#999}
+#kefuContactList{border-right-color:#eee!important}
 
 @media(max-width:700px){
   .app{padding:14px}
@@ -184,16 +190,25 @@ tr:hover td{background:rgba(52,211,153,.03)}
     <div class="stats" id="statsContainer"></div>
     <div id="chartRow" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
       <div class="section" style="flex:2;min-width:280px;padding:14px">
-        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">近 7 日发布</div>
-        <div id="chartBar" style="height:160px;display:flex;align-items:flex-end;gap:6px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:600;color:#aaa">近 7 日发布</span>
+          <span onclick="toggleChart('chartBarWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
+        </div>
+        <div id="chartBarWrap"><div id="chartBar" style="height:160px;display:flex;align-items:flex-end;gap:6px"></div></div>
       </div>
       <div class="section" style="flex:1;min-width:180px;padding:14px">
-        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">分类分布</div>
-        <div id="chartCat" style="font-size:11px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:600;color:#aaa">分类分布</span>
+          <span onclick="toggleChart('chartCatWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
+        </div>
+        <div id="chartCatWrap"><div id="chartCat" style="font-size:11px"></div></div>
       </div>
       <div class="section" style="flex:1;min-width:140px;padding:14px;text-align:center">
-        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">商品状态</div>
-        <div id="chartStatus" style="display:flex;justify-content:center"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:600;color:#aaa">商品状态</span>
+          <span onclick="toggleChart('chartStatusWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
+        </div>
+        <div id="chartStatusWrap"><div id="chartStatus" style="display:flex;justify-content:center"></div></div>
       </div>
     </div>
     <div class="section">
@@ -1123,6 +1138,14 @@ async function loadLogs() {
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function fmtDate(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
 function fmtDateTime(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function toggleChart(id, btn) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+  btn.textContent = hidden ? '👁️' : '🚫';
+  btn.style.opacity = hidden ? '1' : '.3';
+}
 
 function init() {
   loadOverview();
