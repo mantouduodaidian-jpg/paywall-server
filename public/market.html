@@ -738,6 +738,7 @@ async function load(reset) {
     var navContainer = document.getElementById('pageNavContainer');
     if (navContainer) {
       if (pageOffset > 0 && total <= 0) pageOffset = 0;
+      console.warn("NAV total="+total+" offset="+pageOffset);
       var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
       var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
       var navHtml = '';
