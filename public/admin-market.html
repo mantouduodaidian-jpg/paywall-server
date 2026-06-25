@@ -518,7 +518,15 @@ function apiFetch(url, opts) {
   opts = opts || {};
   opts.headers = opts.headers || {};
   if (token) opts.headers['Authorization'] = 'Bearer ' + token;
-  return fetch(url, opts);
+  return fetch(url, opts).then(function(r) {
+    if (r.status === 401) { showLoginGate(); throw new Error('未授权'); }
+    return r;
+  });
+}
+function showLoginGate() {
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginGate').style.display = 'flex';
+  document.getElementById('loginPwd').value = '';
 }
 
 function login() {
