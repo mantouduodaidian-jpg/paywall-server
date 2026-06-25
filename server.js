@@ -1307,8 +1307,8 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         var uR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=school"), { headers: SB_HEADERS });
         var uData = await uR.json();
         var uSchool = (Array.isArray(uData) && uData[0]) ? uData[0].school : (school || '');
-        if (uSchool) {
-          contacts.unshift({ student_id: kefuId(uSchool), name: '客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+        if (uSchool) { var kName = uSchool; SCHOOL_ADMINS.forEach(function(sa) { if (sa.code === uSchool) kName = sa.name; });
+          contacts.unshift({ student_id: kefuId(uSchool), name: kName + '二豆客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
         }
       } catch(e) {}
     }
