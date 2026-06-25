@@ -667,13 +667,13 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         const existing = chkData[0];
         if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，请登录' });
         if (existing.status === 'pending') return res.json({ ok: false, msg: '认证审核中，请等待' });
-        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'', nickname: req.body.nickname||'' }) });
+        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'', nickname: req.body.nickname||'', school: req.body.school||'' }) });
         addLog('user_register', 'verification', student_id, name);
         return res.json({ ok: true, msg: '✅ 认证已重新提交，等待审核' });
       }
       await fetch(SB('verifications'), {
         method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', nickname: req.body.nickname||'', status: 'pending', created_at: new Date().toISOString() })
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', nickname: req.body.nickname||'', school: req.body.school||'', status: 'pending', created_at: new Date().toISOString() })
       });
       addLog('user_register', 'verification', student_id, name);
         notifyAdmin('new_verification', { student_id, name });
@@ -687,7 +687,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       const arr = Array.isArray(data) ? data : [];
       const approved = arr.filter(v => v.status === 'approved');
       if (approved.length) {
-        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'' } });
+        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'' } });
       }
       const banned = arr.filter(v => v.status === 'banned');
       if (banned.length) return res.json({ ok: false, msg: '账号已封禁' + (banned[0]?.reject_reason ? '：' + banned[0].reject_reason : '') });
@@ -1100,7 +1100,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0 })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0, school: req.body.school||'' })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
@@ -1111,7 +1111,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset, owner, item_type } = req.query;
+    const { category, search, admin, limit, offset, owner, item_type, school } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
     // Get total count first
@@ -1122,6 +1122,11 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (owner) {
       countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
       if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
+    }
+    if (school) {
+      countUrl = SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&select=id');
+      if (category) countUrl = SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      if (admin) { countUrl = SB('products?school=eq.'+school+'&select=id'); if(category) countUrl = SB('products?school=eq.'+school+'&category=eq.'+category+'&select=id'); }
     }
     if (item_type && !admin) {
       countUrl = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
@@ -1139,6 +1144,11 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (owner) {
       url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
       if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
+    if (school) {
+      url = SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (category) url = SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (admin) { url = SB('products?school=eq.'+school+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); if(category) url = SB('products?school=eq.'+school+'&category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); }
     }
     if (item_type && !admin) {
       url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);

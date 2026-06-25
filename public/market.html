@@ -267,6 +267,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
     </div>
     <div class="grid" id="productList"><div class="empty">加载中...</div></div>
+    <div id="pageNavContainer" style="text-align:right;padding:12px 0;border-top:1px solid rgba(0,0,0,.04)"></div>
   </div>
 </div>
 
@@ -433,6 +434,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div style="font-size:48px;margin-bottom:8px">🔑</div>
     <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">欢迎回来</h2>
     <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
+    <div id="visitorSchoolDiv" style="margin-bottom:10px">
+      <select id="visitorSchool" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:14px;outline:none;font-family:inherit"><option value="">选择学校浏览</option></select>
+    </div>
     <input type="text" id="loginId" placeholder="学号">
     <input type="password" id="loginPhone" placeholder="电话">
     <div style="font-size:12px;color:rgba(0,0,0,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
@@ -461,6 +465,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <div class="pub-box" style="max-width:460px">
     <h2>🪪 实名认证</h2>
     <p style="font-size:13px;color:rgba(0,0,0,.25);margin-bottom:16px">认证通过后即可用学号+电话登录</p>
+    <select id="vSchool" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">选择学校 *</option></select>
     <input type="text" id="vName" placeholder="真实姓名 *">
     <input type="text" id="vNickname" placeholder="匿名昵称 *（如：椰子学长）" style="margin-bottom:10px">
     <input type="text" id="vStudentId" placeholder="学号 *">
@@ -483,6 +488,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <script>
 let selCat = '';
 let itemTypeFilter = 'sell';
+const SCHOOLS = [
+  { id: 'gdst', name: '广东科学技术职业学院', sidLen: 13, sidHint: '2331030110XXXX' },
+  { id: 'zhbit', name: '北京理工大学珠海学院', sidLen: 11, sidHint: '23XXXXXXXXX' },
+];
 let sellerFilter = null;
 let reportingProductId = null;
 
@@ -637,6 +646,8 @@ async function load(reset) {
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
+  var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
+  if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
   else if (selCat) url += '&category='+selCat;
@@ -677,11 +688,12 @@ async function load(reset) {
     var totalPages = Math.ceil(total / PAGE_SIZE);
     var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
     var nav = document.getElementById('pageNav');
+    var navContainer = document.getElementById('pageNavContainer');
     if (!nav) {
       nav = document.createElement('div');
       nav.id = 'pageNav';
-      nav.style.cssText = 'text-align:right;padding:12px 0;margin-top:16px;display:flex;gap:4px;justify-content:flex-end;align-items:center;border-top:1px solid rgba(0,0,0,.04)';
-      list.parentNode.appendChild(nav);
+      nav.style.cssText = 'display:flex;gap:4px;justify-content:flex-end;align-items:center';
+      if (navContainer) navContainer.appendChild(nav);
     }
     var navHtml = '';
     if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">‹</a>';
@@ -756,6 +768,7 @@ async function publish(){
     desc:document.getElementById('fDesc').value.trim(),
     owner_student_id: currentUser ? currentUser.student_id : '',
     owner_name: currentUser ? currentUser.name : '',
+    school: currentUser ? (currentUser.school || '') : '',
     gender_pref: document.getElementById('fGenderPref').value || 'all',
     item_type: document.getElementById('typeRent').style.background.includes('rgba(52,211,153,.12)') ? 'rent' : 'sell',
     rent_price: parseFloat(document.getElementById('fRentPrice').value) || 0,
@@ -857,7 +870,7 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),image:window._cardImage||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:window._cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
     if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
@@ -1358,6 +1371,32 @@ try {
     if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
   }
 } catch(e) {}
+// Populate school selector
+var schoolSel = document.getElementById('vSchool');
+if (schoolSel && SCHOOLS) {
+  SCHOOLS.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    schoolSel.appendChild(opt);
+  });
+}
+// Populate visitor school selector
+var visSel = document.getElementById('visitorSchool');
+if (visSel && SCHOOLS) {
+  SCHOOLS.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    visSel.appendChild(opt);
+  });
+  // Restore saved selection
+  var savedSchool = localStorage.getItem('visitorSchool');
+  if (savedSchool) visSel.value = savedSchool;
+}
+// School selection changes
+document.getElementById('visitorSchool').onchange = function() {
+  localStorage.setItem('visitorSchool', this.value);
+  load();
+};
 loadCats();
 load(false);
 loadAnn();
