@@ -1211,8 +1211,13 @@ app.get('/api/marketplace/products', async (req, res) => {
       if (admin) { url = SB('products?school=eq.'+school+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); if(category) url = SB('products?school=eq.'+school+'&category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); }
     }
     if (item_type && !admin) {
-      url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-      if (category) url = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (school) {
+        url = SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+        if (category) url = SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      } else {
+        url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+        if (category) url = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      }
     }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
