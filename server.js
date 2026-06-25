@@ -1308,7 +1308,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         var uData = await uR.json();
         var uSchool = (Array.isArray(uData) && uData[0]) ? uData[0].school : (school || '');
         if (uSchool) {
-          contacts.unshift({ student_id: kefuId(uSchool), name: uSchool + '客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+          contacts.unshift({ student_id: kefuId(uSchool), name: '客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
         }
       } catch(e) {}
     }
