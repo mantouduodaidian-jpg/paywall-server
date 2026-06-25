@@ -408,6 +408,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
           <button onclick="cancelTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(239,68,68,.12)">✕ 取消交易</button>
         </div>
       </div>
+      <div id="chatImgPreview" style="display:none;padding:4px 12px 2px;border-top:1px solid rgba(0,0,0,.04)"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:rgba(96,184,142,.08);font-size:10px;color:#60b88e;max-width:100%"><img id="chatImgThumb" style="width:24px;height:24px;border-radius:4px;object-fit:cover"><span id="chatImgName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><span onclick="clearChatImg()" style="cursor:pointer;color:rgba(0,0,0,.2);margin-left:2px">✕</span></span></div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
         <span id="chatImgBadge" style="display:none;padding:3px 8px;border-radius:4px;background:rgba(96,184,142,.1);color:#60b88e;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;flex-shrink:0">📷</span>
@@ -1256,6 +1257,10 @@ function confirmRejectTrade() {
 }
 
 var _chatImgData = null;
+function clearChatImg() {
+  _chatImgData = null;
+  document.getElementById('chatImgPreview').style.display = 'none';
+}
 function selectChatImage(input) {
   var file = input.files && input.files[0];
   if (!file) return;
@@ -1272,8 +1277,9 @@ function selectChatImage(input) {
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
       _chatImgData = canvas.toDataURL('image/jpeg', 0.5);
-      document.getElementById('chatImgBadge').textContent = '📷 ' + file.name;
-      document.getElementById('chatImgBadge').style.display = '';
+      document.getElementById('chatImgThumb').src = _chatImgData;
+      document.getElementById('chatImgName').textContent = file.name;
+      document.getElementById('chatImgPreview').style.display = '';
     };
     img.src = e.target.result;
   };
@@ -1293,7 +1299,7 @@ function sendChat() {
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
     var imgData = _chatImgData;
     _chatImgData = null;
-    document.getElementById('chatImgBadge').style.display = 'none';
+  
     input.value = '';
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},

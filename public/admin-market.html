@@ -573,7 +573,15 @@ function switchSchool(code) {
   SCHOOL_LIST.forEach(function(s) { if (s.code === code) sn = s.name; });
   localStorage.setItem('adminSchoolName', sn);
   document.getElementById('headerSchool').textContent = code ? '- ' + sn : '';
-  refreshAll();
+  // Fade then switch to overview + reload all
+  var activeTab = document.querySelector('.tab.active');
+  var tabName = activeTab ? activeTab.dataset.tab : 'overview';
+  var tc = document.querySelectorAll('.tab-content');
+  tc.forEach(function(el) { if (el.style.display !== 'none') el.style.opacity = '0.3'; });
+  setTimeout(function() {
+    switchTab(tabName);
+    tc.forEach(function(el) { el.style.opacity = ''; });
+  }, 120);
 }
 
 // 自动检测 token 有效再进后台
