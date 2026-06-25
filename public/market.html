@@ -300,6 +300,11 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <select id="fGenderPref" style="flex:0.5"><option value="all">男女均可</option><option value="male">仅男生</option><option value="female">仅女生</option></select>
           </div>
     <textarea id="fDesc" placeholder="描述（版本、使用情况、面交地点...）"></textarea>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;background:rgba(0,0,0,.02);border-radius:8px">
+      <span style="font-size:12px;color:rgba(0,0,0,.3);flex:1">接受议价</span>
+      <span id="negoOn" onclick="setNego(true)" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(96,184,142,.1);color:#60b88e">是</span>
+      <span id="negoOff" onclick="setNego(false)" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(0,0,0,.04);color:rgba(0,0,0,.25)">否</span>
+    </div>
     <div id="rentFields" style="display:none;margin-bottom:10px">
       <div class="row">
         <input type="number" id="fRentPrice" placeholder="租金（元/天）" step="0.01" style="flex:1">
@@ -735,7 +740,9 @@ async function load(reset) {
       }
       div.onclick = function() { if (!currentUser) { hideDetail();notify('请登录查看商品', '🔑'); showLogin(); return; } showDetail(p.id); };
       var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
-      var typeTag = p.item_type === 'rent' ? '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>' : '';
+      var typeTag = '';
+      if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
+      if (p.negotiable) typeTag += '<span class="tag" style="background:rgba(251,191,36,.1);color:#d4a030">💰 可议价</span>';
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
         (p.sold?'<div class="sold-badge">已售罄</div>':'')+
         (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
@@ -775,7 +782,7 @@ async function showDetail(id) {
       '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<img src="'+src+'" style="'+(i>0?'display:none':'')+'max-width:100%;max-height:300px;border-radius:8px" class="detail-img">'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(0,0,0,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
       '<div class="price">'+(p.item_type==='rent'?'¥'+parseFloat(p.rent_price).toFixed(2)+'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+(p.deposit>0?' · 押金¥'+parseFloat(p.deposit).toFixed(0):''):'¥'+parseFloat(p.price).toFixed(2))+'</div>'+
-      '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span></div>'+
+      '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span>'+(p.negotiable?'<span style="background:rgba(251,191,36,.1);color:#d4a030;padding:3px 10px;border-radius:6px;font-size:12px">💰 可议价</span>':'')+'</div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
       (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
@@ -806,6 +813,12 @@ function setItemType(type) {
   document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06');
   document.getElementById('rentFields').style.display = type==='rent' ? '' : 'none';
 }
+var _nego = false;
+function setNego(v) {
+  _nego = v;
+  document.getElementById('negoOn').style.cssText = 'padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:' + (v?'rgba(96,184,142,.1)':'rgba(0,0,0,.04)') + ';color:' + (v?'#60b88e':'rgba(0,0,0,.25)');
+  document.getElementById('negoOff').style.cssText = 'padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:' + (!v?'rgba(96,184,142,.1)':'rgba(0,0,0,.04)') + ';color:' + (!v?'#60b88e':'rgba(0,0,0,.25)');
+}
 function showPub(){document.getElementById('pubOverlay').classList.add('show')}
 function hidePub(){document.getElementById('pubOverlay').classList.remove('show')}
 
@@ -827,6 +840,7 @@ async function publish(){
     rent_price: parseFloat(document.getElementById('fRentPrice').value) || 0,
     rent_period: document.getElementById('fRentPeriod').value || 'day',
     deposit: parseFloat(document.getElementById('fDeposit').value) || 0,
+    negotiable: _nego,
     images: window._uploadedImages || [],
   };
   try{

@@ -1099,7 +1099,7 @@ app.post('/api/verify/reject', schoolScope, express.json(), async (req, res) => 
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/verify/:id', fullAdmin, async (req, res) => {
+app.delete('/api/verify/:id', schoolScope, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1155,7 +1155,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0, school: req.body.school||'' })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0, school: req.body.school||'', negotiable: req.body.negotiable||false })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
