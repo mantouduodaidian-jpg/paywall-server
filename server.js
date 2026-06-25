@@ -1176,7 +1176,9 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     contacts = Object.keys(seen).map(function(k) {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
-    if (student_id !== KEFU_ID) {
+    if (student_id === KEFU_ID) {
+      contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
+    } else {
       contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
       contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
     }
