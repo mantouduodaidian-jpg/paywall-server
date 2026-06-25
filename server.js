@@ -673,7 +673,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       }
       await fetch(SB('verifications'), {
         method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', status: 'pending', created_at: new Date().toISOString() })
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', status: 'pending', created_at: new Date().toISOString() })
       });
       addLog('user_register', 'verification', student_id, name);
         notifyAdmin('new_verification', { student_id, name });
@@ -1074,7 +1074,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'' })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all' })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);

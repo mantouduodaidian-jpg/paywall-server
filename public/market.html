@@ -262,6 +262,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     </div>
     <div class="row">
       <select id="fQuality"><option value="">新旧程度</option><option>全新</option><option>九成新</option><option>八成新</option><option>七成新</option><option>五成新</option></select>
+      <select id="fGenderPref" style="flex:0.5"><option value="all">男女均可</option><option value="male">仅男生</option><option value="female">仅女生</option></select>
           </div>
     <textarea id="fDesc" placeholder="描述（版本、使用情况、面交地点...）"></textarea>
     <div style="margin-bottom:10px">
@@ -423,6 +424,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <input type="text" id="vName" placeholder="真实姓名 *">
     <input type="text" id="vStudentId" placeholder="学号 *">
     <input type="text" id="vPhone" placeholder="手机号 *">
+    <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">性别</option><option value="male">男</option><option value="female">女</option></select>
     <div style="margin-bottom:10px">
       <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 上传学生证照片
         <input type="file" id="vStudentCard" accept="image/*" style="display:none" onchange="previewStudentCard(this)">
@@ -623,7 +625,7 @@ async function showDetail(id) {
       '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<img src="'+src+'" style="'+(i>0?'display:none':'')+'max-width:100%;max-height:300px;border-radius:8px" class="detail-img">'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(255,255,255,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
       '<div class="price">¥'+parseFloat(p.price).toFixed(2)+'</div>'+
-      '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span></div>'+
+      '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
       (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
@@ -664,7 +666,8 @@ async function publish(){
     desc:document.getElementById('fDesc').value.trim(),
     owner_student_id: currentUser ? currentUser.student_id : '',
     owner_name: currentUser ? currentUser.name : '',
-    images: window._uploadedImages || []
+    images: window._uploadedImages || [],
+    gender_pref: document.getElementById('fGenderPref').value || 'all',
   };
   try{
     const r=await fetch('/api/marketplace/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
@@ -760,7 +763,7 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,image:window._cardImage||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,image:window._cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
     if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
@@ -904,6 +907,15 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
+  // Use anonymous display until trade confirmed
+  fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
+    if (p && p.trade_status === 'completed') {
+      document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
+    } else {
+      var anonName = sellerName ? sellerName.charAt(0) + '***' : '买家';
+      document.getElementById('chatConvLabel').textContent = '💬 ' + anonName;
+    }
+  }).catch(function(){});
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
