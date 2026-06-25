@@ -1008,7 +1008,7 @@ app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/chat-alerts', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 };
+    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.json([]); }
 });
