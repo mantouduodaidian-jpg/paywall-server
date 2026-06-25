@@ -505,14 +505,14 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/verify/list', adminAuth, async (req, res) => {
+app.get('/api/verify/list', anyAdmin, async (req, res) => {
   try {
     const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', adminAuth, express.json(), async (req, res) => {
+app.post('/api/verify/approve', anyAdmin, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -537,7 +537,7 @@ async function addLog(action, targetType, targetId, detail) {
 }
 
 // ====== Marketplace Admin API ======
-app.get('/api/marketplace/admin/stats', adminAuth, async (req, res) => {
+app.get('/api/marketplace/admin/stats', anyAdmin, async (req, res) => {
   try {
     const [prodR, verR, reportR, annR] = await Promise.all([
       fetch(SB('products?select=id,verified,status,listed'), { headers: SB_HEADERS }),
@@ -566,7 +566,7 @@ app.get('/api/marketplace/admin/stats', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.patch('/api/marketplace/products/:id', adminAuth, express.json(), async (req, res) => {
+app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -598,7 +598,7 @@ app.patch('/api/marketplace/products/:id', adminAuth, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/products/:id', adminAuth, async (req, res) => {
+app.delete('/api/marketplace/products/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -618,7 +618,7 @@ app.get('/api/marketplace/promotions', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/promotions', adminAuth, express.json(), async (req, res) => {
+app.post('/api/marketplace/promotions', anyAdmin, express.json(), async (req, res) => {
   try {
     const { title, desc, contact, image, sort_order } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
@@ -630,7 +630,7 @@ app.post('/api/marketplace/promotions', adminAuth, express.json(), async (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/marketplace/promotions/:id', adminAuth, express.json(), async (req, res) => {
+app.put('/api/marketplace/promotions/:id', anyAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, desc, contact, image, sort_order, active } = req.body;
@@ -646,7 +646,7 @@ app.put('/api/marketplace/promotions/:id', adminAuth, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/promotions/:id', adminAuth, async (req, res) => {
+app.delete('/api/marketplace/promotions/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('promotions?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -726,6 +726,41 @@ app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Seller Management API ======
+app.get('/api/marketplace/sellers', async (req, res) => {
+  try {
+    const r = await fetch(SB('products?select=owner_student_id,owner_name,id,title,status,listed,sold'), { headers: SB_HEADERS });
+    let data = await r.json();
+    let arr = Array.isArray(data) ? data : [];
+    // Group by owner
+    let sellers = {}, seen = {};
+    arr.forEach(function(p) {
+      if (!p.owner_student_id) return;
+      if (!sellers[p.owner_student_id]) sellers[p.owner_student_id] = { student_id: p.owner_student_id, name: p.owner_name||p.owner_student_id, total: 0, active: 0, listed: 0, product_ids: [] };
+      sellers[p.owner_student_id].total++;
+      if (p.status === 'approved') sellers[p.owner_student_id].active++;
+      if (p.listed) sellers[p.owner_student_id].listed++;
+      sellers[p.owner_student_id].product_ids.push(p.id);
+    });
+    res.json(Object.values(sellers));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/sellers/toggle-all', express.json(), async (req, res) => {
+  try {
+    const { student_id, listed } = req.body;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    const r = await fetch(SB("products?owner_student_id=eq."+encodeURIComponent(student_id)+"&status=eq.approved&select=id"), { headers: SB_HEADERS });
+    let data = await r.json();
+    let arr = Array.isArray(data) ? data : [];
+    for (const p of arr) {
+      await fetch(SB('products?id=eq.'+p.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: !!listed }) });
+    }
+    addLog('seller_toggle', 'seller', student_id, listed?'上架':'下架'+' '+arr.length+'件');
+    res.json({ ok: true, count: arr.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Categories API ======
 app.get('/api/marketplace/categories', async (req, res) => {
   try {
@@ -734,7 +769,7 @@ app.get('/api/marketplace/categories', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/categories', adminAuth, express.json(), async (req, res) => {
+app.post('/api/marketplace/categories', anyAdmin, express.json(), async (req, res) => {
   try {
     const { name, icon, sort_order } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
@@ -748,7 +783,7 @@ app.post('/api/marketplace/categories', adminAuth, express.json(), async (req, r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/marketplace/categories/:id', adminAuth, express.json(), async (req, res) => {
+app.put('/api/marketplace/categories/:id', anyAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -762,7 +797,7 @@ app.put('/api/marketplace/categories/:id', adminAuth, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/categories/:id', adminAuth, async (req, res) => {
+app.delete('/api/marketplace/categories/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -786,7 +821,7 @@ app.post('/api/marketplace/reports', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/marketplace/reports', adminAuth, async (req, res) => {
+app.get('/api/marketplace/reports', anyAdmin, async (req, res) => {
   try {
     const { status } = req.query;
     let url = SB('reports?order=created_at.desc&select=*');
@@ -802,7 +837,7 @@ app.get('/api/marketplace/reports', adminAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/reports/resolve', adminAuth, express.json(), async (req, res) => {
+app.post('/api/marketplace/reports/resolve', anyAdmin, express.json(), async (req, res) => {
   try {
     const { id, action: reportAction } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -822,7 +857,7 @@ app.get('/api/marketplace/announcements', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/announcements', adminAuth, express.json(), async (req, res) => {
+app.post('/api/marketplace/announcements', anyAdmin, express.json(), async (req, res) => {
   try {
     const { title, content } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
@@ -836,7 +871,7 @@ app.post('/api/marketplace/announcements', adminAuth, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/marketplace/announcements/:id', adminAuth, express.json(), async (req, res) => {
+app.put('/api/marketplace/announcements/:id', anyAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, content, active } = req.body;
@@ -850,7 +885,7 @@ app.put('/api/marketplace/announcements/:id', adminAuth, express.json(), async (
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/announcements/:id', adminAuth, async (req, res) => {
+app.delete('/api/marketplace/announcements/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('announcements?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -860,7 +895,7 @@ app.delete('/api/marketplace/announcements/:id', adminAuth, async (req, res) => 
 });
 
 // ====== Logs API ======
-app.get('/api/marketplace/logs', adminAuth, async (req, res) => {
+app.get('/api/marketplace/logs', anyAdmin, async (req, res) => {
   try {
     const { limit: lmt } = req.query;
     let url = SB('logs?order=created_at.desc&select=*');
@@ -872,14 +907,14 @@ app.get('/api/marketplace/logs', adminAuth, async (req, res) => {
 });
 
 // ====== Blocked Words API ======
-app.get('/api/marketplace/blocked-words', adminAuth, async (req, res) => {
+app.get('/api/marketplace/blocked-words', anyAdmin, async (req, res) => {
   try {
     const r = await fetch(SB('blocked_words?select=*'), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/blocked-words', adminAuth, express.json(), async (req, res) => {
+app.post('/api/marketplace/blocked-words', anyAdmin, express.json(), async (req, res) => {
   try {
     const { word } = req.body;
     if (!word) return res.status(400).json({ error: 'word required' });
@@ -893,7 +928,7 @@ app.post('/api/marketplace/blocked-words', adminAuth, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/blocked-words/:id', adminAuth, async (req, res) => {
+app.delete('/api/marketplace/blocked-words/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('blocked_words?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -916,7 +951,7 @@ app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
   } catch(e) { res.json({ ok: false }); }
 });
 
-app.get('/api/marketplace/chat-alerts', adminAuth, async (req, res) => {
+app.get('/api/marketplace/chat-alerts', anyAdmin, async (req, res) => {
   try {
     const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*'), { headers: SB_HEADERS2 });
     res.json(await r.json());
@@ -924,7 +959,7 @@ app.get('/api/marketplace/chat-alerts', adminAuth, async (req, res) => {
 });
 
 // ====== CSV Export ======
-app.get('/api/marketplace/export/:type', adminAuth, async (req, res) => {
+app.get('/api/marketplace/export/:type', anyAdmin, async (req, res) => {
   try {
     const type = req.params.type;
     if (type === 'products') {
@@ -969,14 +1004,14 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/verify/list', adminAuth, async (req, res) => {
+app.get('/api/verify/list', anyAdmin, async (req, res) => {
   try {
     const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', adminAuth, express.json(), async (req, res) => {
+app.post('/api/verify/approve', anyAdmin, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -991,7 +1026,7 @@ app.post('/api/verify/approve', adminAuth, express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/reject', adminAuth, express.json(), async (req, res) => {
+app.post('/api/verify/reject', anyAdmin, express.json(), async (req, res) => {
   try {
     const { id, reason } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1002,7 +1037,7 @@ app.post('/api/verify/reject', adminAuth, express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/verify/:id', adminAuth, async (req, res) => {
+app.delete('/api/verify/:id', anyAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1195,28 +1230,42 @@ app.delete('/api/expenses/:id', async (req, res) => {
 });
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889';
+const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
 const adminTokens = new Map();
 
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
-    const token = randomBytes(24).toString('hex');
-    adminTokens.set(token, { createdAt: Date.now() });
-    setTimeout(() => adminTokens.delete(token), 86400000);
-    res.json({ ok: true, token });
-  } else {
-    res.json({ ok: false, msg: '密码错误' });
-  }
+  let role = null;
+  if (password === ADMIN_PASSWORD) role = 'admin';
+  else if (password === MANAGER_PASSWORD) role = 'manager';
+  if (!role) return res.json({ ok: false, msg: '密码错误' });
+
+  const token = randomBytes(24).toString('hex');
+  adminTokens.set(token, { role, createdAt: Date.now() });
+  setTimeout(() => adminTokens.delete(token), 86400000);
+  res.json({ ok: true, token, role });
 });
 
-function adminAuth(req, res, next) {
+function anyAdmin(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
     return res.status(401).json({ ok: false, msg: '未授权' });
   }
-  if (!adminTokens.has(auth.slice(7))) {
-    return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  const sess = adminTokens.get(auth.slice(7));
+  if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  req.adminRole = sess.role;
+  next();
+}
+
+function fullAdmin(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return res.status(401).json({ ok: false, msg: '未授权' });
   }
+  const sess = adminTokens.get(auth.slice(7));
+  if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  if (sess.role !== 'admin') return res.status(403).json({ ok: false, msg: '无权限' });
+  req.adminRole = sess.role;
   next();
 }
 

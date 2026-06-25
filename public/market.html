@@ -242,6 +242,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
   <div class="content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-size:13px;color:rgba(255,255,255,.2)" id="resultLabel">全部商品</span>
+      <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
     </div>
     <div class="grid" id="productList"><div class="empty">加载中...</div></div>
   </div>
@@ -438,6 +439,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 
 <script>
 let selCat = '';
+let sellerFilter = null;
 let reportingProductId = null;
 
 // ====== Toast Notification ======
@@ -524,11 +526,21 @@ function hidePromoDetail() { document.getElementById('promoModal').classList.rem
 
 // ====== Products ======
 function setCat(c) {
+  sellerFilter = null;
   selCat = c;
   document.querySelectorAll('#catList .cat').forEach(el => {
     if (c === '') el.classList.toggle('active', el.textContent.includes('全部'));
     else el.classList.toggle('active', el.textContent.includes(c));
   });
+  load();
+}
+
+function viewSellerProducts(studentId, name) {
+  sellerFilter = studentId;
+  window._sellerName = name;
+  selCat = '';
+  // Clear category highlight
+  document.querySelectorAll('#catList .cat').forEach(el => el.classList.toggle('active', el.textContent.includes('全部')));
   load();
 }
 
@@ -541,7 +553,8 @@ async function load(reset) {
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
-  if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
+  if (sellerFilter) url += '&owner='+sellerFilter;
+  else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
   else if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
   try {
@@ -550,7 +563,8 @@ async function load(reset) {
     var searchVal = document.getElementById('searchInput').value.trim();
     const total = searchVal ? data.length : (json.total || data.length);
     document.getElementById('statCount').textContent = total;
-    document.getElementById('resultLabel').textContent = (selCat||'全部')+(search?' · "'+search+'"':'')+' · '+total+' 件';
+    document.getElementById('resultLabel').textContent = (sellerFilter ? '卖家「'+(window._sellerName||'')+'」的商品' : (selCat||'全部'))+(search?' · "'+search+'"':'')+' · '+total+' 件';
+    document.getElementById('sellerClear').style.display = sellerFilter ? 'inline' : 'none';
     const list = document.getElementById('productList');
     if (reset !== false) {
       if (!data.length) { list.innerHTML = '<div class="empty">🌱 还没有商品，快来发布第一个</div>'; return; }
@@ -608,7 +622,9 @@ async function showDetail(id) {
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
       (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(p.owner_name||'卖家')+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+
-      '<button class="close" onclick="hideDetail()">关闭</button></div>'+
+      '<button class="close" onclick="hideDetail()">关闭</button>'+
+      (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(p.owner_name||'卖家')+'\');return false" style="font-size:11px;color:rgba(255,255,255,.2);text-decoration:none">👤 查看 '+(p.owner_name||'卖家')+' 的其他商品</a></div>' : '')+
+      '</div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
     document.getElementById('detailModal').classList.add('show');
   } catch(e) {}
