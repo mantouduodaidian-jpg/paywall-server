@@ -576,6 +576,8 @@ function logout() {
 var SCHOOL_LIST = [];
 try { var sl = localStorage.getItem('schoolList'); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) {}
 
+function kefuId() { var s = localStorage.getItem('adminSchool'); return s ? 'kefu_'+s : 'kefu_admin'; }
+function isKefuId(id) { return id && id.indexOf('kefu_') === 0; }
 function switchSchool(code) {
   localStorage.setItem('adminSchool', code);
   var sn = '';
@@ -1149,7 +1151,7 @@ async function delBw(id, word) {
 let kefuContactId = null, kefuPollTimer = null, kefuLastId = 0;
 async function loadKefuContacts() {
   try {
-    const r = await apiFetch(getSchoolParam('/api/marketplace/contacts?student_id=kefu_001'));
+    const r = await apiFetch('/api/marketplace/contacts?student_id='+kefuId()+'&school='+(localStorage.getItem('adminSchool')||''));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const el = document.getElementById('kefuContacts');
@@ -1182,7 +1184,7 @@ async function openKefuChat(studentId, name) {
 async function loadKefuMsgs() {
   if (!kefuContactId) return;
   try {
-    var url = '/api/marketplace/messages?student_id=kefu_001&other_student_id='+kefuContactId;
+    var url = '/api/marketplace/messages?student_id='+kefuId()+'&other_student_id='+kefuContactId;
     if (kefuLastId) url += '&since_id='+kefuLastId;
     const r = await apiFetch(url);
     const data = await r.json();
@@ -1190,7 +1192,7 @@ async function loadKefuMsgs() {
     var el = document.getElementById('kefuMsgs');
     arr.forEach(function(m) {
       if (m.id > kefuLastId) kefuLastId = m.id;
-      var me = m.from_student_id === 'kefu_001';
+      var me = isKefuId(m.from_student_id);
       var msgHtml = esc(m.content);
         if (msgHtml.indexOf('[img]') >= 0) {
           var parts = msgHtml.split('[img]');
@@ -1209,7 +1211,7 @@ async function sendKefuMsg() {
   inp.value = '';
   try {
     await apiFetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({product_id:0,from_student_id:'kefu_001',from_name:'校园严选客服',to_student_id:kefuContactId,to_name:'',content:t})});
+      body:JSON.stringify({product_id:0,from_student_id:kefuId(),from_name:'校园严选客服',to_student_id:kefuContactId,to_name:'',content:t})});
     await loadKefuMsgs();
   } catch(e) { toast('发送失败'); }
 }

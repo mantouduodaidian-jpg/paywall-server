@@ -1235,8 +1235,8 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
 });
 
 // ====== Messages API ======
-const KEFU_ID = 'kefu_001';
-const KEFU_NAME = '校园严选客服';
+function kefuId(school) { return 'kefu_' + (school || 'admin'); }
+function isKefu(id) { return id && id.startsWith('kefu_'); }
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
     const { product_id, student_id, other_student_id, since_id } = req.query;
@@ -1298,11 +1298,19 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     contacts = Object.keys(seen).map(function(k) {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
-    if (student_id === KEFU_ID) {
-      contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
+    if (isKefu(student_id)) {
+      contacts = contacts.filter(function(c) { return !isKefu(c.student_id); });
     } else {
-      contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
-      contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+      contacts = contacts.filter(function(c) { return c.student_id !== student_id && !isKefu(c.student_id); });
+      // Look up user's school to add their school's kefu
+      try {
+        var uR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=school"), { headers: SB_HEADERS });
+        var uData = await uR.json();
+        var uSchool = (Array.isArray(uData) && uData[0]) ? uData[0].school : (school || '');
+        if (uSchool) {
+          contacts.unshift({ student_id: kefuId(uSchool), name: uSchool + '客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+        }
+      } catch(e) {}
     }
     // Filter by school if requested
     if (school && contacts.length) {
@@ -1326,7 +1334,7 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
     let { product_id, from_student_id, from_name, to_student_id, to_name, content } = req.body;
     if (!from_student_id || !content) return res.status(400).json({ error: 'missing fields' });
     if (product_id === undefined || product_id === null) {
-      if (to_student_id === KEFU_ID || from_student_id === KEFU_ID) product_id = 0;
+      if (isKefu(to_student_id) || isKefu(from_student_id)) product_id = 0;
       else return res.status(400).json({ error: 'product_id required' });
     }
     const r = await fetch(SB('messages'), {

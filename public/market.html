@@ -1115,7 +1115,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
-  if (sellerStudentId === 'kefu_001') {
+  if ((sellerStudentId||'').indexOf('kefu_') === 0) {
     document.getElementById('chatConvLabel').textContent = '💬 校园严选客服';
   } else if (productId) {
     fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
@@ -1138,7 +1138,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').classList.add('show');
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
-  document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerStudentId === 'kefu_001' ? '校园严选客服' : sellerName);
+  document.getElementById('chatConvLabel').textContent = '💬 ' + ((sellerStudentId||'').indexOf('kefu_') === 0 ? '校园严选客服' : sellerName);
   startChatPoll();
   setTimeout(function() {
     fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
