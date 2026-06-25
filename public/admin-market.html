@@ -619,9 +619,11 @@ function switchTab(name) {
 function refreshAll() { loadOverview(); }
 
 // ====== OVERVIEW ======
+function getSchoolParam() { var s = localStorage.getItem('adminSchool'); return s ? '&school='+s : ''; }
+
 async function loadOverview() {
   try {
-    const r = await apiFetch('/api/marketplace/admin/stats');
+    const r = await apiFetch('/api/marketplace/admin/stats'+getSchoolParam());
     const d = await r.json();
     document.getElementById('statsContainer').innerHTML =
       '<div class="stat-card"><div class="num green">'+d.total+'</div><div class="label">总商品</div></div>'+
@@ -644,7 +646,7 @@ async function loadOverview() {
   } catch(e) {}
   // Charts
   try {
-    const r = await apiFetch('/api/marketplace/products?admin=1&limit=200');
+    const r = await apiFetch('/api/marketplace/products?admin=1&limit=200'+getSchoolParam());
     const d = await r.json();
     const all = Array.isArray(d) ? d : (d.data || []);
     renderBarChart(all);
@@ -653,7 +655,7 @@ async function loadOverview() {
   } catch(e) {}
   // Recent
   try {
-    const r = await apiFetch('/api/marketplace/products?admin=1&limit=5');
+    const r = await apiFetch('/api/marketplace/products?admin=1&limit=5'+getSchoolParam());
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('recentList').innerHTML = !arr.length ? '<div class="empty">暂无商品</div>' :
