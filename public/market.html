@@ -53,12 +53,13 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .card{background:#ffffff;border:1px solid rgba(0,0,0,.04);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1);position:relative}
 .card:hover{border-color:rgba(0,0,0,.1);transform:translateY(-6px);box-shadow:0 8px 24px rgba(0,0,0,.04)}
-.card .img{width:100%;aspect-ratio:1;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:36px;color:rgba(255,255,255,.06)}
+.card .img{width:100%;aspect-ratio:1;background:rgba(0,0,0,.03);display:flex;align-items:center;justify-content:center;font-size:36px;color:rgba(0,0,0,.06)}
 .card .info{padding:8px 10px}
 .card .info .title{font-size:13px;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .info .price{font-size:17px;font-weight:700;color:#60b88e;margin:3px 0}
 .card .info .meta{display:flex;gap:6px;font-size:10px;color:rgba(0,0,0,.2);flex-wrap:wrap}
 .card .info .meta .tag{padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.04);color:rgba(0,0,0,.3)}
+.card .pin-bar{height:3px;background:linear-gradient(90deg,#4e9e80,#bce0cc,#4e9e80);border-radius:14px 14px 0 0;flex-shrink:0}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
 .card .mine-badge{position:absolute;top:8px;left:8px;background:rgba(96,184,142,.12);color:#60b88e;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px}
 .status-badge{font-size:10px;padding:2px 8px;border-radius:4px;display:inline-block}
@@ -73,7 +74,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;overflow-y:auto;padding:20px}
 .modal-overlay.show{display:block}
 .modal-box{background:#ffffff;border-radius:16px;max-width:600px;margin:40px auto;border:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column}
-.modal-box .img-big{width:100%;max-height:400px;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.modal-box .img-big{width:100%;max-height:400px;background:rgba(0,0,0,.03);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .modal-box .img-big img{width:100%;height:100%;object-fit:cover}
 .modal-box .body{padding:20px}
 .modal-box .body .title{font-size:22px;font-weight:600;color:#333}
@@ -105,7 +106,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 
 /* Report Modal */
 .report-modal .pub-box{max-width:460px}
-.report-modal select,.report-modal textarea,.report-modal input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
+.report-modal select,.report-modal textarea,.report-modal input{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px;-webkit-tap-highlight-color:transparent}
 .report-modal select:focus,.report-modal textarea:focus,.report-modal input:focus{border-color:rgba(52,211,153,.3);background:rgba(0,0,0,.3);-webkit-tap-highlight-color:transparent}
 .report-modal textarea{min-height:80px;resize:vertical}
 
@@ -116,12 +117,12 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 
 .cat-select-wrap{position:relative;flex:1}
 .cat-select-real{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;font-size:14px}
-.cat-select-display{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;display:flex;align-items:center;gap:8px;pointer-events:none;z-index:1;position:relative}
+.cat-select-display{padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;display:flex;align-items:center;gap:8px;pointer-events:none;z-index:1;position:relative}
 .cat-select-display svg{width:16px;height:16px;flex-shrink:0;vertical-align:middle}
-.cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(255,255,255,.2);font-size:10px}
+.cat-select-display:after{content:'\25BE';margin-left:auto;color:rgba(0,0,0,.2);font-size:10px}
 
 /* Chat Backdrop */
-.chat-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:190;display:none;backdrop-filter:blur(2px)}
+.chat-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.15);z-index:190;display:none}
 .chat-backdrop.show{display:block}
 
 /* Chat Button */
@@ -131,35 +132,35 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 /* Contact Sidebar */
 .contact-sidebar{position:fixed;top:0;left:-320px;width:300px;height:100vh;background:rgba(10,26,15,.98);border-right:1px solid rgba(52,211,153,.15);z-index:200;transition:left .3s ease;backdrop-filter:blur(12px);overflow:hidden;display:flex;flex-direction:column}
 .contact-sidebar.show{left:0}
-.contact-sidebar-header{padding:16px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5)}
+.contact-sidebar-header{padding:16px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(0,0,0,.5)}
 .contact-list{flex:1;overflow-y:auto;padding:8px}
 .contact-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
 .contact-item:hover{background:rgba(52,211,153,.04)}
 .contact-item .badge{background:#ef4444;color:#fff;font-size:10px;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
 /* Chat Panel */
-.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;height:500px;background:rgba(10,26,15,.98);border:1px solid rgba(52,211,153,.15);border-radius:16px;z-index:200;backdrop-filter:blur(12px);box-shadow:0 4px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+.chat-panel{position:fixed;bottom:88px;left:24px;width:400px;height:500px;background:#ffffff;border:1px solid rgba(0,0,0,.08);border-radius:16px;z-index:200;box-shadow:0 4px 30px rgba(0,0,0,.08);overflow:hidden;display:none;flex-direction:column}
 #contactsOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
 #contactsOverlay.show{display:block}
 .chat-panel.show{display:flex;flex-direction:column}
-.chat-panel-header{padding:14px 16px;background:rgba(52,211,153,.06);border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(255,255,255,.5);flex-shrink:0}
+.chat-panel-header{padding:14px 16px;background:rgba(96,184,142,.06);border-bottom:1px solid rgba(0,0,0,.04);display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600;color:rgba(0,0,0,.5);flex-shrink:0}
 .chat-body{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
 .chat-body::-webkit-scrollbar,.chat-msgs::-webkit-scrollbar{width:4px}
 .chat-body::-webkit-scrollbar-track,.chat-msgs::-webkit-scrollbar-track{background:transparent}
 .chat-body::-webkit-scrollbar-thumb,.chat-msgs::-webkit-scrollbar-thumb{background:rgba(52,211,153,.15);border-radius:4px}
 .chat-msgs{padding:14px;flex:1;overflow-y:auto;min-height:0}
 .chat-msg{margin-bottom:12px}
-.chat-msg .sender{font-size:10px;color:rgba(255,255,255,.2);margin-bottom:2px;padding:0 4px}
+.chat-msg .sender{font-size:10px;color:rgba(0,0,0,.2);margin-bottom:2px;padding:0 4px}
 .chat-msg .bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:85%;word-break:break-word;font-size:13px;line-height:1.5}
 .chat-msg.mine{text-align:right}
-.chat-msg.mine .bubble{background:rgba(52,211,153,.15);color:#c8e6c9;border-radius:14px 14px 14px 4px}
-.chat-msg.other .bubble{background:rgba(255,255,255,.04);color:#c8e6c9;border-radius:4px 14px 14px 14px}
-.chat-msg .time{font-size:9px;color:rgba(255,255,255,.12);margin-top:3px;display:block}
-.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.04);flex-shrink:0}
-.chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);color:#c8e6c9;font-size:12px;outline:0}
+.chat-msg.mine .bubble{background:rgba(96,184,142,.12);color:#60b88e;border-radius:14px 14px 14px 4px}
+.chat-msg.other .bubble{background:rgba(0,0,0,.04);color:rgba(0,0,0,.5);border-radius:4px 14px 14px 14px}
+.chat-msg .time{font-size:9px;color:rgba(0,0,0,.2);margin-top:3px;display:block}
+.chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(0,0,0,.04);flex-shrink:0}
+.chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
 .chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
-.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s}
-.chat-conv-item:hover{background:rgba(52,211,153,.04)}
+.chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;color:rgba(0,0,0,.5)}
+.chat-conv-item:hover{background:rgba(96,184,142,.06)}
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 
@@ -170,9 +171,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .card-blur .img{filter:blur(4px)}
 
 @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
-.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%);background-size:400px 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
-.skeleton-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;overflow:hidden}
-.skeleton-card .skeleton-img{width:100%;aspect-ratio:1;background:rgba(255,255,255,.03)}
+.skeleton{background:linear-gradient(90deg,rgba(0,0,0,.02) 25%,rgba(0,0,0,.06) 50%,rgba(0,0,0,.02) 75%);background-size:400px 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
+.skeleton-card{background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;overflow:hidden}
+.skeleton-card .skeleton-img{width:100%;aspect-ratio:1;background:rgba(0,0,0,.03)}
 .skeleton-card .skeleton-info{padding:8px 10px}
 .skeleton-card .skeleton-line{height:12px;margin-bottom:6px;width:70%}
 .skeleton-card .skeleton-line:last-child{width:40%}
@@ -224,7 +225,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <!-- Header -->
 <div class="header">
   <div style="display:flex;align-items:center;gap:12px">
-    <span id="hamburgerBtn" onclick="toggleContacts()" style="cursor:pointer;font-size:20px;color:rgba(255,255,255,.3);margin-right:8px;display:none">☰</span>
+    <span id="hamburgerBtn" onclick="toggleContacts()" style="cursor:pointer;font-size:20px;color:rgba(0,0,0,.3);margin-right:8px;display:none">☰</span>
     <div class="logo" style="display:flex;align-items:center;gap:10px">
 	      <img src="/logo.jpg" alt="二豆" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #bce0cc;box-shadow:0 2px 8px rgba(0,0,0,.04)">
 	      <span style="font-size:18px;font-weight:800;color:#60b88e;letter-spacing:2px">二豆</span>
@@ -232,9 +233,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div class="sub">校园二手 · 严格认证</div>
   </div>
   <div class="actions">
-    <span id="userInfo" style="display:none;font-size:12px;color:rgba(255,255,255,.4);align-items:center;gap:6px">
+    <span id="userInfo" style="display:none;font-size:12px;color:rgba(0,0,0,.4);align-items:center;gap:6px">
       <span id="userName"></span>
-      <a href="#" onclick="logout();return false" style="color:rgba(255,255,255,.2);font-size:11px;text-decoration:none">退出</a>
+      <a href="#" onclick="logout();return false" style="color:rgba(0,0,0,.2);font-size:11px;text-decoration:none">退出</a>
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
@@ -262,7 +263,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <!-- Content -->
   <div class="content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <span style="font-size:13px;color:rgba(255,255,255,.2)" id="resultLabel">全部商品</span>
+      <span style="font-size:13px;color:rgba(0,0,0,.2)" id="resultLabel">全部商品</span>
       <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
     </div>
     <div class="grid" id="productList"><div class="empty">加载中...</div></div>
@@ -275,14 +276,14 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <h2>📝 发布闲置</h2>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <span id="typeSell" onclick="setItemType('sell')" style="flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.2)">💰 出售</span>
-      <span id="typeRent" onclick="setItemType('rent')" style="flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.04);color:rgba(255,255,255,.25);border:1px solid rgba(255,255,255,.06)">📅 出租</span>
+      <span id="typeRent" onclick="setItemType('rent')" style="flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:rgba(0,0,0,.04);color:rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.06)">📅 出租</span>
     </div>
     <input type="text" id="fTitle" placeholder="物品名称 *">
     <div class="row">
       <input type="number" id="fPrice" placeholder="价格（元）*" step="0.01">
       <div class="cat-select-wrap">
         <select id="fCat" class="cat-select-real"><option value="">分类</option></select>
-        <div class="cat-select-display" id="fCatDisplay"><span style="color:rgba(255,255,255,.2)">分类</span></div>
+        <div class="cat-select-display" id="fCatDisplay"><span style="color:rgba(0,0,0,.2)">分类</span></div>
       </div>
     </div>
     <div class="row">
@@ -295,20 +296,20 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
         <input type="number" id="fRentPrice" placeholder="租金（元/天）" step="0.01" style="flex:1">
         <input type="number" id="fDeposit" placeholder="押金（元）" step="0.01" style="flex:1">
       </div>
-      <select id="fRentPeriod" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-top:8px">
+      <select id="fRentPeriod" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;margin-top:8px">
         <option value="day">按天</option>
         <option value="week">按周</option>
         <option value="month">按月</option>
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 添加照片
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 添加照片
         <input type="file" id="fImage" accept="image/*" multiple style="display:none" onchange="previewImg(this)">
       </label>
-      <span id="fImageName" style="font-size:11px;color:rgba(255,255,255,.2);margin-left:8px"></span>
+      <span id="fImageName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
     </div>
     <div id="fImagePreview" style="margin-bottom:10px;display:none">
-      <img id="fImagePreviewImg" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid rgba(255,255,255,.06)">
+      <img id="fImagePreviewImg" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid rgba(0,0,0,.06)">
     </div>
     <div class="btns">
       <button class="submit" onclick="publish()">✅ 确认发布</button>
@@ -325,7 +326,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <!-- Reject Trade Modal -->
 <div class="modal-overlay" id="rejectTradeModal" onclick="if(event.target===this)closeRejectTrade()">
   <div class="modal"><h2>✕ 拒绝交易</h2>
-    <p style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:12px">告知买家拒绝原因</p>
+    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:12px">告知买家拒绝原因</p>
     <select id="rejectTradeReason"><option>已售出</option><option>价格不合适</option><option>不想卖了</option><option>已与其他买家交易</option><option>其他</option></select>
     <textarea id="rejectTradeDetail" placeholder="补充说明（选填）" style="min-height:60px"></textarea>
     <div class="btns"><button class="btn-red" onclick="confirmRejectTrade()">✕ 拒绝</button><button class="btn-ghost" onclick="closeRejectTrade()">取消</button></div>
@@ -367,23 +368,23 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <div class="chat-panel-header">
     <span>💬 最近对话</span>
     <span style="display:flex;gap:6px;align-items:center">
-      <span id="soundToggle" onclick="toggleSound()" style="cursor:pointer;font-size:11px;color:rgba(255,255,255,.15)" title="消息提示音">🔔</span>
-      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+      <span id="soundToggle" onclick="toggleSound()" style="cursor:pointer;font-size:11px;color:rgba(0,0,0,.15)" title="消息提示音">🔔</span>
+      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(0,0,0,.2)">✕</span>
     </span>
   </div>
   <div class="chat-body" id="chatBody">
     <div style="padding:8px 8px 0">
-      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
+      <input type="text" id="chatSearch" autocomplete="off" placeholder="搜索联系人..." onkeyup="loadConvs()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:12px;outline:0">
     </div>
     <div class="chat-convs" id="chatConvs"></div>
     <div class="chat-conv" id="chatConv">
-      <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:rgba(255,255,255,.3);display:flex;justify-content:space-between;align-items:center">
+      <div style="padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-size:12px;color:rgba(0,0,0,.3);display:flex;justify-content:space-between;align-items:center">
         <span onclick="showConvs()" style="cursor:pointer;color:#34d399">← 返回</span>
         <span id="chatConvLabel">💬 聊天</span>
         <span></span>
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
-      <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(255,255,255,.04)">
+      <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(0,0,0,.04)">
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
         <div id="tradeSeller" style="display:none;display:flex;gap:6px">
@@ -418,9 +419,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <div class="modal-box" style="max-width:420px;text-align:center">
     <div class="body" style="padding:28px">
       <div style="font-size:48px;margin-bottom:8px">🎁</div>
-      <div id="promoModalTitle" style="font-size:18px;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:4px"></div>
-      <div id="promoModalDesc" style="font-size:13px;color:rgba(255,255,255,.3);margin-bottom:16px"></div>
-      <div id="promoModalContact" style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:20px;padding:8px 12px;background:rgba(255,255,255,.02);border-radius:8px;display:inline-block"></div>
+      <div id="promoModalTitle" style="font-size:18px;font-weight:600;color:rgba(0,0,0,.6);margin-bottom:4px"></div>
+      <div id="promoModalDesc" style="font-size:13px;color:rgba(0,0,0,.3);margin-bottom:16px"></div>
+      <div id="promoModalContact" style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:20px;padding:8px 12px;background:rgba(0,0,0,.02);border-radius:8px;display:inline-block"></div>
       <div class="btns" style="justify-content:center"><button class="close" onclick="hidePromoDetail()">关闭</button></div>
     </div>
   </div>
@@ -430,15 +431,15 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <div class="pub-overlay" id="loginOverlay" onclick="if(event.target===this)hideLogin()">
   <div class="pub-box" style="max-width:400px;text-align:center">
     <div style="font-size:48px;margin-bottom:8px">🔑</div>
-    <h2 style="font-size:18px;color:rgba(255,255,255,.6);margin-bottom:4px">欢迎回来</h2>
-    <p style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
+    <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">欢迎回来</h2>
+    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
     <input type="text" id="loginId" placeholder="学号">
     <input type="password" id="loginPhone" placeholder="电话">
-    <div style="font-size:12px;color:rgba(255,255,255,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
+    <div style="font-size:12px;color:rgba(0,0,0,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
     <div class="btns">
       <button class="submit" onclick="doLogin()" style="padding:12px">登录</button>
     </div>
-    <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(255,255,255,.15);text-decoration:none">稍后再说</a></div>
+    <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(0,0,0,.15);text-decoration:none">稍后再说</a></div>
   </div>
 </div>
 
@@ -447,10 +448,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <div class="contact-sidebar" id="contactSidebar" onclick="event.stopPropagation()">
   <div class="contact-sidebar-header">
     <span>👥 全部联系人</span>
-    <span onclick="toggleContacts()" style="cursor:pointer;font-size:14px;color:rgba(255,255,255,.2)">✕</span>
+    <span onclick="toggleContacts()" style="cursor:pointer;font-size:14px;color:rgba(0,0,0,.2)">✕</span>
   </div>
   <div style="padding:8px">
-    <input type="text" id="contactSearch" placeholder="搜索联系人..." onkeyup="loadContacts()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:0">
+    <input type="text" id="contactSearch" placeholder="搜索联系人..." onkeyup="loadContacts()" style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:12px;outline:0">
   </div>
   <div class="contact-list" id="contactList"></div>
 </div>
@@ -459,19 +460,19 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <div class="pub-overlay" id="verifyOverlay">
   <div class="pub-box" style="max-width:460px">
     <h2>🪪 实名认证</h2>
-    <p style="font-size:13px;color:rgba(255,255,255,.25);margin-bottom:16px">认证通过后即可用学号+电话登录</p>
+    <p style="font-size:13px;color:rgba(0,0,0,.25);margin-bottom:16px">认证通过后即可用学号+电话登录</p>
     <input type="text" id="vName" placeholder="真实姓名 *">
     <input type="text" id="vNickname" placeholder="匿名昵称 *（如：椰子学长）" style="margin-bottom:10px">
     <input type="text" id="vStudentId" placeholder="学号 *">
     <input type="text" id="vPhone" placeholder="手机号 *">
-    <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">性别</option><option value="male">男</option><option value="female">女</option></select>
+    <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">性别</option><option value="male">男</option><option value="female">女</option></select>
     <div style="margin-bottom:10px">
-      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:rgba(255,255,255,.3);font-size:12px;cursor:pointer">📷 上传学生证照片
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 上传学生证照片
         <input type="file" id="vStudentCard" accept="image/*" style="display:none" onchange="previewStudentCard(this)">
       </label>
-      <span id="vCardName" style="font-size:11px;color:rgba(255,255,255,.2);margin-left:8px"></span>
+      <span id="vCardName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
     </div>
-    <div style="font-size:12px;color:rgba(255,255,255,.15);margin:8px 0">信息仅用于认证，不会公开</div>
+    <div style="font-size:12px;color:rgba(0,0,0,.15);margin:8px 0">信息仅用于认证，不会公开</div>
     <div class="btns">
       <button class="submit" onclick="applyVerify()">提交认证</button>
       <button class="cancel" onclick="hideVerify()">取消</button>
@@ -555,7 +556,7 @@ async function loadCats() {
       var val = sel.value;
       var name = val || '分类';
       var icon = val ? (getCatIcon(val) || CAT_ICONS_EMOJI[val] || '') : '';
-      document.getElementById('fCatDisplay').innerHTML = (icon || '<span style="color:rgba(255,255,255,.2)">分类</span>') + ' ' + (val || '');
+      document.getElementById('fCatDisplay').innerHTML = (icon || '<span style="color:rgba(0,0,0,.2)">分类</span>') + ' ' + (val || '');
     };
   } catch(e) {
     // Fallback hardcoded
@@ -665,10 +666,10 @@ async function load(reset) {
         div.appendChild(overlay);
       }
       div.onclick = function() { if (!currentUser) { hideDetail();notify('请登录查看商品', '🔑'); showLogin(); return; } showDetail(p.id); };
-      var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(255,255,255,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
+      var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
       var typeTag = p.item_type === 'rent' ? '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>' : '';
-      div.innerHTML = '<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
-        (p.pinned?'<div class="pin-badge">📌 置顶</div>':''+(p.sold?'<div class="sold-badge">已售罄</div>':''))+
+      div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
+        (p.sold?'<div class="sold-badge">已售罄</div>':''))+
         (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
       list.appendChild(div);
     });
@@ -679,16 +680,16 @@ async function load(reset) {
     if (!nav) {
       nav = document.createElement('div');
       nav.id = 'pageNav';
-      nav.style.cssText = 'text-align:right;padding:12px 0;margin-top:16px;display:flex;gap:4px;justify-content:flex-end;align-items:center;border-top:1px solid rgba(255,255,255,.04)';
+      nav.style.cssText = 'text-align:right;padding:12px 0;margin-top:16px;display:flex;gap:4px;justify-content:flex-end;align-items:center;border-top:1px solid rgba(0,0,0,.04)';
       list.parentNode.appendChild(nav);
     }
     var navHtml = '';
-    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.06);border-radius:5px">‹</a>';
+    if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">‹</a>';
     for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
       if (i === currentPage) navHtml += '<span style="background:rgba(52,211,153,.1);color:#34d399;padding:5px 10px;border-radius:5px;font-size:12px;font-weight:600">'+i+'</span>';
-      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(255,255,255,.25);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.04);border-radius:5px">'+i+'</a>';
+      else navHtml += '<a href="#" onclick="gotoPage('+i+');return false" style="color:rgba(0,0,0,.25);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.04);border-radius:5px">'+i+'</a>';
     }
-    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(255,255,255,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(255,255,255,.06);border-radius:5px">›</a>';
+    if (currentPage < totalPages) navHtml += '<a href="#" onclick="gotoPage('+(currentPage+1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">›</a>';
     nav.innerHTML = navHtml;
   } catch(e) { document.getElementById('productList').innerHTML = '<div class="empty">加载失败</div>'; }
 }
@@ -706,7 +707,7 @@ async function showDetail(id) {
     if(!p) return;
     reportingProductId = p.id;
     document.getElementById('detailBox').innerHTML =
-      '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<img src="'+src+'" style="'+(i>0?'display:none':'')+'max-width:100%;max-height:300px;border-radius:8px" class="detail-img">'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(255,255,255,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
+      '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<img src="'+src+'" style="'+(i>0?'display:none':'')+'max-width:100%;max-height:300px;border-radius:8px" class="detail-img">'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(0,0,0,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
       '<div class="price">'+(p.item_type==='rent'?'¥'+parseFloat(p.rent_price).toFixed(2)+'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+(p.deposit>0?' · 押金¥'+parseFloat(p.deposit).toFixed(0):''):'¥'+parseFloat(p.price).toFixed(2))+'</div>'+
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span></div>'+
@@ -736,8 +737,8 @@ function nextImg() {
 
 // ====== Publish ======
 function setItemType(type) {
-  document.getElementById('typeSell').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.12)':'rgba(255,255,255,.04)') + ';color:' + (type==='sell'?'#34d399':'rgba(255,255,255,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.2)':'rgba(255,255,255,.06)');
-  document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(255,255,255,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(255,255,255,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(255,255,255,.06');
+  document.getElementById('typeSell').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='sell'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06)');
+  document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06');
   document.getElementById('rentFields').style.display = type==='rent' ? '' : 'none';
 }
 function showPub(){document.getElementById('pubOverlay').classList.add('show')}
@@ -1022,7 +1023,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatBtn').style.display = 'none';
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').classList.add('show');
-  document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
+  document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
   document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerStudentId === 'kefu_001' ? '校园严选客服' : sellerName);
   startChatPoll();
   setTimeout(function() {
@@ -1061,7 +1062,7 @@ function loadConvs() {
       var el = document.getElementById('chatConvs');
       var badge = document.getElementById('chatBadge');
       if (!arr.length) {
-        el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
+        el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(0,0,0,.1);font-size:12px">' + (search ? '未找到联系人' : '暂无消息') + '</div>';
         badge.textContent = '0'; return;
       }
       el.innerHTML = arr.map(function(c) {
@@ -1245,7 +1246,7 @@ function loadContacts() {
       var arr = Array.isArray(data)?data:[];
       if (search) arr = arr.filter(function(c) { return (c.name||'').toLowerCase().includes(search) || (c.student_id||'').includes(search); });
       var el = document.getElementById('contactList');
-      if (!arr.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.1);font-size:12px">暂无联系人</div>'; return; }
+      if (!arr.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(0,0,0,.1);font-size:12px">暂无联系人</div>'; return; }
       el.innerHTML = arr.map(function(c) {
         var unBadge = (c.unread && c.unread > 0) ? '<span class="badge">'+c.unread+'</span>' : '';
         return '<div class="contact-item" onclick="closeContacts();openChat('+c.product_id+',\''+c.student_id+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
@@ -1314,7 +1315,7 @@ function loadMyProducts() {
         var statusMap = {pending:'待审核',approved:'已上架',rejected:'未通过'};
         var sLabel = p.sold ? '已售罄' : (statusMap[p.status]||p.status);
         var sClass = p.sold ? 'sold' : p.status;
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;font-size:12px"><span style="flex:1">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 12px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="status-badge '+sClass+'">'+sLabel+'</span></div>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 12px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="status-badge '+sClass+'">'+sLabel+'</span></div>';
       }).join('') + '</div>';
     }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
 }
