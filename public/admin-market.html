@@ -302,8 +302,8 @@ tr:hover td{background:#f8fcf9}
     </div>
     <div class="section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.4)">最近发布</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.15)"><a href="#" onclick="switchTab('products');return false" style="color:rgba(255,255,255,.2)">管理 →</a></span>
+        <span style="font-size:13px;font-weight:600;color:#888">最近发布</span>
+        <span style="font-size:10px;color:#ccc"><a href="#" onclick="switchTab('products');return false" style="color:#bbb">管理 →</a></span>
       </div>
       <div id="recentList"><div class="empty">加载中...</div></div>
     </div>
@@ -399,15 +399,15 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabKefu" style="display:none">
     <div class="section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px">
       <div style="display:flex;flex:1;overflow:hidden">
-        <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(255,255,255,.04);overflow-y:auto;flex-shrink:0">
-          <div style="padding:10px;font-size:11px;color:rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.04)">联系人</div>
+        <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(0,0,0,.04);overflow-y:auto;flex-shrink:0">
+          <div style="padding:10px;font-size:11px;color:#bbb;border-bottom:1px solid rgba(0,0,0,.04)">联系人</div>
           <div id="kefuContacts"></div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column">
-          <div id="kefuChatHeader" style="padding:10px 14px;font-size:12px;color:rgba(255,255,255,.3);border-bottom:1px solid rgba(255,255,255,.04)">选择联系人</div>
+          <div id="kefuChatHeader" style="padding:10px 14px;font-size:12px;color:#999;border-bottom:1px solid rgba(0,0,0,.04)">选择联系人</div>
           <div id="kefuMsgs" style="flex:1;overflow-y:auto;padding:10px 14px"></div>
-          <div id="kefuInputArea" style="display:none;padding:8px 14px;border-top:1px solid rgba(255,255,255,.04);gap:6px">
-            <input type="text" id="kefuInput" placeholder="输入回复..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:12px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')sendKefuMsg()">
+          <div id="kefuInputArea" style="display:none;padding:8px 14px;border-top:1px solid rgba(0,0,0,.04);gap:6px">
+            <input type="text" id="kefuInput" placeholder="输入回复..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:rgba(0,0,0,.2);color:#4a4a4a;font-size:12px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')sendKefuMsg()">
             <button class="btn btn-primary" onclick="sendKefuMsg()" style="padding:8px 16px">发送</button>
           </div>
         </div>
@@ -493,7 +493,7 @@ tr:hover td{background:#f8fcf9}
 <!-- Ban Account Modal -->
 <div class="modal-overlay" id="banModal" onclick="if(event.target===this)closeBan()">
   <div class="modal"><h2>🚫 封禁账号</h2>
-    <p style="font-size:12px;color:rgba(255,255,255,.2);margin-bottom:12px">该用户将无法登录</p>
+    <p style="font-size:12px;color:#bbb;margin-bottom:12px">该用户将无法登录</p>
     <select id="banReason"><option>违规发布</option><option>欺诈行为</option><option>恶意骚扰</option><option>多次违规</option><option>其他</option></select>
     <textarea id="banDetail" placeholder="补充说明（选填）" style="min-height:60px"></textarea>
     <div class="btns"><button class="btn-red" onclick="confirmBan()">🚫 封禁</button><button class="btn-ghost" onclick="closeBan()">取消</button></div>
@@ -629,7 +629,7 @@ async function loadOverview() {
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('recentList').innerHTML = !arr.length ? '<div class="empty">暂无商品</div>' :
       '<div style="display:grid;gap:4px">' + arr.slice(0,5).map(p =>
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,.02);border-radius:6px;font-size:11px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(0,0,0,.02);border-radius:6px;font-size:11px">' +
         '<span>' + esc(p.title) + '</span>' +
         '<span style="display:flex;gap:6px;align-items:center"><span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price).toFixed(0) + '</span>' +
         '<span class="badge ' + (p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow') + '">' + (p.status||'pending') + '</span></span></div>'
@@ -655,9 +655,9 @@ function renderBarChart(products) {
   el.innerHTML = days.map(function(d) {
     var h = Math.round((d.count / max) * 130);
     return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
-      '<span style="font-size:9px;color:rgba(255,255,255,.2);margin-bottom:2px">'+d.count+'</span>'+
-      '<div style="width:100%;max-width:40px;height:'+h+'px;background:linear-gradient(to top,#059669,#34d399);border-radius:4px 4px 0 0;transition:all.3s;min-height:2px;opacity:'+(0.3 + 0.7*(d.count/max))+'"></div>'+
-      '<span style="font-size:9px;color:rgba(255,255,255,.15);margin-top:4px">'+d.label+'</span></div>';
+      '<span style="font-size:9px;color:#bbb;margin-bottom:2px">'+d.count+'</span>'+
+      '<div style="width:100%;max-width:40px;height:'+h+'px;background:linear-gradient(to top,#4e9e80,#60b88e);border-radius:4px 4px 0 0;transition:all.3s;min-height:2px;opacity:'+(0.3 + 0.7*(d.count/max))+'"></div>'+
+      '<span style="font-size:9px;color:#ccc;margin-top:4px">'+d.label+'</span></div>';
   }).join('');
 }
 function renderCatChart(products) {
@@ -672,14 +672,14 @@ function renderCatChart(products) {
   var max = Math.max(1, entries.length ? entries[0].count : 1);
   var total = entries.reduce(function(s,e) { return s + e.count; }, 0);
   var el = document.getElementById('chartCat');
-  el.innerHTML = !entries.length ? '<div style="padding:20px;text-align:center;color:rgba(255,255,255,.06)">暂无</div>' :
+  el.innerHTML = !entries.length ? '<div style="padding:20px;text-align:center;color:#ddd">暂无</div>' :
     entries.map(function(e) {
       var pct = Math.round(e.count / total * 100);
       var w = Math.round(e.count / max * 100);
-      return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:2px">'+
+      return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:2px">'+
         '<span>'+esc(e.name)+'</span><span>'+e.count+' ('+pct+'%)</span></div>'+
-        '<div style="height:6px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden">'+
-        '<div style="height:100%;width:'+w+'%;background:linear-gradient(90deg,#059669,#34d399);border-radius:3px;transition:width.5s"></div></div></div>';
+        '<div style="height:6px;background:rgba(0,0,0,.04);border-radius:3px;overflow:hidden">'+
+        '<div style="height:100%;width:'+w+'%;background:linear-gradient(90deg,#4e9e80,#60b88e);border-radius:3px;transition:width.5s"></div></div></div>';
     }).join('');
 }
 function renderStatusChart(products) {
@@ -689,7 +689,7 @@ function renderStatusChart(products) {
     if (st[s] !== undefined) st[s]++;
   });
   var total = st.pending + st.approved + st.rejected;
-  if (!total) { document.getElementById('chartStatus').innerHTML = '<div style="color:rgba(255,255,255,.06);font-size:11px;padding:20px">暂无</div>'; return; }
+  if (!total) { document.getElementById('chartStatus').innerHTML = '<div style="color:#ddd;font-size:11px;padding:20px">暂无</div>'; return; }
   var colors = { pending: '#fbbf24', approved: '#34d399', rejected: '#ef4444' };
   var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
   var cx = 70, cy = 70, r = 50, sw = 20;
@@ -713,11 +713,11 @@ function renderStatusChart(products) {
   });
   document.getElementById('chartStatus').innerHTML = '<svg width="140" height="140" viewBox="0 0 140 140">'+
     arcs.map(function(a) { return '<path d="'+a.path+'" fill="'+colors[a.k]+'" opacity="0.85"/>'; }).join('')+
-    '<text x="70" y="66" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="18" font-weight="700">'+total+'</text>'+
-    '<text x="70" y="82" text-anchor="middle" fill="rgba(255,255,255,.15)" font-size="9">总商品</text></svg>'+
+    '<text x="70" y="66" text-anchor="middle" fill="#666" font-size="18" font-weight="700">'+total+'</text>'+
+    '<text x="70" y="82" text-anchor="middle" fill="#ccc" font-size="9">总商品</text></svg>'+
     '<div style="display:flex;gap:8px;justify-content:center;margin-top:6px;font-size:9px;flex-wrap:wrap">'+
     ['pending','approved','rejected'].filter(function(k){return st[k];}).map(function(k){
-      return '<span style="display:flex;align-items:center;gap:3px;color:rgba(255,255,255,.3)"><span style="width:8px;height:8px;border-radius:2px;background:'+colors[k]+'"></span>'+labels[k]+' '+st[k]+'</span>';
+      return '<span style="display:flex;align-items:center;gap:3px;color:#999"><span style="width:8px;height:8px;border-radius:2px;background:'+colors[k]+'"></span>'+labels[k]+' '+st[k]+'</span>';
     }).join('')+'</div>';
 }
 
@@ -738,15 +738,15 @@ async function loadProds() {
     if (!f.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
-      return '<tr><td style="color:rgba(255,255,255,.15)">'+p.id+'</td>'+
+      return '<tr><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
         '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
         '<td>'+ (p.sold?'<span class="badge badge-red">已售</span>':'<span class="badge badge-gray">在售</span>') +'</td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||p.contact||'-')+'</td>'+
-        '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(p.created_at)+'</td>'+
+        '<td style="color:#bbb;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||p.contact||'-')+'</td>'+
+        '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
           (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
@@ -841,15 +841,15 @@ async function loadRentals() {
     tbody.innerHTML = f.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var periodMap = {day:'/天',week:'/周',month:'/月'};
-      return '<tr><td style="color:rgba(255,255,255,.15)">'+p.id+'</td>'+
+      return '<tr><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
         '<td style="color:#fbbf24;font-weight:600">¥'+parseFloat(p.rent_price||0).toFixed(0)+'</td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
-        '<td style="color:rgba(255,255,255,.2)">¥'+parseFloat(p.deposit||0).toFixed(0)+'</td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
+        '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(0)+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||'')+'</td>'+
-        '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(p.created_at)+'</td>'+
+        '<td style="color:#bbb;font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||'')+'</td>'+
+        '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
         '<td style="text-align:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
           (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
@@ -868,10 +868,10 @@ async function loadVers() {
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
     document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
-      filtered.map(v => '<tr><td style="color:rgba(255,255,255,.15)">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:rgba(255,255,255,.3)">'+esc(v.student_id)+'</td><td style="color:rgba(255,255,255,.2)">'+esc(v.phone||'-')+'</td>'+
-        '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:rgba(255,255,255,.15);font-size:10px">无</span>')+'</td>'+
+      filtered.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
+        '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#34d399;font-size:10px">📷 查看</a>':'<span style="color:#ccc;font-size:10px">无</span>')+'</td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
-        '<td style="color:rgba(255,255,255,.15);font-size:10px">'+fmtDate(v.created_at)+'</td>'+
+        '<td style="color:#ccc;font-size:10px">'+fmtDate(v.created_at)+'</td>'+
         '<td style="text-align:center">'+(v.status==='pending'
           ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="rejectVer('+v.id+')">✕ 未通过</button><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button></span>'
           : '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button></span>')+'</td></tr>').join('');
@@ -947,8 +947,8 @@ async function loadCats() {
     const data = await r.json();
     cats = Array.isArray(data) ? data : [];
     document.getElementById('catTbody').innerHTML = !cats.length ? '<tr><td colspan="5"><div class="empty">暂无分类</div></td></tr>' :
-      cats.map(c => '<tr><td style="color:rgba(255,255,255,.15)">'+c.id+'</td><td>'+c.icon+'</td><td>'+esc(c.name)+'</td>'+
-        '<td><input type="number" value="'+(c.sort_order||0)+'" style="width:50px;padding:3px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:11px;outline:none" onchange="updateCatSort('+c.id+',this.value)"></td>'+
+      cats.map(c => '<tr><td style="color:#ccc">'+c.id+'</td><td>'+c.icon+'</td><td>'+esc(c.name)+'</td>'+
+        '<td><input type="number" value="'+(c.sort_order||0)+'" style="width:50px;padding:3px 6px;border-radius:4px;border:1px solid #ddd;background:rgba(0,0,0,.2);color:#4a4a4a;font-size:11px;outline:none" onchange="updateCatSort('+c.id+',this.value)"></td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
         '<button class="btn btn-ghost btn-sm" onclick="editCat('+c.id+',\''+esc(c.name)+'\',\''+esc(c.icon)+'\')">✏️</button>'+
         '<button class="btn btn-red btn-sm" onclick="delCat('+c.id+',\''+esc(c.name)+'\')">🗑️</button></span></td></tr>').join('');
@@ -987,14 +987,14 @@ async function loadReports() {
     const f = document.getElementById('reportStatusFilter').value;
     const filtered = f ? arr.filter(r => r.status === f) : arr;
     document.getElementById('reportTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
-      filtered.map(r => '<tr><td style="color:rgba(255,255,255,.15)">'+r.id+'</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(r.product_title||'#'+r.product_id)+'</td>'+
-        '<td style="color:#fbbf24">'+esc(r.reason)+'</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.2)">'+esc(r.detail||'-')+'</td>'+
-        '<td style="color:rgba(255,255,255,.2);font-size:10px">'+esc(r.reporter_contact||'-')+'</td>'+
+      filtered.map(r => '<tr><td style="color:#ccc">'+r.id+'</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(r.product_title||'#'+r.product_id)+'</td>'+
+        '<td style="color:#fbbf24">'+esc(r.reason)+'</td><td style="max-width:100px;overflow:hidden;text-overflow:ellipsis;color:#bbb">'+esc(r.detail||'-')+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+esc(r.reporter_contact||'-')+'</td>'+
         '<td><span class="badge '+(r.status==='resolved'?'badge-green':r.status==='dismissed'?'badge-red':'badge-yellow')+'">'+(r.status||'pending')+'</span></td>'+
-        '<td style="font-size:10px;color:rgba(255,255,255,.15)">'+fmtDate(r.created_at)+'</td>'+
+        '<td style="font-size:10px;color:#ccc">'+fmtDate(r.created_at)+'</td>'+
         '<td style="text-align:center">'+(r.status==='pending'
           ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="resolveReport('+r.id+',\'resolved\')">✅ 处理</button><button class="btn btn-red btn-sm" onclick="resolveReport('+r.id+',\'dismissed\')">✕ 驳回</button></span>'
-          : '<span style="color:rgba(255,255,255,.15);font-size:10px">—</span>')+'</td></tr>').join('');
+          : '<span style="color:#ccc;font-size:10px">—</span>')+'</td></tr>').join('');
   } catch(e) {}
 }
 async function resolveReport(id, action) {
@@ -1009,9 +1009,9 @@ async function loadAnns() {
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('annTbody').innerHTML = !arr.length ? '<tr><td colspan="6"><div class="empty">暂无公告</div></td></tr>' :
-      arr.map(a => '<tr><td style="color:rgba(255,255,255,.15)">'+a.id+'</td><td>'+esc(a.title)+'</td><td style="color:rgba(255,255,255,.2);max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(a.content)+'</td>'+
+      arr.map(a => '<tr><td style="color:#ccc">'+a.id+'</td><td>'+esc(a.title)+'</td><td style="color:#bbb;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(a.content)+'</td>'+
         '<td><span class="badge '+(a.active?'badge-green':'badge-gray')+'">'+(a.active?'显示中':'已关闭')+'</span></td>'+
-        '<td style="font-size:10px;color:rgba(255,255,255,.15)">'+fmtDate(a.created_at)+'</td>'+
+        '<td style="font-size:10px;color:#ccc">'+fmtDate(a.created_at)+'</td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
         '<button class="btn btn-ghost btn-sm" onclick="toggleAnn('+a.id+','+a.active+')">'+(a.active?'🔕 关闭':'🔔 开启')+'</button>'+
         '<button class="btn btn-red btn-sm" onclick="delAnn('+a.id+')">🗑️</button></span></td></tr>').join('');
@@ -1042,7 +1042,7 @@ async function loadBws() {
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('bwTbody').innerHTML = !arr.length ? '<tr><td colspan="4"><div class="empty">暂无敏感词</div></td></tr>' :
-      arr.map(w => '<tr><td style="color:rgba(255,255,255,.15)">'+w.id+'</td><td style="color:#ef4444">'+esc(w.word)+'</td><td style="font-size:10px;color:rgba(255,255,255,.15)">'+fmtDate(w.created_at)+'</td>'+
+      arr.map(w => '<tr><td style="color:#ccc">'+w.id+'</td><td style="color:#ef4444">'+esc(w.word)+'</td><td style="font-size:10px;color:#ccc">'+fmtDate(w.created_at)+'</td>'+
         '<td style="text-align:center"><button class="btn btn-red btn-sm" onclick="delBw('+w.id+',\''+esc(w.word)+'\')">🗑️</button></td></tr>').join('');
   } catch(e) {}
 }
@@ -1069,11 +1069,11 @@ async function loadKefuContacts() {
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const el = document.getElementById('kefuContacts');
-    if (!arr.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,.1);font-size:11px">暂无消息</div>'; return; }
+    if (!arr.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">暂无消息</div>'; return; }
     el.innerHTML = arr.map(function(c) {
       var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
-      return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(255,255,255,.02)">'+
-        esc(c.name)+'<span style="color:rgba(255,255,255,.15);font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
+      return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02)">'+
+        esc(c.name)+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
     }).join('');
   } catch(e) {}
 }
@@ -1100,7 +1100,7 @@ async function loadKefuMsgs() {
       if (m.id > kefuLastId) kefuLastId = m.id;
       var me = m.from_student_id === 'kefu_001';
       el.innerHTML += '<div style="margin:4px 0;text-align:'+(me?'right':'left')+'"><span style="display:inline-block;padding:6px 10px;border-radius:8px;font-size:11px;max-width:70%;'+
-        (me?'background:rgba(52,211,153,.15);color:#6ee7b7':'background:rgba(255,255,255,.04);color:rgba(255,255,255,.6)')+'">'+esc(m.content)+'</span></div>';
+        (me?'background:rgba(78,158,128,.12);color:#4e9e80':'background:rgba(0,0,0,.04);color:#666')+'">'+esc(m.content)+'</span></div>';
     });
     el.scrollTop = el.scrollHeight;
   } catch(e) {}
@@ -1125,8 +1125,8 @@ async function loadPromos() {
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('promoTbody').innerHTML = !arr.length ? '<tr><td colspan="7"><div class="empty">暂无</div></td></tr>' :
-      arr.map(p => '<tr><td style="color:rgba(255,255,255,.15)">'+p.id+'</td><td>'+esc(p.title)+'</td><td style="color:rgba(255,255,255,.2);max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(p.desc||'-')+'</td><td style="color:rgba(255,255,255,.2)">'+esc(p.contact||'-')+'</td>'+
-        '<td><input type="number" value="'+(p.sort_order||0)+'" style="width:40px;padding:2px 4px;border-radius:4px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:11px;outline:none" onchange="updatePromoSort('+p.id+',this.value)"></td>'+
+      arr.map(p => '<tr><td style="color:#ccc">'+p.id+'</td><td>'+esc(p.title)+'</td><td style="color:#bbb;max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(p.desc||'-')+'</td><td style="color:#bbb">'+esc(p.contact||'-')+'</td>'+
+        '<td><input type="number" value="'+(p.sort_order||0)+'" style="width:40px;padding:2px 4px;border-radius:4px;border:1px solid #ddd;background:rgba(0,0,0,.2);color:#4a4a4a;font-size:11px;outline:none" onchange="updatePromoSort('+p.id+',this.value)"></td>'+
         '<td><span class="badge '+(p.active?'badge-green':'badge-gray')+'">'+(p.active?'显示':'隐藏')+'</span></td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
         '<button class="btn btn-ghost btn-sm" onclick="editPromo('+p.id+')">✏️</button>'+
@@ -1172,7 +1172,7 @@ async function loadSellers() {
     if (search) arr = arr.filter(function(s) { return (s.name||'').toLowerCase().includes(search) || (s.student_id||'').includes(search); });
     document.getElementById('sellerTbody').innerHTML = !arr.length ? '<tr><td colspan="5"><div class="empty">暂无卖家</div></td></tr>' :
       arr.map(function(s) {
-        return '<tr><td><strong style="color:rgba(255,255,255,.6)">'+esc(s.name)+'</strong><br><span style="font-size:10px;color:rgba(255,255,255,.15)">'+esc(s.student_id)+'</span></td>'+
+        return '<tr><td><strong style="color:#666">'+esc(s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
           '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td>'+
           '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center">'+
           '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button>'+
@@ -1217,9 +1217,9 @@ async function loadLogs() {
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('logTbody').innerHTML = !arr.length ? '<tr><td colspan="5"><div class="empty">暂无日志</div></td></tr>' :
-      arr.map(l => '<tr><td style="font-size:10px;color:rgba(255,255,255,.15);white-space:nowrap">'+fmtDateTime(l.created_at)+'</td>'+
-        '<td>'+esc(l.action)+'</td><td style="color:rgba(255,255,255,.2)">'+esc(l.target_type||'-')+'</td>'+
-        '<td style="color:rgba(255,255,255,.2)">'+esc(l.target_id||'-')+'</td><td style="color:rgba(255,255,255,.15);font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(l.detail||'-')+'</td></tr>').join('');
+      arr.map(l => '<tr><td style="font-size:10px;color:#ccc;white-space:nowrap">'+fmtDateTime(l.created_at)+'</td>'+
+        '<td>'+esc(l.action)+'</td><td style="color:#bbb">'+esc(l.target_type||'-')+'</td>'+
+        '<td style="color:#bbb">'+esc(l.target_id||'-')+'</td><td style="color:#ccc;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(l.detail||'-')+'</td></tr>').join('');
   } catch(e) {}
 }
 
