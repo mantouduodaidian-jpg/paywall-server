@@ -1171,8 +1171,13 @@ app.get('/api/marketplace/products', async (req, res) => {
       if (admin) { countUrl = SB('products?school=eq.'+school+'&select=id'); if(category) countUrl = SB('products?school=eq.'+school+'&category=eq.'+category+'&select=id'); }
     }
     if (item_type && !admin) {
-      countUrl = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
-      if (category) countUrl = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      if (school) {
+        countUrl = SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&status=eq.approved&listed=eq.true&select=id');
+        if (category) countUrl = SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      } else {
+        countUrl = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
+        if (category) countUrl = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      }
     }
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
