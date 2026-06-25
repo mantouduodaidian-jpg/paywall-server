@@ -489,6 +489,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 let selCat = '';
 let itemTypeFilter = 'sell';
 const SCHOOLS = [
+  { id: 'gxny', name: '广西农业职业技术大学', sidLen: 12, sidHint: 'XXXXXXXXXXXX' },
   { id: 'gdst', name: '广东科学技术职业学院', sidLen: 13, sidHint: '2331030110XXXX' },
   { id: 'zhbit', name: '北京理工大学珠海学院', sidLen: 11, sidHint: '23XXXXXXXXX' },
 ];
@@ -647,6 +648,19 @@ async function load(reset) {
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
+  if (!userSchool && !currentUser) {
+    document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.2);font-size:14px"><div style="font-size:48px;margin-bottom:12px">🏫</div>请先选择学校<br><span style="font-size:12px">登录后可自动匹配</span><br><br><select id="quickSchool" onchange="var s=this.value;if(s){localStorage.setItem('visitorSchool',s);load();}" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;color:#555;font-size:13px;outline:none"><option value="">选择学校</option></select></div>';
+    // Populate quick school selector
+    var qs = document.getElementById('quickSchool');
+    if (qs && typeof SCHOOLS !== 'undefined') {
+      SCHOOLS.forEach(function(s){var o=document.createElement('option');o.value=s.id;o.textContent=s.name;qs.appendChild(o);});
+    }
+    document.getElementById('statCount').textContent = '0';
+    document.getElementById('resultLabel').textContent = '';
+    var nav = document.getElementById('pageNav');
+    if (nav) nav.innerHTML = '';
+    return;
+  }
   if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
