@@ -1299,13 +1299,15 @@ function sendChat() {
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
     var imgData = _chatImgData;
     _chatImgData = null;
-  
+    document.getElementById('chatImgPreview').style.display = 'none';
     input.value = '';
+    var fullContent = text ? text + (imgData ? '
+[img]'+imgData : '') : (imgData ? '[img]'+imgData : '');
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:imgData ? '[img]'+imgData : text})
+      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:fullContent})
     }).then(function(r){return r.json();}).then(function(m){
-      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:imgData ? '[img]'+imgData : text,created_at:new Date().toISOString()}, false); }
+      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:fullContent,created_at:new Date().toISOString()}, false); }
     }).catch(function(e){notify('发送失败','❌');});
   } catch(e) { notify('发送出错', '❌'); console.error(e); }
 }
@@ -1446,8 +1448,10 @@ function appendMsg(m, isHistory) {
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
   if (m.id) div.setAttribute('data-msgid', m.id);
-  if (m.content && m.content.startsWith('[img]')) {
-    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble"><img src="'+m.content.replace('[img]','')+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block"></div><span class="time">'+timeStr+'</span>';
+  if (m.content && m.content.indexOf('[img]') >= 0) {
+    var imgSrc = m.content.substring(m.content.indexOf('[img]')+5);
+    var txtBefore = m.content.substring(0, m.content.indexOf('[img]'));
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block"></div><span class="time">'+timeStr+'</span>';
   } else {
     div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   }
