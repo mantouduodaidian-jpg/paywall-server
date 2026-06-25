@@ -67,41 +67,41 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .status-badge.rejected{background:rgba(239,68,68,.1);color:#ef4444}
 .status-badge.sold{background:rgba(239,68,68,.1);color:#ef4444}
 
-.empty{text-align:center;padding:60px;color:rgba(255,255,255,.06);font-size:14px;grid-column:1/-1}
+.empty{text-align:center;padding:60px;color:rgba(0,0,0,.15);font-size:14px;grid-column:1/-1}
 
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;overflow-y:auto;padding:20px}
 .modal-overlay.show{display:block}
-.modal-box{background:#0a1a0f;border-radius:16px;max-width:600px;margin:40px auto;border:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column}
+.modal-box{background:#ffffff;border-radius:16px;max-width:600px;margin:40px auto;border:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column}
 .modal-box .img-big{width:100%;max-height:400px;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .modal-box .img-big img{width:100%;height:100%;object-fit:cover}
 .modal-box .body{padding:20px}
-.modal-box .body .title{font-size:22px;font-weight:600;color:rgba(255,255,255,.7)}
-.modal-box .body .price{font-size:32px;font-weight:700;color:#34d399;margin:8px 0 12px}
+.modal-box .body .title{font-size:22px;font-weight:600;color:#333}
+.modal-box .body .price{font-size:32px;font-weight:700;color:#60b88e;margin:8px 0 12px}
 .modal-box .body .tags{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.modal-box .body .tags span{padding:3px 12px;border-radius:6px;font-size:12px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.3)}
-.modal-box .body .desc{font-size:14px;line-height:1.8;color:rgba(255,255,255,.4);margin-bottom:20px}
+.modal-box .body .tags span{padding:3px 12px;border-radius:6px;font-size:12px;background:rgba(0,0,0,.04);color:rgba(0,0,0,.3)}
+.modal-box .body .desc{font-size:14px;line-height:1.8;color:rgba(0,0,0,.4);margin-bottom:20px}
 .modal-box .body .btns{display:flex;gap:8px}
-.modal-box .body .btns .contact{flex:1;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:15px;cursor:pointer;font-weight:600;text-align:center;text-decoration:none}
-.modal-box .body .btns .close{padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.06);background:transparent;color:rgba(255,255,255,.3);font-size:14px;cursor:pointer}
+.modal-box .body .btns .contact{flex:1;padding:12px;border-radius:12px;border:none;background:#60b88e;color:#fff;font-size:15px;cursor:pointer;font-weight:600;text-align:center;text-decoration:none}
+.modal-box .body .btns .close{padding:12px 20px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:transparent;color:rgba(0,0,0,.4);font-size:14px;cursor:pointer}
 .modal-box .body .report-link{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:8px;font-size:11px;color:rgba(239,68,68,.4);cursor:pointer;border:1px solid rgba(239,68,68,.08);background:rgba(239,68,68,.04);transition:all.15s}
 .modal-box .body .report-link:hover{background:rgba(239,68,68,.1);color:rgba(239,68,68,.7)}
 
 /* Publish Form */
 .pub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;overflow-y:auto;padding:20px}
 .pub-overlay.show{display:block}
-.pub-box{background:#0a1a0f;border-radius:16px;max-width:560px;margin:30px auto;padding:28px;border:1px solid rgba(255,255,255,.06)}
-.pub-box h2{font-size:20px;color:rgba(255,255,255,.5);margin-bottom:20px}
+.pub-box{background:#ffffff;border-radius:16px;max-width:560px;margin:30px auto;padding:28px;border:1px solid rgba(0,0,0,.08)}
+.pub-box h2{font-size:20px;color:rgba(0,0,0,.5);margin-bottom:20px}
 .pub-box .row{display:flex;gap:10px;margin-bottom:10px}
 .pub-box .row input,.pub-box .row select{flex:1}
-.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#d4f0d4;font-size:14px;outline:0;font-family:inherit;-webkit-tap-highlight-color:transparent;box-shadow:none}
+.pub-box input,.pub-box select,.pub-box textarea{width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:14px;outline:0;font-family:inherit;-webkit-tap-highlight-color:transparent;box-shadow:none}
 .pub-box select option{background:#0a1a0f;color:#c8e6c9}
-.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:rgba(52,211,153,.4);background:rgba(0,0,0,.35);outline:0;-webkit-tap-highlight-color:transparent;box-shadow:0 0 0 2px rgba(52,211,153,.08)}
+.pub-box input:focus,.pub-box select:focus,.pub-box textarea:focus{border-color:#60b88e;background:#f0ece3;outline:0;-webkit-tap-highlight-color:transparent;box-shadow:0 0 0 2px rgba(96,184,142,.08)}
 .pub-box textarea{min-height:100px;resize:vertical}
 .pub-box .btns{display:flex;gap:8px;margin-top:16px}
 .pub-box .btns button{flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit}
 .pub-box .btns .submit{background:linear-gradient(135deg,#059669,#34d399);color:#fff}
-.pub-box .btns .cancel{background:rgba(255,255,255,.04);color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.06)}
+.pub-box .btns .cancel{background:rgba(0,0,0,.04);color:rgba(0,0,0,.4);border:1px solid rgba(0,0,0,.08)}
 
 /* Report Modal */
 .report-modal .pub-box{max-width:460px}
@@ -249,8 +249,8 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <input id="searchInput" type="text" autocomplete="off" placeholder="搜索物品..." onkeydown="if(event.key==='Enter')load()">
     </div>
     <div style="display:flex;gap:4px;margin-bottom:10px">
-      <span id="typeFilterSell" onclick="setTypeFilter('sell')" style="flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.15)">💰 二手</span>
-      <span id="typeFilterRent" onclick="setTypeFilter('rent')" style="flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.04)">📅 出租</span>
+      <span id="typeFilterSell" onclick="setTypeFilter('sell')" style="flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:rgba(96,184,142,.08);color:#60b88e;border:1px solid rgba(96,184,142,.15)"><svg viewBox="0 0 24 24" width="14" height="14" style="flex-shrink:0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="none" stroke="currentColor" stroke-width="1.5"/><polyline points="3.27 6.96 12 12.01 20.73 6.96" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" stroke-width="1.2"/></svg> 二手</span>
+      <span id="typeFilterRent" onclick="setTypeFilter('rent')" style="flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,.02);color:rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.06)"><svg viewBox="0 0 24 24" width="14" height="14" style="flex-shrink:0"><rect x="3" y="6" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.2"/><polyline points="8 6 8 2 16 2 16 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg> 出租</span>
     </div>
     <div class="section-title">分类</div>
     <div class="cats" id="catList"></div>
@@ -487,8 +487,8 @@ let reportingProductId = null;
 
 function setTypeFilter(type) {
   itemTypeFilter = type;
-  document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='sell'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04)');
-  document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='rent'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04');
+  document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (type==='sell'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (type==='sell'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
+  document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (type==='rent'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (type==='rent'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06');
   selCat = '';
   load();
 }
@@ -535,7 +535,7 @@ async function loadCats() {
     const r = await fetch('/api/marketplace/categories');
     const cats = await r.json();
     const arr = Array.isArray(cats) ? cats : [];
-    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#a7f3d0" stroke-width="1.5"/></svg> 我的</div>' : '';
+    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/></svg> 我的</div>' : '';
     const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' + mineCat +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
