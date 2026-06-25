@@ -612,14 +612,16 @@ app.delete('/api/marketplace/products/:id', fullAdmin, async (req, res) => {
 // ====== Promotions API ======
 app.get('/api/marketplace/promotions', async (req, res) => {
   try {
-    const { all } = req.query;
-    let url = all ? SB('promotions?order=sort_order.asc&select=*') : SB('promotions?active=eq.true&order=sort_order.asc&select=*');
+    const { all, school } = req.query;
+    var promoUrl = all ? 'promotions?order=sort_order.asc&select=*' : 'promotions?active=eq.true&order=sort_order.asc&select=*';
+    if (school && all) promoUrl += '&school=eq.'+encodeURIComponent(school);
+    let url = SB(promoUrl);
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/promotions', fullAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/promotions', schoolScope, express.json(), async (req, res) => {
   try {
     const { title, desc, contact, image, sort_order } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
@@ -907,20 +909,23 @@ app.post('/api/marketplace/reports/resolve', anyAdmin, express.json(), async (re
 // ====== Announcements API ======
 app.get('/api/marketplace/announcements', async (req, res) => {
   try {
-    const { all } = req.query;
-    let url = all ? SB('announcements?order=created_at.desc&select=*') : SB('announcements?active=eq.true&order=created_at.desc&select=*');
+    const { all, school } = req.query;
+    var annUrl = all ? 'announcements?order=created_at.desc&select=*' : 'announcements?active=eq.true&order=created_at.desc&select=*';
+    if (school && all) annUrl += '&school=eq.'+encodeURIComponent(school);
+    let url = SB(annUrl);
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/announcements', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/announcements', schoolScope, express.json(), async (req, res) => {
   try {
     const { title, content } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
+    const school = req.adminSchool || '';
     const r = await fetch(SB('announcements'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, content: content||'', active: true })
+      body: JSON.stringify({ title, content: content||'', active: true, school })
     });
     const t = await r.json();
     addLog('announcement_create', 'announcement', t.id, title);
