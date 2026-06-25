@@ -694,10 +694,18 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       const arr = Array.isArray(data) ? data : [];
       const approved = arr.filter(v => v.status === 'approved');
       if (approved.length) {
-        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'' } });
+        var loginToken = randomBytes(16).toString('hex');
+        await fetch(SB('verifications?id=eq.'+approved[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ login_token: loginToken }) });
+        approved[0].login_token = loginToken;
+        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'', login_token: loginToken } });
       }
       const muted = arr.filter(v => v.status === 'muted');
-      if (muted.length) return res.json({ ok: true, user: { id: muted[0].id, name: muted[0].name, student_id: muted[0].student_id, phone: muted[0].phone, nickname: muted[0].nickname||'', school: muted[0].school||'' }, muted: true, msg: '账号已禁言，仅可聊天不可发布商品' });
+      if (muted.length) {
+        var loginToken = randomBytes(16).toString('hex');
+        await fetch(SB('verifications?id=eq.'+muted[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ login_token: loginToken }) });
+        muted[0].login_token = loginToken;
+        return res.json({ ok: true, user: { id: muted[0].id, name: muted[0].name, student_id: muted[0].student_id, phone: muted[0].phone, nickname: muted[0].nickname||'', school: muted[0].school||'', login_token: loginToken }, muted: true, msg: '账号已禁言，仅可聊天不可发布商品' });
+      }
       const banned = arr.filter(v => v.status === 'banned');
       if (banned.length) return res.json({ ok: false, msg: '账号已封禁' + (banned[0]?.reject_reason ? '：' + banned[0].reject_reason : '') });
       const pending = arr.filter(v => v.status === 'pending');
@@ -1386,6 +1394,20 @@ app.get('/api/marketplace/check-account', async (req, res) => {
     const arr = Array.isArray(data) ? data : [];
     const valid = arr.some(function(v) { return v.status === 'approved'; });
     res.json({ ok: valid });
+  } catch(e) { res.json({ ok: false }); }
+});
+
+app.get('/api/marketplace/check-session', async (req, res) => {
+  try {
+    const { student_id, token } = req.query;
+    if (!student_id) return res.json({ ok: false });
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=login_token"), { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    if (arr.length && arr[0].login_token) {
+      return res.json({ ok: arr[0].login_token === token });
+    }
+    res.json({ ok: false });
   } catch(e) { res.json({ ok: false }); }
 });
 
