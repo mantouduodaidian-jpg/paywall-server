@@ -167,6 +167,20 @@ tr:hover td{background:rgba(52,211,153,.03)}
   <!-- ===== OVERVIEW ===== -->
   <div class="tab-content" id="tabOverview">
     <div class="stats" id="statsContainer"></div>
+    <div id="chartRow" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="section" style="flex:2;min-width:280px;padding:14px">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">近 7 日发布</div>
+        <div id="chartBar" style="height:160px;display:flex;align-items:flex-end;gap:6px"></div>
+      </div>
+      <div class="section" style="flex:1;min-width:180px;padding:14px">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">分类分布</div>
+        <div id="chartCat" style="font-size:11px"></div>
+      </div>
+      <div class="section" style="flex:1;min-width:140px;padding:14px;text-align:center">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.25);margin-bottom:8px">商品状态</div>
+        <div id="chartStatus" style="display:flex;justify-content:center"></div>
+      </div>
+    </div>
     <div class="section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <span style="font-size:13px;font-weight:600;color:rgba(255,255,255,.4)">最近发布</span>
@@ -479,6 +493,15 @@ async function loadOverview() {
     const vb = document.getElementById('verBadge');
     if (d.verPending > 0) { vb.textContent = d.verPending; vb.style.display = 'inline'; } else vb.style.display = 'none';
   } catch(e) {}
+  // Charts
+  try {
+    const r = await apiFetch('/api/marketplace/products?admin=1&limit=200');
+    const d = await r.json();
+    const all = Array.isArray(d) ? d : (d.data || []);
+    renderBarChart(all);
+    renderCatChart(all);
+    renderStatusChart(all);
+  } catch(e) {}
   // Recent
   try {
     const r = await apiFetch('/api/marketplace/products?admin=1&limit=5');
@@ -492,6 +515,90 @@ async function loadOverview() {
         '<span class="badge ' + (p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow') + '">' + (p.status||'pending') + '</span></span></div>'
       ).join('') + '</div>';
   } catch(e) {}
+}
+
+// ====== Chart Renderers ======
+function renderBarChart(products) {
+  var days = [], now = new Date();
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(now); d.setDate(d.getDate() - i);
+    var key = d.toISOString().slice(0,10);
+    days.push({ label: (d.getMonth()+1)+'/'+d.getDate(), key: key, count: 0 });
+  }
+  products.forEach(function(p) {
+    if (!p.created_at) return;
+    var pk = p.created_at.slice(0,10);
+    days.forEach(function(d) { if (d.key === pk) d.count++; });
+  });
+  var max = Math.max(1, ...days.map(function(d) { return d.count; }));
+  var el = document.getElementById('chartBar');
+  el.innerHTML = days.map(function(d) {
+    var h = Math.round((d.count / max) * 130);
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
+      '<span style="font-size:9px;color:rgba(255,255,255,.2);margin-bottom:2px">'+d.count+'</span>'+
+      '<div style="width:100%;max-width:40px;height:'+h+'px;background:linear-gradient(to top,#059669,#34d399);border-radius:4px 4px 0 0;transition:all.3s;min-height:2px;opacity:'+(0.3 + 0.7*(d.count/max))+'"></div>'+
+      '<span style="font-size:9px;color:rgba(255,255,255,.15);margin-top:4px">'+d.label+'</span></div>';
+  }).join('');
+}
+function renderCatChart(products) {
+  var cats = {};
+  products.forEach(function(p) {
+    var c = p.category || '其他';
+    if (!cats[c]) cats[c] = 0;
+    cats[c]++;
+  });
+  var entries = Object.keys(cats).map(function(k) { return { name: k, count: cats[k] }; });
+  entries.sort(function(a,b) { return b.count - a.count; });
+  var max = Math.max(1, entries.length ? entries[0].count : 1);
+  var total = entries.reduce(function(s,e) { return s + e.count; }, 0);
+  var el = document.getElementById('chartCat');
+  el.innerHTML = !entries.length ? '<div style="padding:20px;text-align:center;color:rgba(255,255,255,.06)">暂无</div>' :
+    entries.map(function(e) {
+      var pct = Math.round(e.count / total * 100);
+      var w = Math.round(e.count / max * 100);
+      return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:2px">'+
+        '<span>'+esc(e.name)+'</span><span>'+e.count+' ('+pct+'%)</span></div>'+
+        '<div style="height:6px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden">'+
+        '<div style="height:100%;width:'+w+'%;background:linear-gradient(90deg,#059669,#34d399);border-radius:3px;transition:width.5s"></div></div></div>';
+    }).join('');
+}
+function renderStatusChart(products) {
+  var st = { pending: 0, approved: 0, rejected: 0 };
+  products.forEach(function(p) {
+    var s = p.status || 'pending';
+    if (st[s] !== undefined) st[s]++;
+  });
+  var total = st.pending + st.approved + st.rejected;
+  if (!total) { document.getElementById('chartStatus').innerHTML = '<div style="color:rgba(255,255,255,.06);font-size:11px;padding:20px">暂无</div>'; return; }
+  var colors = { pending: '#fbbf24', approved: '#34d399', rejected: '#ef4444' };
+  var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
+  var cx = 70, cy = 70, r = 50, sw = 20;
+  var arcs = [], curAngle = -90;
+  ['pending','approved','rejected'].forEach(function(k) {
+    if (!st[k]) return;
+    var pct = st[k] / total;
+    var angle = pct * 360;
+    var a1 = curAngle, a2 = curAngle + angle;
+    var x1 = cx + r * Math.cos(a1 * Math.PI / 180);
+    var y1 = cy + r * Math.sin(a1 * Math.PI / 180);
+    var x2 = cx + r * Math.cos(a2 * Math.PI / 180);
+    var y2 = cy + r * Math.sin(a2 * Math.PI / 180);
+    var large = angle > 180 ? 1 : 0;
+    var x3 = cx + (r - sw) * Math.cos(a2 * Math.PI / 180);
+    var y3 = cy + (r - sw) * Math.sin(a2 * Math.PI / 180);
+    var x4 = cx + (r - sw) * Math.cos(a1 * Math.PI / 180);
+    var y4 = cy + (r - sw) * Math.sin(a1 * Math.PI / 180);
+    arcs.push({ k: k, path: 'M'+x1.toFixed(1)+','+y1.toFixed(1)+' A'+r+','+r+' 0 '+large+',1 '+x2.toFixed(1)+','+y2.toFixed(1)+' L'+x3.toFixed(1)+','+y3.toFixed(1)+' A'+(r-sw)+','+(r-sw)+' 0 '+large+',0 '+x4.toFixed(1)+','+y4.toFixed(1)+' Z' });
+    curAngle = a2;
+  });
+  document.getElementById('chartStatus').innerHTML = '<svg width="140" height="140" viewBox="0 0 140 140">'+
+    arcs.map(function(a) { return '<path d="'+a.path+'" fill="'+colors[a.k]+'" opacity="0.85"/>'; }).join('')+
+    '<text x="70" y="66" text-anchor="middle" fill="rgba(255,255,255,.6)" font-size="18" font-weight="700">'+total+'</text>'+
+    '<text x="70" y="82" text-anchor="middle" fill="rgba(255,255,255,.15)" font-size="9">总商品</text></svg>'+
+    '<div style="display:flex;gap:8px;justify-content:center;margin-top:6px;font-size:9px;flex-wrap:wrap">'+
+    ['pending','approved','rejected'].filter(function(k){return st[k];}).map(function(k){
+      return '<span style="display:flex;align-items:center;gap:3px;color:rgba(255,255,255,.3)"><span style="width:8px;height:8px;border-radius:2px;background:'+colors[k]+'"></span>'+labels[k]+' '+st[k]+'</span>';
+    }).join('')+'</div>';
 }
 
 // ====== PRODUCTS ======
