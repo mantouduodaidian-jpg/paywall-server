@@ -386,7 +386,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <div class="chat-panel-header">
     <span>💬 最近对话</span>
     <span style="display:flex;gap:6px;align-items:center">
-      <span id="soundToggle" onclick="toggleSound()" style="cursor:pointer;font-size:11px;color:rgba(0,0,0,.15)" title="消息提示音">🔔</span>
+      <span id="soundToggle" onclick="toggleSound()" style="cursor:pointer;color:rgba(0,0,0,.2);display:flex;align-items:center" title="消息提示音"><svg id="soundIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
       <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(0,0,0,.2)">✕</span>
     </span>
   </div>
@@ -586,7 +586,7 @@ function playMsgSound() {
 function toggleSound() {
   _soundEnabled = !_soundEnabled;
   localStorage.setItem('chatSound', _soundEnabled ? 'on' : 'off');
-  document.getElementById('soundToggle').textContent = _soundEnabled ? '🔔' : '🔕';
+  document.getElementById('soundIcon').style.opacity = _soundEnabled ? '1' : '.3';
   notify(_soundEnabled ? '提示音已开启' : '提示音已关闭', '🔔');
 }
 
@@ -1389,6 +1389,7 @@ function loadContacts() {
 }
 function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
 
+var _lastUnreadCount = 0;
 var _unreadTimer = null;
 function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
@@ -1409,7 +1410,7 @@ function startUnreadPoll() {
         });
         if (latest > lastCheck) { lastCheck = latest; }
         var badge = document.getElementById('chatBadge');
-        if (unread > 0) { badge.textContent = unread; playMsgSound(); }
+        if (unread > 0) { badge.textContent = unread; if (unread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = unread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
         else { badge.textContent = '0'; }
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
