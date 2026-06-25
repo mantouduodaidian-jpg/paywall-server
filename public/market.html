@@ -649,7 +649,7 @@ async function load(reset) {
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
   if (!userSchool && !currentUser) {
-    document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.2);font-size:14px"><div style="font-size:48px;margin-bottom:12px">🏫</div>请先选择学校<br><span style="font-size:12px">登录后可自动匹配</span><br><br><select id="quickSchool" onchange="var s=this.value;if(s){localStorage.setItem('visitorSchool',s);load();}" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;color:#555;font-size:13px;outline:none"><option value="">选择学校</option></select></div>';
+    document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.2);font-size:14px"><div style="font-size:48px;margin-bottom:12px">🏫</div>请先选择学校<br><span style="font-size:12px">登录后可自动匹配</span><br><br><select id="quickSchool" onchange="selectSchool(this.value)" style="padding:10px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;color:#555;font-size:13px;outline:none"><option value="">选择学校</option></select></div>';
     // Populate quick school selector
     var qs = document.getElementById('quickSchool');
     if (qs && typeof SCHOOLS !== 'undefined') {
@@ -824,6 +824,8 @@ async function submitReport(){
   } catch(e) { notify('提交失败', '❌'); }
 }
 
+
+function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);load();}}
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
