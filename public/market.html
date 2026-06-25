@@ -410,8 +410,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </div>
       <div class="chat-input-row">
         <input type="text" id="chatInput" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendChat()">
-        <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="sendChatImage(this)">
-        <label for="chatImageInput" style="cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:rgba(0,0,0,.25);font-size:12px;flex-shrink:0;display:flex;align-items:center;gap:4px;transition:all.15s" title="发送图片"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> 图片</label>
+        <span id="chatImgBadge" style="display:none;padding:3px 8px;border-radius:4px;background:rgba(96,184,142,.1);color:#60b88e;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;flex-shrink:0">📷</span>
+        <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="selectChatImage(this)">
+        <label for="chatImageInput" style="cursor:pointer;padding:6px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:rgba(0,0,0,.25);font-size:12px;flex-shrink:0;display:flex;align-items:center;gap:4px;transition:all.15s" title="选择图片"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></label>
         <button onclick="sendChat()" style="background:linear-gradient(135deg,#059669,#34d399);border:none;border-radius:10px;color:#fff;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;flex-shrink:0;letter-spacing:1px">发送</button>
       </div>
     </div>
@@ -1254,11 +1255,11 @@ function confirmRejectTrade() {
     }).catch(function(){});
 }
 
-function sendChatImage(input) {
+var _chatImgData = null;
+function selectChatImage(input) {
   var file = input.files && input.files[0];
-  if (!file || !chatProductId || !currentUser) return;
+  if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
-  notify('正在处理图片...', '⏳');
   var reader = new FileReader();
   reader.onload = function(e) {
     var img = new Image();
@@ -1270,15 +1271,9 @@ function sendChatImage(input) {
       canvas.width = w; canvas.height = h;
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, w, h);
-      var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-      var content = '[img]' + dataUrl;
-      input.value = '';
-      fetch('/api/marketplace/messages', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:content})
-      }).then(function(r){return r.json();}).then(function(m){
-        if (m && m.id) { notify('图片已发送', '✅'); appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:content,created_at:new Date().toISOString()}, false); }
-      }).catch(function(){notify('发送失败','❌');});
+      _chatImgData = canvas.toDataURL('image/jpeg', 0.5);
+      document.getElementById('chatImgBadge').textContent = '📷 ' + file.name;
+      document.getElementById('chatImgBadge').style.display = '';
     };
     img.src = e.target.result;
   };
@@ -1293,15 +1288,18 @@ function sendChat() {
     _lastChatTime = now;
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
-    if (!text) { notify('输入消息', '✏️'); return; }
+    if (!text && !_chatImgData) { notify('输入消息', '✏️'); return; }
     if (chatProductId === null || chatProductId === undefined) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
+    var imgData = _chatImgData;
+    _chatImgData = null;
+    document.getElementById('chatImgBadge').style.display = 'none';
     input.value = '';
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:text})
+      body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:imgData ? '[img]'+imgData : text})
     }).then(function(r){return r.json();}).then(function(m){
-      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:text,created_at:new Date().toISOString()}, false); }
+      if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:imgData ? '[img]'+imgData : text,created_at:new Date().toISOString()}, false); }
     }).catch(function(e){notify('发送失败','❌');});
   } catch(e) { notify('发送出错', '❌'); console.error(e); }
 }
