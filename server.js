@@ -1216,8 +1216,10 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
   try {
     let { product_id, from_student_id, from_name, to_student_id, to_name, content } = req.body;
     if (!from_student_id || !content) return res.status(400).json({ error: 'missing fields' });
-    if (!product_id && (to_student_id === KEFU_ID || from_student_id === KEFU_ID)) product_id = 0;
-    if (!product_id) return res.status(400).json({ error: 'product_id required' });
+    if (product_id === undefined || product_id === null) {
+      if (to_student_id === KEFU_ID || from_student_id === KEFU_ID) product_id = 0;
+      else return res.status(400).json({ error: 'product_id required' });
+    }
     const r = await fetch(SB('messages'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', to_name: to_name||'', content, read: false })
