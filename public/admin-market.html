@@ -587,6 +587,12 @@ async function autoLogin() {
     if (!r.ok) throw new Error();
     document.getElementById('loginGate').style.display = 'none';
     document.getElementById('app').classList.add('show');
+    // Restore school selector for super admin
+    if (role === 'admin' && SCHOOL_LIST.length) {
+      var sel = document.getElementById('schoolSelector');
+      sel.style.display = 'inline-block';
+      sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===localStorage.getItem('adminSchool')?' selected':'')+'>'+s.name+'</option>'; }).join('');
+    }
     init(); applyRole();
   } catch(e) {
     token = null; role = null;
