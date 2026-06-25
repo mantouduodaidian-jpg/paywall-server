@@ -1340,6 +1340,12 @@ function init() {
   loadOverview();
   loadCats();
   connectAdminWS();
+  // Populate ann school selector
+  var annSel = document.getElementById('annSchool');
+  if (annSel && annSel.children.length <= 1 && SCHOOL_LIST.length) {
+    SCHOOL_LIST.forEach(function(s) { annSel.innerHTML += '<option value="'+s.code+'">'+s.name+'</option>'; });
+  }
+  if (annSel && role === 'school_admin') annSel.style.display = 'none';
 }
 
 // WebSocket for instant updates
