@@ -696,7 +696,7 @@ async function load(reset) {
     '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }
   const search = document.getElementById('searchInput').value.trim();
   // Save state
-  try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
+  try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1,type:itemTypeFilter})); } catch(e) {}
   let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
   if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
@@ -1477,6 +1477,11 @@ try {
     if (saved.cat) { selCat = saved.cat; }
     if (saved.search) { document.getElementById('searchInput').value = saved.search; }
     if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
+    if (saved.type) {
+        itemTypeFilter = saved.type;
+        document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (saved.type==='sell'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (saved.type==='sell'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (saved.type==='sell'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
+        document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (saved.type==='rent'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (saved.type==='rent'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (saved.type==='rent'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06');
+      }
   }
 } catch(e) {}
 // Populate school selector
