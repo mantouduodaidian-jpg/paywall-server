@@ -1289,10 +1289,12 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       }
       // Count unread
       if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
-      // Try to improve name from any message
-      var nameCandidate = m.from_student_id === student_id ? m.to_name : m.from_name;
-      if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
-        seen[otherId].name = nameCandidate;
+      // Try to improve name from any message (skip for kefu)
+      if (!isKefu(otherId)) {
+        var nameCandidate = m.from_student_id === student_id ? m.to_name : m.from_name;
+        if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
+          seen[otherId].name = nameCandidate;
+        }
       }
     });
     contacts = Object.keys(seen).map(function(k) {
