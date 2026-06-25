@@ -1062,11 +1062,11 @@ async function resolveReport(id, action) {
 // ====== ANNOUNCEMENTS ======
 async function loadAnns() {
   try {
-    const r = await apiFetch('/api/marketplace/announcements?all=1');
+    const r = await apiFetch(getSchoolParam('/api/marketplace/announcements?all=1'));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('annTbody').innerHTML = !arr.length ? '<tr><td colspan="6"><div class="empty">暂无公告</div></td></tr>' :
-      arr.map(a => '<tr><td style="color:#ccc">'+a.id+'</td><td>'+esc(a.title)+'</td><td style="color:#bbb;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(a.content)+'</td>'+
+      arr.map(a => '<tr'+(a.school?'':' style="border-left:3px solid #c4a84c;background:rgba(196,168,76,.04)"')+'><td style="color:#ccc">'+a.id+'</td><td>'+esc(a.title)+(a.school?'':' <span style="font-size:9px;color:#c4a84c">[全局]</span>')+'</td><td style="color:#bbb;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(a.content)+'</td>'+
         '<td><span class="badge '+(a.active?'badge-green':'badge-gray')+'">'+(a.active?'显示中':'已关闭')+'</span></td>'+
         '<td style="font-size:10px;color:#ccc">'+fmtDate(a.created_at)+'</td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
@@ -1178,7 +1178,7 @@ function stopKefuPoll() { if (kefuPollTimer) { clearInterval(kefuPollTimer); kef
 // ====== Promotions ======
 async function loadPromos() {
   try {
-    const r = await apiFetch('/api/marketplace/promotions?all=1');
+    const r = await apiFetch(getSchoolParam('/api/marketplace/promotions?all=1'));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     document.getElementById('promoTbody').innerHTML = !arr.length ? '<tr><td colspan="7"><div class="empty">暂无</div></td></tr>' :
