@@ -690,13 +690,24 @@ function renderBarChart(products) {
   });
   var max = Math.max(1, ...days.map(function(d) { return d.count; }));
   var el = document.getElementById('chartBar');
-  el.innerHTML = days.map(function(d) {
-    var h = Math.round((d.count / max) * 130);
-    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
-      '<span style="font-size:9px;color:#bbb;margin-bottom:2px">'+d.count+'</span>'+
-      '<div style="width:100%;max-width:40px;height:'+h+'px;background:linear-gradient(to top,#4e9e80,#60b88e);border-radius:4px 4px 0 0;transition:all.3s;min-height:2px;opacity:'+(0.3 + 0.7*(d.count/max))+'"></div>'+
-      '<span style="font-size:9px;color:#ccc;margin-top:4px">'+d.label+'</span></div>';
-  }).join('');
+  // Reuse existing bars for smooth transition
+  if (!el._bars) {
+    el.innerHTML = days.map(function(d) {
+      var h = Math.round((d.count / max) * 130);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
+        '<span class="bar-val" style="font-size:9px;color:#bbb;margin-bottom:2px">'+d.count+'</span>'+
+        '<div class="bar-rect" style="width:100%;max-width:40px;height:'+h+'px;background:linear-gradient(to top,#4e9e80,#60b88e);border-radius:4px 4px 0 0;transition:height .4s ease;min-height:2px;opacity:'+(0.3 + 0.7*(d.count/max))+'"></div>'+
+        '<span style="font-size:9px;color:#ccc;margin-top:4px">'+d.label+'</span></div>';
+    }).join('');
+    el._bars = el.querySelectorAll('.bar-rect');
+    el._vals = el.querySelectorAll('.bar-val');
+  } else {
+    days.forEach(function(d, i) {
+      var h = Math.round((d.count / max) * 130);
+      if (el._bars[i]) el._bars[i].style.height = h + 'px';
+      if (el._vals[i]) el._vals[i].textContent = d.count;
+    });
+  }
 }
 function renderCatChart(products) {
   var cats = {};
@@ -710,15 +721,23 @@ function renderCatChart(products) {
   var max = Math.max(1, entries.length ? entries[0].count : 1);
   var total = entries.reduce(function(s,e) { return s + e.count; }, 0);
   var el = document.getElementById('chartCat');
-  el.innerHTML = !entries.length ? '<div style="padding:20px;text-align:center;color:#ddd">暂无</div>' :
-    entries.map(function(e) {
-      var pct = Math.round(e.count / total * 100);
+  if (!entries.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ddd">暂无</div>'; el._bars = null; return; }
+  // Reuse bars
+  if (!el._bars || el._bars.length !== entries.length) {
+    el.innerHTML = entries.map(function(e) {
       var w = Math.round(e.count / max * 100);
       return '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:2px">'+
-        '<span>'+esc(e.name)+'</span><span>'+e.count+' ('+pct+'%)</span></div>'+
+        '<span class="cat-name">'+esc(e.name)+'</span><span class="cat-count">'+e.count+' ('+Math.round(e.count/total*100)+'%)</span></div>'+
         '<div style="height:6px;background:rgba(0,0,0,.04);border-radius:3px;overflow:hidden">'+
-        '<div style="height:100%;width:'+w+'%;background:linear-gradient(90deg,#4e9e80,#60b88e);border-radius:3px;transition:width.5s"></div></div></div>';
+        '<div class="cat-rect" style="height:100%;width:'+w+'%;background:linear-gradient(90deg,#4e9e80,#60b88e);border-radius:3px;transition:width .5s ease"></div></div></div>';
     }).join('');
+    el._bars = el.querySelectorAll('.cat-rect');
+  } else {
+    entries.forEach(function(e, i) {
+      var w = Math.round(e.count / max * 100);
+      if (el._bars[i]) el._bars[i].style.width = w + '%';
+    });
+  }
 }
 function renderStatusChart(products) {
   var st = { pending: 0, approved: 0, rejected: 0 };
