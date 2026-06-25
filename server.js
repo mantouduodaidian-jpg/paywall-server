@@ -1,7 +1,7 @@
 import express from 'express';
 import initSqlJs from 'sql.js';
 import cors from 'cors';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHmac } from 'crypto';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
@@ -1381,33 +1381,47 @@ app.delete('/api/expenses/:id', async (req, res) => {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889X';
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
+const JWT_SECRET = process.env.JWT_SECRET || 'paywall-default-jwt-secret-2024';
 let SCHOOL_ADMINS = [];
 try { SCHOOL_ADMINS = JSON.parse(process.env.SCHOOL_ADMINS || '[]'); } catch(e) {}
-const adminTokens = new Map();
+function signToken(payload) {
+  var header = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
+  var body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  var sig = createHmac('sha256', JWT_SECRET).update(header+'.'+body).digest('base64url');
+  return header+'.'+body+'.'+sig;
+}
+
+function verifyToken(token) {
+  try {
+    var parts = token.split('.');
+    if (parts.length !== 3) return null;
+    var sig = createHmac('sha256', JWT_SECRET).update(parts[0]+'.'+parts[1]).digest('base64url');
+    if (sig !== parts[2]) return null;
+    var payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch(e) { return null; }
+}
 
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { password } = req.body;
   let role = null, school = null, schoolName = null;
 
-  // Check school admin passwords first
   var sa = SCHOOL_ADMINS.find(function(s) { return s.password === password; });
   if (sa) { role = 'school_admin'; school = sa.code; schoolName = sa.name; }
   else if (password === ADMIN_PASSWORD) role = 'admin';
   else if (password === MANAGER_PASSWORD) role = 'manager';
   if (!role) return res.json({ ok: false, msg: '密码错误' });
 
-  const token = randomBytes(24).toString('hex');
-  adminTokens.set(token, { role, school, schoolName, createdAt: Date.now() });
   var tokenHours = parseInt(process.env.TOKEN_EXPIRY_HOURS) || 12;
-  setTimeout(() => adminTokens.delete(token), tokenHours * 3600000);
+  var token = signToken({ role, school, schoolName, exp: Date.now() + tokenHours * 3600000 });
   res.json({ ok: true, token, role, school, schoolName, schools: role === 'admin' ? SCHOOL_ADMINS : undefined });
 });
 
 function getAdminSession(req) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) return null;
-  const sess = adminTokens.get(auth.slice(7));
-  return sess || null;
+  return verifyToken(auth.slice(7));
 }
 
 function anyAdmin(req, res, next) {
@@ -1470,7 +1484,7 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify({ type: 'auth_ok', student_id: userId }));
         return;
       }
-      if (msg.type === 'admin_auth' && adminTokens.has(msg.token)) {
+      if (msg.type === 'admin_auth' && verifyToken(msg.token)) {
         isAdmin = true;
         adminConns.add(ws);
         ws.send(JSON.stringify({ type: 'admin_auth_ok' }));
