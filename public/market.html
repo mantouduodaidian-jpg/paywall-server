@@ -1411,7 +1411,6 @@ function startUnreadPoll() {
         if (latest > lastCheck) { lastCheck = latest; }
         var badge = document.getElementById('chatBadge');
         if (unread > 0) { badge.textContent = unread; if (unread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = unread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
-        else { badge.textContent = '0'; }
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
       }).catch(function(){});
