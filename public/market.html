@@ -734,12 +734,12 @@ async function load(reset) {
       list.appendChild(div);
     });
     // Page navigation
-
+    var totalPages = Math.ceil(total / PAGE_SIZE);
+    var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
     var navContainer = document.getElementById('pageNavContainer');
     if (navContainer) {
-      pageOffset = pageOffset > 0 && total <= 0 ? 0 : pageOffset;
-      var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      var currentPage = Math.floor(pageOffset / PAGE_SIZE) + 1;
+      if (total <= 0) { navContainer.innerHTML = ''; }
+      else {
       var navHtml = '';
       if (currentPage > 1) navHtml += '<a href="#" onclick="gotoPage('+(currentPage-1)+');return false" style="color:rgba(0,0,0,.3);font-size:12px;text-decoration:none;padding:5px 10px;border:1px solid rgba(0,0,0,.06);border-radius:5px">‹</a>';
       for (var i = Math.max(1, currentPage-2); i <= Math.min(totalPages, currentPage+2); i++) {
