@@ -1274,6 +1274,11 @@ app.get('/api/marketplace/messages', async (req, res) => {
       var [d1,d2] = await Promise.all([r1.json(), r2.json()]);
       var intersect = (Array.isArray(d1)?d1:[]).concat(Array.isArray(d2)?d2:[]);
       var seen = {}; intersect = intersect.filter(function(m){ if(seen[m.id])return false; seen[m.id]=true; return true; });
+      // Only show messages between these two participants
+      intersect = intersect.filter(function(m) {
+        return (m.from_student_id === student_id && m.to_student_id === other_student_id) ||
+               (m.from_student_id === other_student_id && m.to_student_id === student_id);
+      });
       intersect.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
       return res.json(intersect);
     }
