@@ -332,6 +332,7 @@ tr:hover td{background:rgba(52,211,153,.02)}
 
 <script>
 let token = localStorage.getItem('marketAdminToken');
+let role = localStorage.getItem('marketAdminRole');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
 
@@ -354,32 +355,44 @@ function login() {
     .then(function(d) {
       if (d.ok && d.token) {
         token = d.token; localStorage.setItem('marketAdminToken', d.token);
+        if (d.role) { role = d.role; localStorage.setItem('marketAdminRole', d.role); }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
-        init();
+        init(); applyRole();
       } else {
         document.getElementById('loginError').style.display = 'block';
         setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
       }
     });
 }
+function applyRole() {
+  if (role === 'manager') {
+    document.querySelectorAll('.tab[data-tab="blocked"]').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab[data-tab="promotions"]').forEach(el => el.style.display = 'none');
+  }
+}
+
 function logout() {
   localStorage.removeItem('marketAdminToken');
+  localStorage.removeItem('marketAdminRole');
+  role = null;
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
 }
 // 自动检测 token 有效再进后台
 async function autoLogin() {
   if (!token) return;
+  role = localStorage.getItem('marketAdminRole');
   try {
     const r = await fetch('/api/marketplace/admin/stats', {headers:{'Authorization':'Bearer '+token}});
     if (!r.ok) throw new Error();
     document.getElementById('loginGate').style.display = 'none';
     document.getElementById('app').classList.add('show');
-    init();
+    init(); applyRole();
   } catch(e) {
-    token = null;
+    token = null; role = null;
     localStorage.removeItem('marketAdminToken');
+    localStorage.removeItem('marketAdminRole');
   }
 }
 autoLogin();
