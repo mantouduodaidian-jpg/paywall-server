@@ -1191,7 +1191,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     let data = await r.json();
     let arr = Array.isArray(data) ? data : [];
     let seen = {}, contacts = [];
-    mine.forEach(function(m) {
+    arr.forEach(function(m) {
       var otherId = m.from_student_id === student_id ? m.to_student_id : m.from_student_id;
       var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
       if (!otherId) return;
