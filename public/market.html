@@ -344,12 +344,12 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
         <span></span>
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
-      <div id="tradeActions" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,.04);gap:6px;flex-direction:column">
-        <div id="tradeStatus" style="display:none;text-align:center;padding:6px;font-size:12px;border-radius:6px"></div>
-        <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:8px;border:none;border-radius:8px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">🤝 我想交易</button></div>
-        <div id="tradeSeller" style="display:none;gap:6px">
-          <button onclick="confirmTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(52,211,153,.12);color:#34d399;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✅ 确认成交</button>
-          <button onclick="cancelTrade()" style="flex:1;padding:8px;border:none;border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕ 取消交易</button>
+      <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(255,255,255,.04)">
+        <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
+        <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
+        <div id="tradeSeller" style="display:none;display:flex;gap:6px">
+          <button onclick="confirmTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(52,211,153,.12);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(52,211,153,.15)">✅ 确认成交</button>
+          <button onclick="cancelTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(239,68,68,.12)">✕ 取消交易</button>
         </div>
       </div>
       <div class="chat-input-row">
@@ -1005,18 +1005,18 @@ function updateTradeButtons(p) {
   if (isOwner && p.trade_status === 'trading') {
     // Seller sees confirm/cancel for active trade
     status.style.display = ''; status.innerHTML = '👤 ' + esc(p.trade_buyer_name||'买家') + ' 想购买';
-    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
     sellerBtns.style.display = 'flex';
   } else if (isBuyer && p.trade_status === 'trading') {
     // Buyer sees waiting message
     status.style.display = ''; status.innerHTML = '⏳ 等待卖家确认';
-    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(251,191,36,.08);color:#fbbf24';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
   } else if (isOwner && p.trade_status === 'completed') {
-    status.style.display = ''; status.innerHTML = '✅ 交易成功';
-    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(52,211,153,.08);color:#34d399';
+    status.style.display = ''; status.innerHTML = '✅ 交易成功 🎉';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
   } else if (!isOwner && p.trade_status === 'completed') {
-    status.style.display = ''; status.innerHTML = '✅ 交易成功';
-    status.style.cssText = 'text-align:center;padding:6px;font-size:12px;border-radius:6px;background:rgba(52,211,153,.08);color:#34d399';
+    status.style.display = ''; status.innerHTML = '✅ 交易成功 🎉';
+    status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
   } else if (!isOwner && p.trade_status !== 'trading' && p.trade_status !== 'completed') {
     // Normal buyer sees request button
     buyerBtn.style.display = '';
@@ -1102,7 +1102,7 @@ function sendChat() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
     if (!text) { notify('输入消息', '✏️'); return; }
-    if (!chatProductId) { notify('请先选择对话', '💬'); return; }
+    if (chatProductId === null || chatProductId === undefined) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
     input.value = '';
     fetch('/api/marketplace/messages', {
