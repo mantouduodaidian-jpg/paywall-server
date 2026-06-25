@@ -188,27 +188,26 @@ tr:hover td{background:#f8fcf9}
   <!-- ===== OVERVIEW ===== -->
   <div class="tab-content" id="tabOverview">
     <div class="stats" id="statsContainer"></div>
-    <div id="chartRow" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <div class="section" style="flex:2;min-width:280px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:11px;font-weight:600;color:#aaa">近 7 日发布</span>
-          <span onclick="toggleChart('chartBarWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
-        </div>
-        <div id="chartBarWrap"><div id="chartBar" style="height:160px;display:flex;align-items:flex-end;gap:6px"></div></div>
+    <div class="section" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <div onclick="toggleChart(this)" style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none">
+        <span style="font-size:12px;font-weight:600;color:#888">📊 数据图表</span>
+        <span id="chartArrow" style="font-size:10px;color:#bbb;transition:transform.2s">▼</span>
       </div>
-      <div class="section" style="flex:1;min-width:180px;padding:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:11px;font-weight:600;color:#aaa">分类分布</span>
-          <span onclick="toggleChart('chartCatWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
+      <div id="chartBody" style="padding:0 18px 18px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:2;min-width:260px">
+            <div style="font-size:10px;font-weight:600;color:#bbb;margin-bottom:6px">近 7 日发布</div>
+            <div id="chartBar" style="height:150px;display:flex;align-items:flex-end;gap:6px"></div>
+          </div>
+          <div style="flex:1;min-width:160px">
+            <div style="font-size:10px;font-weight:600;color:#bbb;margin-bottom:6px">分类分布</div>
+            <div id="chartCat" style="font-size:11px"></div>
+          </div>
+          <div style="flex:1;min-width:120px;text-align:center">
+            <div style="font-size:10px;font-weight:600;color:#bbb;margin-bottom:6px">商品状态</div>
+            <div id="chartStatus" style="display:flex;justify-content:center"></div>
+          </div>
         </div>
-        <div id="chartCatWrap"><div id="chartCat" style="font-size:11px"></div></div>
-      </div>
-      <div class="section" style="flex:1;min-width:140px;padding:14px;text-align:center">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:11px;font-weight:600;color:#aaa">商品状态</span>
-          <span onclick="toggleChart('chartStatusWrap',this)" style="cursor:pointer;font-size:12px;color:#ccc;transition:all.2s" title="隐藏/显示">👁️</span>
-        </div>
-        <div id="chartStatusWrap"><div id="chartStatus" style="display:flex;justify-content:center"></div></div>
       </div>
     </div>
     <div class="section">
@@ -1138,13 +1137,14 @@ async function loadLogs() {
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function fmtDate(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
 function fmtDateTime(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-function toggleChart(id, btn) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var hidden = el.style.display === 'none';
-  el.style.display = hidden ? '' : 'none';
-  btn.textContent = hidden ? '👁️' : '🚫';
-  btn.style.opacity = hidden ? '1' : '.3';
+function toggleChart(headerEl) {
+  var body = document.getElementById('chartBody');
+  var arrow = document.getElementById('chartArrow');
+  if (!body || !arrow) return;
+  var hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  arrow.textContent = hidden ? '▼' : '▶';
+  arrow.style.transform = hidden ? 'rotate(0deg)' : 'rotate(-90deg)';
 }
 
 function init() {
