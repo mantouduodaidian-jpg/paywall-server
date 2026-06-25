@@ -669,7 +669,7 @@ async function load(reset) {
       var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
       var typeTag = p.item_type === 'rent' ? '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>' : '';
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
-        (p.sold?'<div class="sold-badge">已售罄</div>':''))+
+        (p.sold?'<div class="sold-badge">已售罄</div>':'')+
         (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
       list.appendChild(div);
     });
