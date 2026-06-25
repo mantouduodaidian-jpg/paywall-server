@@ -616,6 +616,10 @@ app.get('/api/marketplace/promotions', async (req, res) => {
     var promoUrl = all ? 'promotions?order=sort_order.asc&select=*' : 'promotions?active=eq.true&order=sort_order.asc&select=*';
     if (school && all) promoUrl += '&school=eq.'+encodeURIComponent(school);
     let url = SB(promoUrl);
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -885,6 +889,10 @@ app.get('/api/marketplace/reports', schoolScope, async (req, res) => {
     const { status } = req.query;
     let url = SB('reports?order=created_at.desc&select=*');
     if (status) url = SB('reports?status=eq.'+status+'&order=created_at.desc&select=*');
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     // Attach product title
@@ -913,6 +921,10 @@ app.get('/api/marketplace/announcements', async (req, res) => {
     var annUrl = all ? 'announcements?order=created_at.desc&select=*' : 'announcements?active=eq.true&order=created_at.desc&select=*';
     if (school && all) annUrl += '&school=eq.'+encodeURIComponent(school);
     let url = SB(annUrl);
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -963,6 +975,10 @@ app.get('/api/marketplace/logs', schoolScope, async (req, res) => {
     let url = SB('logs?order=created_at.desc&select=*');
     if (lmt) url = SB('logs?order=created_at.desc&select=*&limit='+lmt);
     else url = SB('logs?order=created_at.desc&select=*&limit=200');
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1174,10 +1190,7 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (!admin) countUrl = SB('products?status=eq.approved&listed=eq.true&select=id');
     if (category && admin) countUrl = SB('products?category=eq.'+category+'&select=id');
     if (category && !admin) countUrl = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
-    if (owner) {
-      countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
-      if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
-    }
+
     if (school) {
       countUrl = SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&select=id');
       if (category) countUrl = SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
@@ -1192,6 +1205,10 @@ app.get('/api/marketplace/products', async (req, res) => {
         if (category) countUrl = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
       }
     }
+    if (owner) {
+      countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
+      if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
+    }
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
@@ -1201,10 +1218,6 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && admin) url = SB('products?category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-    }
     if (school) {
       url = SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
       if (category) url = SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
@@ -1218,6 +1231,10 @@ app.get('/api/marketplace/products', async (req, res) => {
         url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
         if (category) url = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
       }
+    }
+    if (owner) {
+      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
     }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
