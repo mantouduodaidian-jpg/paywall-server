@@ -229,7 +229,7 @@ tr:hover td{background:#f8fcf9}
     <div class="actions">
       <a href="/market.html" class="btn-outline" target="_blank">🏪 前台</a>
       <select id="schoolSelector" onchange="switchSchool(this.value)" style="display:none;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#555;font-size:11px;outline:none;font-family:inherit"></select>
-      <button class="btn-outline" onclick="refreshAll()">🔄 刷新</button>
+      <button class="btn-outline" onclick="refreshAll()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 刷新</button>
       <button class="btn-danger" onclick="logout()">退出</button>
     </div>
   </div>
@@ -255,7 +255,7 @@ tr:hover td{background:#f8fcf9}
       <div class="toolbar">
         <input type="text" id="rentSearch" placeholder="搜索租借商品..." onkeydown="if(event.key==='Enter')loadRentals()">
         <select id="rentStatusFilter" onchange="loadRentals()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
-        <button class="btn btn-ghost" onclick="loadRentals()">🔄</button>
+        <button class="btn btn-ghost" onclick="loadRentals()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>ID</th><th>商品</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
@@ -268,7 +268,7 @@ tr:hover td{background:#f8fcf9}
     <div class="section">
       <div class="toolbar">
         <input type="text" id="sellerSearch" placeholder="搜索卖家..." onkeydown="if(event.key==='Enter')loadSellers()">
-        <button class="btn btn-ghost" onclick="loadSellers()">🔄</button>
+        <button class="btn btn-ghost" onclick="loadSellers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>卖家</th><th>总商品</th><th>已上架</th><th>在售</th><th style="text-align:center">操作</th></tr></thead><tbody id="sellerTbody"></tbody></table>
@@ -321,7 +321,7 @@ tr:hover td{background:#f8fcf9}
         <input type="text" id="prodSearch" placeholder="搜索..." onkeydown="if(event.key==='Enter')loadProds()">
         <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
         <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
-        <button class="btn btn-ghost" onclick="loadProds()">🔄</button>
+        <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>ID</th><th>商品</th><th>¥</th><th>分类</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
@@ -334,7 +334,7 @@ tr:hover td{background:#f8fcf9}
     <div class="section">
       <div class="toolbar">
         <select id="verStatusFilter" onchange="loadVers()"><option value="">全部</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
-        <button class="btn btn-ghost" onclick="loadVers()">🔄</button>
+        <button class="btn btn-ghost" onclick="loadVers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
@@ -361,7 +361,7 @@ tr:hover td{background:#f8fcf9}
     <div class="section">
       <div class="toolbar">
         <select id="reportStatusFilter" onchange="loadReports()"><option value="">全部</option><option value="pending">待处理</option><option value="resolved">已处理</option><option value="dismissed">已驳回</option></select>
-        <button class="btn btn-ghost" onclick="loadReports()">🔄</button>
+        <button class="btn btn-ghost" onclick="loadReports()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th>ID</th><th>商品</th><th>原因</th><th>详情</th><th>举报人</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="reportTbody"></tbody></table>
