@@ -1321,7 +1321,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         if (Array.isArray(vData)) {
           var schoolMap = {};
           vData.forEach(function(v) { schoolMap[v.student_id] = v.school; });
-          contacts = contacts.filter(function(c) { return schoolMap[c.student_id] === school; });
+          contacts = contacts.filter(function(c) { return c.student_id === kefuId(school) || schoolMap[c.student_id] === school; });
         }
       } catch(e) {}
     }
