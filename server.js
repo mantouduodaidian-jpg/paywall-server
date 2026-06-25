@@ -1100,7 +1100,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all' })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0 })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
@@ -1156,15 +1156,29 @@ const KEFU_ID = 'kefu_001';
 const KEFU_NAME = '校园严选客服';
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
-    const { product_id, student_id, other_student_id } = req.query;
-    let url = SB('messages?order=created_at.asc&select=*');
-    if (product_id) url = SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select=*');
-    const r = await fetch(url, { headers: SB_HEADERS });
-    let data = await r.json();
-    let arr = Array.isArray(data) ? data : [];
-    if (student_id) arr = arr.filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
-    if (other_student_id) arr = arr.filter(m => m.from_student_id === other_student_id || m.to_student_id === other_student_id);
-    res.json(arr);
+    const { product_id, student_id, other_student_id, since_id } = req.query;
+    var fields = 'id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at';
+    // Two-participant chat: filter both sides via Supabase
+    if (student_id && other_student_id) {
+      var url1 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
+      var url2 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(other_student_id)+",to_student_id.eq."+encodeURIComponent(other_student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
+      var [r1,r2] = await Promise.all([fetch(url1,{headers:SB_HEADERS}), fetch(url2,{headers:SB_HEADERS})]);
+      var [d1,d2] = await Promise.all([r1.json(), r2.json()]);
+      var intersect = (Array.isArray(d1)?d1:[]).concat(Array.isArray(d2)?d2:[]);
+      var seen = {}; intersect = intersect.filter(function(m){ if(seen[m.id])return false; seen[m.id]=true; return true; });
+      intersect.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
+      return res.json(intersect);
+    }
+    var s = student_id || other_student_id;
+    if (s) {
+      var r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(s)+",to_student_id.eq."+encodeURIComponent(s)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:'')), { headers: SB_HEADERS });
+      return res.json(await r.json());
+    }
+    if (product_id) {
+      var r = await fetch(SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select='+fields+(since_id?'&id=gt.'+since_id:'')), { headers: SB_HEADERS });
+      return res.json(await r.json());
+    }
+    res.json([]);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1173,10 +1187,9 @@ app.get('/api/marketplace/contacts', async (req, res) => {
   try {
     const { student_id } = req.query;
     if (!student_id) return res.json([]);
-    const r = await fetch(SB('messages?select=*&order=created_at.desc'), { headers: SB_HEADERS });
+    const r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at"), { headers: SB_HEADERS });
     let data = await r.json();
     let arr = Array.isArray(data) ? data : [];
-    let mine = arr.filter(m => m.from_student_id === student_id || m.to_student_id === student_id);
     let seen = {}, contacts = [];
     mine.forEach(function(m) {
       var otherId = m.from_student_id === student_id ? m.to_student_id : m.from_student_id;

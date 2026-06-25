@@ -907,7 +907,7 @@ async function delBw(id, word) {
 }
 
 // ====== Kefu Chat ======
-let kefuContactId = null, kefuPollTimer = null;
+let kefuContactId = null, kefuPollTimer = null, kefuLastId = 0;
 async function loadKefuContacts() {
   try {
     const r = await apiFetch('/api/marketplace/contacts?student_id=kefu_001');
@@ -923,10 +923,11 @@ async function loadKefuContacts() {
   } catch(e) {}
 }
 async function openKefuChat(studentId, name) {
-  kefuContactId = studentId;
+  kefuContactId = studentId; kefuLastId = 0;
   document.getElementById('kefuChatHeader').textContent = '\u{1f4ac} ' + name;
   document.getElementById('kefuInputArea').style.display = 'flex';
   if (kefuPollTimer) clearInterval(kefuPollTimer);
+  document.getElementById('kefuMsgs').innerHTML = '';
   await loadKefuMsgs();
   kefuPollTimer = setInterval(loadKefuMsgs, 3000);
   loadKefuContacts();
@@ -934,15 +935,18 @@ async function openKefuChat(studentId, name) {
 async function loadKefuMsgs() {
   if (!kefuContactId) return;
   try {
-    const r = await apiFetch('/api/marketplace/messages?student_id=kefu_001&other_student_id='+kefuContactId);
+    var url = '/api/marketplace/messages?student_id=kefu_001&other_student_id='+kefuContactId;
+    if (kefuLastId) url += '&since_id='+kefuLastId;
+    const r = await apiFetch(url);
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     var el = document.getElementById('kefuMsgs');
-    el.innerHTML = arr.map(function(m) {
+    arr.forEach(function(m) {
+      if (m.id > kefuLastId) kefuLastId = m.id;
       var me = m.from_student_id === 'kefu_001';
-      return '<div style="margin:4px 0;text-align:'+(me?'right':'left')+'"><span style="display:inline-block;padding:6px 10px;border-radius:8px;font-size:11px;max-width:70%;'+
+      el.innerHTML += '<div style="margin:4px 0;text-align:'+(me?'right':'left')+'"><span style="display:inline-block;padding:6px 10px;border-radius:8px;font-size:11px;max-width:70%;'+
         (me?'background:rgba(52,211,153,.15);color:#6ee7b7':'background:rgba(255,255,255,.04);color:rgba(255,255,255,.6)')+'">'+esc(m.content)+'</span></div>';
-    }).join('');
+    });
     el.scrollTop = el.scrollHeight;
   } catch(e) {}
 }
