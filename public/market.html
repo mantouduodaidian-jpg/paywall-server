@@ -908,28 +908,31 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
   chatOtherName = sellerName;
-  // Use anonymous display until trade confirmed
-  fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
-    fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
-      var arr = Array.isArray(vers)?vers:[];
-      var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
-      var nick = (seller && seller.nickname) ? seller.nickname : sellerName;
-      if (p && p.trade_status === 'completed') {
-        document.getElementById('chatConvLabel').textContent = '💬 ' + nick + (sellerName && nick !== sellerName ? '('+sellerName+')' : '');
-      } else {
-        document.getElementById('chatConvLabel').textContent = '💬 ' + (nick || '买家');
-      }
+  if (sellerStudentId === 'kefu_001') {
+    document.getElementById('chatConvLabel').textContent = '💬 校园严选客服';
+  } else if (productId) {
+    fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
+      fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
+        var arr = Array.isArray(vers)?vers:[];
+        var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
+        var nick = (seller && seller.nickname) ? seller.nickname : sellerName;
+        if (p && p.trade_status === 'completed') {
+          document.getElementById('chatConvLabel').textContent = '💬 ' + nick + (sellerName && nick !== sellerName ? '('+sellerName+')' : '');
+        } else {
+          document.getElementById('chatConvLabel').textContent = '💬 ' + (nick || '买家');
+        }
+      }).catch(function(){});
     }).catch(function(){});
-  }).catch(function(){});
-  // Show panel immediately
+  } else {
+    document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
+  }
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').classList.add('show');
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.15);font-size:12px">加载中...</div>';
-  document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
+  document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerStudentId === 'kefu_001' ? '校园严选客服' : sellerName);
   startChatPoll();
-  // Load messages async
   setTimeout(function() {
     fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
       .then(function(r) { return r.json(); })
@@ -1099,7 +1102,7 @@ function sendChat() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
     if (!text) { notify('输入消息', '✏️'); return; }
-    if (!chatProductId) { notify('请先选择对话', '💬'); return; }
+    if (chatProductId === null || chatProductId === undefined) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
     input.value = '';
     fetch('/api/marketplace/messages', {
