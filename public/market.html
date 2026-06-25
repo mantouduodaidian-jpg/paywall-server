@@ -966,6 +966,7 @@ function previewStudentCard(input) {
   const reader = new FileReader();
   reader.onload = function(e) { window._cardImage = e.target.result; };
   reader.readAsDataURL(file);
+  input.value = '';
 }
 
 // ====== Image Upload ======
@@ -1257,6 +1258,7 @@ function sendChatImage(input) {
   var file = input.files && input.files[0];
   if (!file || !chatProductId || !currentUser) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
+  notify('正在处理图片...', '⏳');
   var reader = new FileReader();
   reader.onload = function(e) {
     var img = new Image();
@@ -1275,12 +1277,13 @@ function sendChatImage(input) {
         method:'POST', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:content})
       }).then(function(r){return r.json();}).then(function(m){
-        if (m && m.id) { appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:content,created_at:new Date().toISOString()}, false); }
+        if (m && m.id) { notify('图片已发送', '✅'); appendMsg({id:m.id,product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,content:content,created_at:new Date().toISOString()}, false); }
       }).catch(function(){notify('发送失败','❌');});
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+  input.value = '';
 }
 
 function sendChat() {
