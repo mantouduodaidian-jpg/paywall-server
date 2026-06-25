@@ -1385,7 +1385,8 @@ app.post('/api/admin/login', express.json(), (req, res) => {
 
   const token = randomBytes(24).toString('hex');
   adminTokens.set(token, { role, school, schoolName, createdAt: Date.now() });
-  setTimeout(() => adminTokens.delete(token), 86400000);
+  var tokenHours = parseInt(process.env.TOKEN_EXPIRY_HOURS) || 168;
+  setTimeout(() => adminTokens.delete(token), tokenHours * 3600000);
   res.json({ ok: true, token, role, school, schoolName, schools: role === 'admin' ? SCHOOL_ADMINS : undefined });
 });
 
