@@ -689,6 +689,8 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       if (approved.length) {
         return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'' } });
       }
+      const banned = arr.filter(v => v.status === 'banned');
+      if (banned.length) return res.json({ ok: false, msg: '账号已封禁' + (banned[0]?.reject_reason ? '：' + banned[0].reject_reason : '') });
       const pending = arr.filter(v => v.status === 'pending');
       if (pending.length) return res.json({ ok: false, msg: '认证审核中，请等待' });
       if (arr.length) return res.json({ ok: false, msg: '认证未通过' + (arr[0]?.reject_reason ? '：' + arr[0].reject_reason : '') });
@@ -758,6 +760,30 @@ app.post('/api/marketplace/sellers/toggle-all', express.json(), async (req, res)
     }
     addLog('seller_toggle', 'seller', student_id, listed?'上架':'下架'+' '+arr.length+'件');
     res.json({ ok: true, count: arr.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Ban account
+app.post('/api/marketplace/sellers/ban', express.json(), async (req, res) => {
+  try {
+    const { student_id, reason } = req.body;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    // Find verification by student_id
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id"), { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    if (arr.length) {
+      await fetch(SB('verifications?id=eq.'+arr[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'banned', reject_reason: reason||'' }) });
+    }
+    // Also take down all products
+    const prodR = await fetch(SB("products?owner_student_id=eq."+encodeURIComponent(student_id)+"&select=id"), { headers: SB_HEADERS });
+    const prodData = await prodR.json();
+    const prodArr = Array.isArray(prodData) ? prodData : [];
+    for (const p of prodArr) {
+      await fetch(SB('products?id=eq.'+p.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: false, status: 'rejected' }) });
+    }
+    addLog('seller_ban', 'seller', student_id, reason);
+    res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
