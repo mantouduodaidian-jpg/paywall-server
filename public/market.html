@@ -875,6 +875,7 @@ function logout(){
 
 function showLoginForPub() {
   if (!currentUser) { notify('请先登录再发布', '🔑'); showLogin(); return false; }
+  if (currentUser.muted) { notify('账号已禁言，无法发布商品', '🔇'); return false; }
   return true;
 }
 
