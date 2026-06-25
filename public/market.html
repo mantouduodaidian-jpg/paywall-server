@@ -422,6 +422,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <h2>🪪 实名认证</h2>
     <p style="font-size:13px;color:rgba(255,255,255,.25);margin-bottom:16px">认证通过后即可用学号+电话登录</p>
     <input type="text" id="vName" placeholder="真实姓名 *">
+    <input type="text" id="vNickname" placeholder="匿名昵称 *（如：椰子学长）" style="margin-bottom:10px">
     <input type="text" id="vStudentId" placeholder="学号 *">
     <input type="text" id="vPhone" placeholder="手机号 *">
     <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">性别</option><option value="male">男</option><option value="female">女</option></select>
@@ -763,7 +764,7 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,image:window._cardImage||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),image:window._cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
     if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
@@ -909,12 +910,16 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatOtherName = sellerName;
   // Use anonymous display until trade confirmed
   fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
-    if (p && p.trade_status === 'completed') {
-      document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
-    } else {
-      var anonName = sellerName ? sellerName.charAt(0) + '***' : '买家';
-      document.getElementById('chatConvLabel').textContent = '💬 ' + anonName;
-    }
+    fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
+      var arr = Array.isArray(vers)?vers:[];
+      var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
+      var nick = (seller && seller.nickname) ? seller.nickname : sellerName;
+      if (p && p.trade_status === 'completed') {
+        document.getElementById('chatConvLabel').textContent = '💬 ' + nick + (sellerName && nick !== sellerName ? '('+sellerName+')' : '');
+      } else {
+        document.getElementById('chatConvLabel').textContent = '💬 ' + (nick || '买家');
+      }
+    }).catch(function(){});
   }).catch(function(){});
   // Show panel immediately
   document.getElementById('chatPanel').classList.add('show');
@@ -1226,6 +1231,17 @@ function appendMsg(m, isHistory) {
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   var name = m.from_name || (mine ? '我' : '对方');
+  // Try to show nickname
+  if (!mine) {
+    fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
+      var arr = Array.isArray(vers)?vers:[];
+      var sender = arr.find(function(v){ return v.student_id === m.from_student_id; });
+      if (sender && sender.nickname) {
+        var msgDiv = el.lastChild;
+        if (msgDiv) { var s = msgDiv.querySelector('.sender'); if (s) s.textContent = sender.nickname; }
+      }
+    }).catch(function(){});
+  }
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
   if (m.id) div.setAttribute('data-msgid', m.id);

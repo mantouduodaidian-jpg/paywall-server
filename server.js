@@ -512,7 +512,7 @@ app.get('/api/verify/list', anyAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/approve', fullAdmin, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -598,7 +598,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/products/:id', anyAdmin, async (req, res) => {
+app.delete('/api/marketplace/products/:id', fullAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -618,7 +618,7 @@ app.get('/api/marketplace/promotions', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/promotions', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/promotions', fullAdmin, express.json(), async (req, res) => {
   try {
     const { title, desc, contact, image, sort_order } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
@@ -630,7 +630,7 @@ app.post('/api/marketplace/promotions', anyAdmin, express.json(), async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/marketplace/promotions/:id', anyAdmin, express.json(), async (req, res) => {
+app.put('/api/marketplace/promotions/:id', fullAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { title, desc, contact, image, sort_order, active } = req.body;
@@ -646,7 +646,7 @@ app.put('/api/marketplace/promotions/:id', anyAdmin, express.json(), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/promotions/:id', anyAdmin, async (req, res) => {
+app.delete('/api/marketplace/promotions/:id', fullAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('promotions?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -667,13 +667,13 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         const existing = chkData[0];
         if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，请登录' });
         if (existing.status === 'pending') return res.json({ ok: false, msg: '认证审核中，请等待' });
-        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'' }) });
+        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'', nickname: req.body.nickname||'' }) });
         addLog('user_register', 'verification', student_id, name);
         return res.json({ ok: true, msg: '✅ 认证已重新提交，等待审核' });
       }
       await fetch(SB('verifications'), {
         method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', status: 'pending', created_at: new Date().toISOString() })
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', nickname: req.body.nickname||'', status: 'pending', created_at: new Date().toISOString() })
       });
       addLog('user_register', 'verification', student_id, name);
         notifyAdmin('new_verification', { student_id, name });
@@ -687,7 +687,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       const arr = Array.isArray(data) ? data : [];
       const approved = arr.filter(v => v.status === 'approved');
       if (approved.length) {
-        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone } });
+        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'' } });
       }
       const pending = arr.filter(v => v.status === 'pending');
       if (pending.length) return res.json({ ok: false, msg: '认证审核中，请等待' });
@@ -769,7 +769,7 @@ app.get('/api/marketplace/categories', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/categories', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/categories', fullAdmin, express.json(), async (req, res) => {
   try {
     const { name, icon, sort_order } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
@@ -783,7 +783,7 @@ app.post('/api/marketplace/categories', anyAdmin, express.json(), async (req, re
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.put('/api/marketplace/categories/:id', anyAdmin, express.json(), async (req, res) => {
+app.put('/api/marketplace/categories/:id', fullAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -797,7 +797,7 @@ app.put('/api/marketplace/categories/:id', anyAdmin, express.json(), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/categories/:id', anyAdmin, async (req, res) => {
+app.delete('/api/marketplace/categories/:id', fullAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -907,14 +907,14 @@ app.get('/api/marketplace/logs', anyAdmin, async (req, res) => {
 });
 
 // ====== Blocked Words API ======
-app.get('/api/marketplace/blocked-words', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/blocked-words', fullAdmin, async (req, res) => {
   try {
     const r = await fetch(SB('blocked_words?select=*'), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/blocked-words', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/blocked-words', fullAdmin, express.json(), async (req, res) => {
   try {
     const { word } = req.body;
     if (!word) return res.status(400).json({ error: 'word required' });
@@ -928,7 +928,7 @@ app.post('/api/marketplace/blocked-words', anyAdmin, express.json(), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/blocked-words/:id', anyAdmin, async (req, res) => {
+app.delete('/api/marketplace/blocked-words/:id', fullAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('blocked_words?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -959,7 +959,7 @@ app.get('/api/marketplace/chat-alerts', anyAdmin, async (req, res) => {
 });
 
 // ====== CSV Export ======
-app.get('/api/marketplace/export/:type', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/export/:type', fullAdmin, async (req, res) => {
   try {
     const type = req.params.type;
     if (type === 'products') {
@@ -1011,7 +1011,7 @@ app.get('/api/verify/list', anyAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/approve', fullAdmin, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1026,7 +1026,7 @@ app.post('/api/verify/approve', anyAdmin, express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/reject', anyAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/reject', fullAdmin, express.json(), async (req, res) => {
   try {
     const { id, reason } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1037,7 +1037,7 @@ app.post('/api/verify/reject', anyAdmin, express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/verify/:id', anyAdmin, async (req, res) => {
+app.delete('/api/verify/:id', fullAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
