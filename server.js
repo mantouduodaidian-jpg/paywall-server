@@ -616,10 +616,6 @@ app.get('/api/marketplace/promotions', async (req, res) => {
     var promoUrl = all ? 'promotions?order=sort_order.asc&select=*' : 'promotions?active=eq.true&order=sort_order.asc&select=*';
     if (school && all) promoUrl += '&school=eq.'+encodeURIComponent(school);
     let url = SB(promoUrl);
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-    }
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -897,10 +893,6 @@ app.get('/api/marketplace/reports', schoolScope, async (req, res) => {
     const { status } = req.query;
     let url = SB('reports?order=created_at.desc&select=*');
     if (status) url = SB('reports?status=eq.'+status+'&order=created_at.desc&select=*');
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-    }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     // Attach product title
@@ -927,7 +919,7 @@ app.get('/api/marketplace/announcements', async (req, res) => {
   try {
     const { all, school } = req.query;
     var annUrl = all ? 'announcements?order=created_at.desc&select=*' : 'announcements?active=eq.true&order=created_at.desc&select=*';
-    if (school && all) annUrl += '&school=eq.'+encodeURIComponent(school);
+    if (school && all) annUrl += '&or=(school.eq.,school.eq.'+encodeURIComponent(school)+')';
     const r = await fetch(SB(annUrl), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
