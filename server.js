@@ -734,7 +734,8 @@ app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
 // ====== Seller Management API ======
 app.get('/api/marketplace/sellers', async (req, res) => {
   try {
-    const r = await fetch(SB('products?select=owner_student_id,owner_name,id,title,status,listed,sold'), { headers: SB_HEADERS });
+    var schoolFilter = req.query.school ? '&school=eq.'+req.query.school : '';
+    const r = await fetch(SB('products?select=owner_student_id,owner_name,id,title,status,listed,sold'+schoolFilter), { headers: SB_HEADERS });
     let data = await r.json();
     let arr = Array.isArray(data) ? data : [];
     // Group by owner
@@ -750,7 +751,7 @@ app.get('/api/marketplace/sellers', async (req, res) => {
     var sellerList = Object.values(sellers);
     // Attach muted status from verifications
     try {
-      var vR = await fetch(SB('verifications?select=student_id,status'), { headers: SB_HEADERS });
+      var vR = await fetch(SB('verifications?select=student_id,status'+schoolFilter), { headers: SB_HEADERS });
       var vData = await vR.json();
       if (Array.isArray(vData)) {
         var vMap = {};

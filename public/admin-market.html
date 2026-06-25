@@ -1214,7 +1214,7 @@ async function delPromo(id, title) {
 // ====== Sellers ======
 async function loadSellers() {
   try {
-    const r = await fetch('/api/marketplace/sellers');
+    const r = await apiFetch(getSchoolParam('/api/marketplace/sellers'));
     let data = await r.json();
     let arr = Array.isArray(data) ? data : [];
     const search = document.getElementById('sellerSearch').value.trim().toLowerCase();
