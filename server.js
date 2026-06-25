@@ -670,13 +670,13 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         const existing = chkData[0];
         if (existing.status === 'approved') return res.json({ ok: true, user: existing, msg: '已认证，请登录' });
         if (existing.status === 'pending') return res.json({ ok: false, msg: '认证审核中，请等待' });
-        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'', nickname: req.body.nickname||'', school: req.body.school||'' }) });
+        await fetch(SB('verifications?id=eq.'+existing.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', name, phone, image: req.body.image||'', payment_qr: req.body.payment_qr||'', nickname: req.body.nickname||'', school: req.body.school||'' }) });
         addLog('user_register', 'verification', student_id, name);
         return res.json({ ok: true, msg: '✅ 认证已重新提交，等待审核' });
       }
       await fetch(SB('verifications'), {
         method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', gender: req.body.gender||'', nickname: req.body.nickname||'', school: req.body.school||'', status: 'pending', created_at: new Date().toISOString() })
+        body: JSON.stringify({ name, student_id, phone, image: req.body.image||'', payment_qr: req.body.payment_qr||'', gender: req.body.gender||'', nickname: req.body.nickname||'', school: req.body.school||'', status: 'pending', created_at: new Date().toISOString() })
       });
       addLog('user_register', 'verification', student_id, name);
         notifyAdmin('new_verification', { student_id, name });
@@ -1115,6 +1115,14 @@ app.get('/api/verify/image/:id', schoolScope, async (req, res) => {
     const data = await r.json();
     res.json({ image: data?.[0]?.image || null });
   } catch(e) { res.json({ image: null }); }
+});
+
+app.get('/api/verify/payment-qr/:id', schoolScope, async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?id=eq.'+req.params.id+'&select=payment_qr'), { headers: SB_HEADERS2 });
+    const data = await r.json();
+    res.json({ payment_qr: data?.[0]?.payment_qr || null });
+  } catch(e) { res.json({ payment_qr: null }); }
 });
 
 // ====== Marketplace API ======

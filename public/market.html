@@ -518,6 +518,12 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </label>
       <span id="vCardName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
     </div>
+    <div style="margin-bottom:10px">
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 上传收款码（微信/支付宝）
+        <input type="file" id="vPaymentQR" accept="image/*" style="display:none" onchange="previewPaymentQR(this)">
+      </label>
+      <span id="vQRName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
+    </div>
     <div style="font-size:12px;color:rgba(0,0,0,.15);margin:8px 0">信息仅用于认证，不会公开</div>
     <div class="btns">
       <button class="submit" onclick="applyVerify()">提交认证</button>
@@ -875,10 +881,15 @@ try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.pa
 if (currentUser) { renderLoggedIn(); }
 if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
 
+function getSchoolName(id) {
+  var s = SCHOOLS.find(function(x){return x.id===id;});
+  return s ? s.name : '';
+}
 function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
-  document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户');
+  var schoolName = getSchoolName(currentUser?.school);
+  document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '');
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -935,10 +946,10 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:window._cardImage||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:window._cardImage||'',payment_qr:window._paymentQR||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
-    if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';document.getElementById('vCardName').textContent='';}
+    if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';window._paymentQR='';document.getElementById('vCardName').textContent='';document.getElementById('vQRName').textContent='';}
     else notify(d.msg||'提交失败', '❌');
   }catch(e){btn.textContent='提交认证';btn.disabled=false;notify('提交失败', '❌');}
 }
@@ -969,6 +980,7 @@ const CAT_ICONS_EMOJI = {
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
 
 // ====== Student Card Upload ======
+window._paymentQR = '';
 window._cardImage = '';
 function previewStudentCard(input) {
   const file = input.files[0];
@@ -977,6 +989,14 @@ function previewStudentCard(input) {
   document.getElementById('vCardName').textContent = file.name;
   const reader = new FileReader();
   reader.onload = function(e) { window._cardImage = e.target.result; };
+}
+function previewPaymentQR(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
+  document.getElementById('vQRName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) { window._paymentQR = e.target.result; };
   reader.readAsDataURL(file);
   input.value = '';
 }
