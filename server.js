@@ -928,12 +928,7 @@ app.get('/api/marketplace/announcements', async (req, res) => {
     const { all, school } = req.query;
     var annUrl = all ? 'announcements?order=created_at.desc&select=*' : 'announcements?active=eq.true&order=created_at.desc&select=*';
     if (school && all) annUrl += '&school=eq.'+encodeURIComponent(school);
-    let url = SB(annUrl);
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-    }
-    const r = await fetch(url, { headers: SB_HEADERS });
+    const r = await fetch(SB(annUrl), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
