@@ -1273,7 +1273,7 @@ app.delete('/api/expenses/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889X';
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
 const adminTokens = new Map();
 
