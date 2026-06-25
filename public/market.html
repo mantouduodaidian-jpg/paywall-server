@@ -163,6 +163,14 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 
+@keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%);background-size:400px 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
+.skeleton-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;overflow:hidden}
+.skeleton-card .skeleton-img{width:100%;aspect-ratio:1;background:rgba(255,255,255,.03)}
+.skeleton-card .skeleton-info{padding:8px 10px}
+.skeleton-card .skeleton-line{height:12px;margin-bottom:6px;width:70%}
+.skeleton-card .skeleton-line:last-child{width:40%}
+
 @media(max-width:768px){
   .main{flex-direction:column;padding:12px}
   .sidebar{width:100%}
@@ -330,7 +338,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 <div class="chat-panel" id="chatPanel" onclick="event.stopPropagation()">
   <div class="chat-panel-header">
     <span>💬 最近对话</span>
-    <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    <span style="display:flex;gap:6px;align-items:center">
+      <span id="soundToggle" onclick="toggleSound()" style="cursor:pointer;font-size:11px;color:rgba(255,255,255,.15)" title="消息提示音">🔔</span>
+      <span onclick="toggleChat()" style="cursor:pointer;font-size:12px;color:rgba(255,255,255,.2)">✕</span>
+    </span>
   </div>
   <div class="chat-body" id="chatBody">
     <div style="padding:8px 8px 0">
@@ -455,6 +466,32 @@ function notify(msg, icon) {
   el._t = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
+// ====== Sound ======
+var _soundEnabled = localStorage.getItem('chatSound') !== 'off';
+function playMsgSound() {
+  if (!_soundEnabled) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  _soundEnabled = !_soundEnabled;
+  localStorage.setItem('chatSound', _soundEnabled ? 'on' : 'off');
+  document.getElementById('soundToggle').textContent = _soundEnabled ? '🔔' : '🔕';
+  notify(_soundEnabled ? '提示音已开启' : '提示音已关闭', '🔔');
+}
+
 // ====== Categories ======
 async function loadCats() {
   try {
@@ -556,7 +593,8 @@ let pageOffset = 0;
 const PAGE_SIZE = 10;
 
 async function load(reset) {
-  if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML = '<div class="empty">加载中...</div>'; }
+  if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML =
+    '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }
   const search = document.getElementById('searchInput').value.trim();
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
@@ -1117,10 +1155,10 @@ function sendChat() {
 var _chatPollTimer = null;
 function startChatPoll() {
   stopChatPoll();
-  if (!chatProductId || !currentUser) return;
+  if (chatProductId === null || chatProductId === undefined || !currentUser) return;
   var lastId = 0;
   _chatPollTimer = setInterval(function() {
-    if (!chatProductId || !currentUser) { stopChatPoll(); return; }
+    if ((chatProductId === null || chatProductId === undefined) || !currentUser) { stopChatPoll(); return; }
     fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+(chatOtherStudent||''))
       .then(function(r){return r.json();})
       .then(function(data){
@@ -1180,7 +1218,7 @@ function startUnreadPoll() {
         });
         if (latest > lastCheck) { lastCheck = latest; }
         var badge = document.getElementById('chatBadge');
-        if (unread > 0) { badge.textContent = unread; }
+        if (unread > 0) { badge.textContent = unread; playMsgSound(); }
         else { badge.textContent = '0'; }
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
