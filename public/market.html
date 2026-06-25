@@ -480,7 +480,6 @@ function setTypeFilter(type) {
   itemTypeFilter = type;
   document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='sell'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04)');
   document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='rent'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04');
-  document.getElementById('catList').innerHTML = '';
   selCat = '';
   load();
 }
