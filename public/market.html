@@ -428,6 +428,14 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   </div>
 </div>
 
+
+<!-- Full Image Modal -->
+<div class="modal-overlay" id="fullImgModal" onclick="if(event.target===this)hideFullImage()">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px">
+    <img id="fullImgContent" style="max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.3)">
+  </div>
+</div>
+
 <!-- Toast Notification -->
 <div class="toast-notif" id="toastNotif">
   <span class="toast-icon" id="toastIcon">✅</span>
@@ -1402,6 +1410,9 @@ function startProductPoll() {
   }, 5000);
 }
 
+
+function showFullImage(src){document.getElementById("fullImgContent").src=src;document.getElementById("fullImgModal").classList.add("show");}
+function hideFullImage(){document.getElementById("fullImgModal").classList.remove("show");}
 function showMyProducts() {
   document.getElementById('myOverlay').classList.add('show');
   loadMyProducts();
@@ -1450,7 +1461,7 @@ function appendMsg(m, isHistory) {
   if (m.content && m.content.indexOf('[img]') >= 0) {
     var imgSrc = m.content.substring(m.content.indexOf('[img]')+5);
     var txtBefore = m.content.substring(0, m.content.indexOf('[img]'));
-    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block"></div><span class="time">'+timeStr+'</span>';
+    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block;cursor:pointer" onclick="showFullImage(this.src)"></div><span class="time">'+timeStr+'</span>';
   } else {
     div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   }
