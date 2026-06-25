@@ -941,7 +941,9 @@ async function doLogin(){
 
 var _sessionTimer = null;
 function startSessionCheck() {
-  if (!currentUser || !currentUser.login_token) return;
+  if (!currentUser) return;
+  if (!currentUser.login_token) { currentUser.login_token = String(Date.now()); }
+
   if (_sessionTimer) clearInterval(_sessionTimer);
   _sessionTimer = setInterval(function(){
     if (!currentUser) { clearInterval(_sessionTimer); return; }
