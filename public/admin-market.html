@@ -609,12 +609,10 @@ async function delVer(id, name) {
 // Image Preview
 async function showCard(id) {
   try {
-    const r = await apiFetch('/api/verify/list');
-    const data = await r.json();
-    const arr = Array.isArray(data) ? data : [];
-    const v = arr.find(x => x.id === id);
-    if (v && v.image) {
-      document.getElementById('imgPreviewContent').src = v.image;
+    const r = await apiFetch('/api/verify/image/'+id);
+    const d = await r.json();
+    if (d && d.image) {
+      document.getElementById('imgPreviewContent').src = d.image;
       document.getElementById('imgPreviewModal').classList.add('show');
     } else {
       toast('暂无图片');

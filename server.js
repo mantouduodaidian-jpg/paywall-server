@@ -507,7 +507,7 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', anyAdmin, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason'), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1006,7 +1006,7 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', anyAdmin, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=*'), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason'), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1045,6 +1045,14 @@ app.delete('/api/verify/:id', anyAdmin, async (req, res) => {
     addLog('verify_delete', 'verification', id, '');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/verify/image/:id', anyAdmin, async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?id=eq.'+req.params.id+'&select=image'), { headers: SB_HEADERS2 });
+    const data = await r.json();
+    res.json({ image: data?.[0]?.image || null });
+  } catch(e) { res.json({ image: null }); }
 });
 
 // ====== Marketplace API ======
