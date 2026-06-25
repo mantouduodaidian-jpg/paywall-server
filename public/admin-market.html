@@ -577,31 +577,23 @@ function switchSchool(code) {
   switchTab(activeTab ? activeTab.dataset.tab : 'overview');
 }
 
-// 自动检测 token 有效再进后台
+// 尝试恢复登录状态
 async function autoLogin() {
   if (!token) return;
   role = localStorage.getItem('marketAdminRole');
   var sn = localStorage.getItem('adminSchoolName') || '';
   document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
-  try {
-    const r = await fetch('/api/marketplace/admin/stats', {headers:{'Authorization':'Bearer '+token}});
-    if (!r.ok) throw new Error();
-    document.getElementById('loginGate').style.display = 'none';
-    document.getElementById('app').classList.add('show');
-    // Restore school selector for super admin
-    if (role === 'admin' && SCHOOL_LIST.length) {
-      var sel = document.getElementById('schoolSelector');
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  // Restore school selector for super admin
+  if (role === 'admin' && SCHOOL_LIST.length) {
+    var sel = document.getElementById('schoolSelector');
+    if (sel) {
       sel.style.display = 'inline-block';
       sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===localStorage.getItem('adminSchool')?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
-    init(); applyRole();
-  } catch(e) {
-    token = null; role = null;
-    localStorage.removeItem('marketAdminToken');
-    localStorage.removeItem('marketAdminRole');
-    localStorage.removeItem('adminSchool');
-    localStorage.removeItem('adminSchoolName');
   }
+  init(); applyRole();
 }
 autoLogin();
 
