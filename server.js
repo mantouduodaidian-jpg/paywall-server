@@ -746,7 +746,18 @@ app.get('/api/marketplace/sellers', async (req, res) => {
       if (p.listed) sellers[p.owner_student_id].listed++;
       sellers[p.owner_student_id].product_ids.push(p.id);
     });
-    res.json(Object.values(sellers));
+    var sellerList = Object.values(sellers);
+    // Attach muted status from verifications
+    try {
+      var vR = await fetch(SB('verifications?select=student_id,status'), { headers: SB_HEADERS });
+      var vData = await vR.json();
+      if (Array.isArray(vData)) {
+        var vMap = {};
+        vData.forEach(function(v) { vMap[v.student_id] = v.status; });
+        sellerList.forEach(function(s) { s.status = vMap[s.student_id] || 'approved'; });
+      }
+    } catch(e) {}
+    res.json(sellerList);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
