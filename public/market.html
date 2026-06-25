@@ -680,7 +680,7 @@ async function showDetail(id) {
     document.getElementById('detailBox').innerHTML =
       '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<img src="'+src+'" style="'+(i>0?'display:none':'')+'max-width:100%;max-height:300px;border-radius:8px" class="detail-img">'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(255,255,255,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
-      '<div class="price">¥'+parseFloat(p.price).toFixed(2)+'</div>'+
+      '<div class="price">'+(p.item_type==='rent'?'¥'+parseFloat(p.rent_price).toFixed(2)+'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+(p.deposit>0?' · 押金¥'+parseFloat(p.deposit).toFixed(0):''):'¥'+parseFloat(p.price).toFixed(2))+'</div>'+
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span></div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
