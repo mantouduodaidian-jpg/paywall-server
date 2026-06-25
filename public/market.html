@@ -8,7 +8,7 @@
 <link rel="manifest" href="/manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:#0a1a0f;color:#c8e6c9;min-height:100vh}
+body{font-family:system-ui;background:#0d2418;color:rgba(255,255,255,.6);min-height:100vh}
 
 /* ===== Announcement Bar ===== */
 .ann-bar{background:rgba(52,211,153,.06);border-bottom:1px solid rgba(52,211,153,.1);padding:8px 24px;font-size:12px;color:rgba(255,255,255,.4);display:none;align-items:center;gap:8px;overflow:hidden}
@@ -20,10 +20,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .promo-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ===== Header ===== */
-.header{background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.04);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header{background:rgba(255,255,255,.015);border-bottom:1px solid rgba(255,255,255,.035);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .header .logo{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
 .header .logo span{background:linear-gradient(135deg,#6ee7b7,#059669);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header .sub{font-size:12px;color:rgba(255,255,255,.15)}
+.header .sub{font-size:12px;color:rgba(255,255,255,.18)}
 .header .actions{display:flex;gap:8px}
 .header .actions a{padding:8px 20px;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;transition:all .15s}
 .header .actions .pub{background:linear-gradient(135deg,#059669,#34d399);color:#fff}
@@ -51,14 +51,14 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-.card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
-.card:hover{border-color:rgba(52,211,153,.15);transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.card{background:rgba(255,255,255,.015);border:1px solid rgba(255,255,255,.035);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative}
+.card:hover{border-color:rgba(52,211,153,.1);background:rgba(52,211,153,.04);transform:translateY(-8px);box-shadow:0 16px 48px rgba(52,211,153,.07)}
 .card .img{width:100%;aspect-ratio:1;background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;font-size:36px;color:rgba(255,255,255,.06)}
 .card .info{padding:8px 10px}
-.card .info .title{font-size:13px;color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .info .title{font-size:13px;color:rgba(255,255,255,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .info .price{font-size:17px;font-weight:700;color:#34d399;margin:3px 0}
 .card .info .meta{display:flex;gap:6px;font-size:10px;color:rgba(255,255,255,.2);flex-wrap:wrap}
-.card .info .meta .tag{padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.04)}
+.card .info .meta .tag{padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.04)}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:rgba(239,68,68,.15);color:#ef4444;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;backdrop-filter:blur(4px)}
 .card .mine-badge{position:absolute;top:8px;left:8px;background:rgba(52,211,153,.15);color:#34d399;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;backdrop-filter:blur(4px)}
 .status-badge{font-size:10px;padding:2px 8px;border-radius:4px;display:inline-block}
