@@ -1111,7 +1111,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset, owner } = req.query;
+    const { category, search, admin, limit, offset, owner, item_type } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
     // Get total count first
@@ -1122,6 +1122,10 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (owner) {
       countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
       if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
+    }
+    if (item_type && !admin) {
+      countUrl = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
+      if (category) countUrl = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
     }
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
@@ -1135,6 +1139,10 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (owner) {
       url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
       if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    }
+    if (item_type && !admin) {
+      url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (category) url = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();

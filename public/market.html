@@ -239,6 +239,10 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
     <div class="search">
       <input id="searchInput" type="text" autocomplete="off" placeholder="搜索物品..." onkeydown="if(event.key==='Enter')load()">
     </div>
+    <div style="display:flex;gap:4px;margin-bottom:10px">
+      <span id="typeFilterSell" onclick="setTypeFilter('sell')" style="flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:rgba(52,211,153,.1);color:#34d399;border:1px solid rgba(52,211,153,.15)">💰 二手</span>
+      <span id="typeFilterRent" onclick="setTypeFilter('rent')" style="flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.04)">📅 出租</span>
+    </div>
     <div class="section-title">分类</div>
     <div class="cats" id="catList"></div>
     <div class="stats">
@@ -468,8 +472,18 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 
 <script>
 let selCat = '';
+let itemTypeFilter = 'sell';
 let sellerFilter = null;
 let reportingProductId = null;
+
+function setTypeFilter(type) {
+  itemTypeFilter = type;
+  document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='sell'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04)');
+  document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:6px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.1)':'rgba(255,255,255,.03)') + ';color:' + (type==='rent'?'#34d399':'rgba(255,255,255,.2)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.15)':'rgba(255,255,255,.04');
+  document.getElementById('catList').innerHTML = '';
+  selCat = '';
+  load();
+}
 
 // ====== Toast Notification ======
 function notify(msg, icon) {
@@ -613,7 +627,7 @@ async function load(reset) {
   const search = document.getElementById('searchInput').value.trim();
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1})); } catch(e) {}
-  let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
+  let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
   else if (selCat) url += '&category='+selCat;
