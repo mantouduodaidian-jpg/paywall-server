@@ -689,6 +689,8 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       if (approved.length) {
         return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'' } });
       }
+      const muted = arr.filter(v => v.status === 'muted');
+      if (muted.length) return res.json({ ok: true, user: { id: muted[0].id, name: muted[0].name, student_id: muted[0].student_id, phone: muted[0].phone, nickname: muted[0].nickname||'', school: muted[0].school||'' }, muted: true, msg: '账号已禁言，仅可聊天不可发布商品' });
       const banned = arr.filter(v => v.status === 'banned');
       if (banned.length) return res.json({ ok: false, msg: '账号已封禁' + (banned[0]?.reject_reason ? '：' + banned[0].reject_reason : '') });
       const pending = arr.filter(v => v.status === 'pending');
@@ -783,6 +785,22 @@ app.post('/api/marketplace/sellers/ban', express.json(), async (req, res) => {
       await fetch(SB('products?id=eq.'+p.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: false, status: 'rejected' }) });
     }
     addLog('seller_ban', 'seller', student_id, reason);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/sellers/mute', express.json(), async (req, res) => {
+  try {
+    const { student_id, reason, action } = req.body;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    const newStatus = action === 'unmute' ? 'pending' : 'muted';
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id"), { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    if (arr.length) {
+      await fetch(SB('verifications?id=eq.'+arr[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: newStatus, reject_reason: reason||'' }) });
+    }
+    addLog('seller_' + (action === 'unmute' ? 'unmute' : 'mute'), 'seller', student_id, reason||'');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1086,6 +1104,17 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
   try {
     const { title, price, category, desc, images, contact, quality } = req.body;
     if (!title || !price) return res.status(400).json({ error: 'title and price required' });
+
+    // Check if user is muted
+    if (req.body.owner_student_id) {
+      try {
+        const muteR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(req.body.owner_student_id)+"&select=status"), { headers: SB_HEADERS });
+        const muteD = await muteR.json();
+        if (Array.isArray(muteD) && muteD.length && muteD[0].status === 'muted') {
+          return res.status(403).json({ error: '账号已禁言，无法发布商品' });
+        }
+      } catch(e) {}
+    }
 
     // Check blocked words
     try {
