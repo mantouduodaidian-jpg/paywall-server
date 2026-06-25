@@ -505,9 +505,9 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/verify/list', anyAdmin, async (req, res) => {
+app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason'), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -537,7 +537,7 @@ async function addLog(action, targetType, targetId, detail) {
 }
 
 // ====== Marketplace Admin API ======
-app.get('/api/marketplace/admin/stats', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
   try {
     const [prodR, verR, reportR, annR] = await Promise.all([
       fetch(SB('products?select=id,verified,status,listed'), { headers: SB_HEADERS }),
@@ -876,7 +876,7 @@ app.post('/api/marketplace/reports', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/marketplace/reports', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/reports', schoolScope, async (req, res) => {
   try {
     const { status } = req.query;
     let url = SB('reports?order=created_at.desc&select=*');
@@ -950,7 +950,7 @@ app.delete('/api/marketplace/announcements/:id', anyAdmin, async (req, res) => {
 });
 
 // ====== Logs API ======
-app.get('/api/marketplace/logs', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/logs', schoolScope, async (req, res) => {
   try {
     const { limit: lmt } = req.query;
     let url = SB('logs?order=created_at.desc&select=*');
@@ -962,14 +962,14 @@ app.get('/api/marketplace/logs', anyAdmin, async (req, res) => {
 });
 
 // ====== Blocked Words API ======
-app.get('/api/marketplace/blocked-words', fullAdmin, async (req, res) => {
+app.get('/api/marketplace/blocked-words', schoolScope, async (req, res) => {
   try {
     const r = await fetch(SB('blocked_words?select=*'), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/marketplace/blocked-words', fullAdmin, express.json(), async (req, res) => {
+app.post('/api/marketplace/blocked-words', schoolScope, express.json(), async (req, res) => {
   try {
     const { word } = req.body;
     if (!word) return res.status(400).json({ error: 'word required' });
@@ -983,7 +983,7 @@ app.post('/api/marketplace/blocked-words', fullAdmin, express.json(), async (req
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/blocked-words/:id', fullAdmin, async (req, res) => {
+app.delete('/api/marketplace/blocked-words/:id', schoolScope, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await fetch(SB('blocked_words?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
@@ -1006,19 +1006,19 @@ app.post('/api/marketplace/chat-alert', express.json(), async (req, res) => {
   } catch(e) { res.json({ ok: false }); }
 });
 
-app.get('/api/marketplace/chat-alerts', anyAdmin, async (req, res) => {
+app.get('/api/marketplace/chat-alerts', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*'), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('chat_alerts?order=created_at.desc&limit=50&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.json([]); }
 });
 
 // ====== CSV Export ======
-app.get('/api/marketplace/export/:type', fullAdmin, async (req, res) => {
+app.get('/api/marketplace/export/:type', schoolScope, async (req, res) => {
   try {
     const type = req.params.type;
     if (type === 'products') {
-      const r = await fetch(SB('products?order=created_at.desc&select=*'), { headers: SB_HEADERS });
+      const r = await fetch(SB('products?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS });
       const data = await r.json();
       const rows = Array.isArray(data) ? data : [];
       const header = 'ID,标题,价格,分类,描述,联系方式,品质,状态,上架,已售,创建时间\n';
@@ -1029,7 +1029,7 @@ app.get('/api/marketplace/export/:type', fullAdmin, async (req, res) => {
       res.setHeader('Content-Disposition', 'attachment; filename=products.csv');
       res.send('﻿' + csv);
     } else if (type === 'reports') {
-      const r = await fetch(SB('reports?order=created_at.desc&select=*'), { headers: SB_HEADERS });
+      const r = await fetch(SB('reports?order=created_at.desc&select=*' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS });
       const data = await r.json();
       const rows = Array.isArray(data) ? data : [];
       const header = 'ID,商品ID,原因,详情,联系方式,状态,创建时间\n';
@@ -1059,9 +1059,9 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/verify/list', anyAdmin, async (req, res) => {
+app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason'), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason' + (req.adminSchool ? '&school=eq.'+req.adminSchool : ''), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1102,7 +1102,7 @@ app.delete('/api/verify/:id', fullAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/verify/image/:id', anyAdmin, async (req, res) => {
+app.get('/api/verify/image/:id', schoolScope, async (req, res) => {
   try {
     const r = await fetch(SB('verifications?id=eq.'+req.params.id+'&select=image'), { headers: SB_HEADERS2 });
     const data = await r.json();
@@ -1348,42 +1348,67 @@ app.delete('/api/expenses/:id', async (req, res) => {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889X';
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
+let SCHOOL_ADMINS = [];
+try { SCHOOL_ADMINS = JSON.parse(process.env.SCHOOL_ADMINS || '[]'); } catch(e) {}
 const adminTokens = new Map();
 
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { password } = req.body;
-  let role = null;
-  if (password === ADMIN_PASSWORD) role = 'admin';
+  let role = null, school = null, schoolName = null;
+
+  // Check school admin passwords first
+  var sa = SCHOOL_ADMINS.find(function(s) { return s.password === password; });
+  if (sa) { role = 'school_admin'; school = sa.code; schoolName = sa.name; }
+  else if (password === ADMIN_PASSWORD) role = 'admin';
   else if (password === MANAGER_PASSWORD) role = 'manager';
   if (!role) return res.json({ ok: false, msg: '密码错误' });
 
   const token = randomBytes(24).toString('hex');
-  adminTokens.set(token, { role, createdAt: Date.now() });
+  adminTokens.set(token, { role, school, schoolName, createdAt: Date.now() });
   setTimeout(() => adminTokens.delete(token), 86400000);
-  res.json({ ok: true, token, role });
+  res.json({ ok: true, token, role, school, schoolName });
 });
 
-function anyAdmin(req, res, next) {
+function getAdminSession(req) {
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ ok: false, msg: '未授权' });
-  }
+  if (!auth || !auth.startsWith('Bearer ')) return null;
   const sess = adminTokens.get(auth.slice(7));
-  if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  return sess || null;
+}
+
+function anyAdmin(req, res, next) {
+  const sess = getAdminSession(req);
+  if (!sess) return res.status(401).json({ ok: false, msg: '未授权' });
   req.adminRole = sess.role;
+  req.adminSchool = sess.school;
+  req.adminSchoolName = sess.schoolName;
+  next();
+}
+
+function schoolScope(req, res, next) {
+  const sess = getAdminSession(req);
+  if (!sess) return res.status(401).json({ ok: false, msg: '未授权' });
+  req.adminRole = sess.role;
+  req.adminSchool = sess.school;
+  req.adminSchoolName = sess.schoolName;
+  // school_admin can only access their school
+  if (sess.role === 'school_admin' && !sess.school) return res.status(403).json({ ok: false, msg: '无学校权限' });
   next();
 }
 
 function fullAdmin(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ ok: false, msg: '未授权' });
-  }
-  const sess = adminTokens.get(auth.slice(7));
-  if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  const sess = getAdminSession(req);
+  if (!sess) return res.status(401).json({ ok: false, msg: '未授权' });
   if (sess.role !== 'admin') return res.status(403).json({ ok: false, msg: '无权限' });
   req.adminRole = sess.role;
   next();
+}
+
+// Helper: add school filter to Supabase URL if applicable
+function addSchoolFilter(url, req) {
+  var school = req.adminSchool || req.query.school;
+  if (school) url += '&school=eq.' + encodeURIComponent(school);
+  return url;
 }
 
 const PORT = process.env.PORT || 3456;

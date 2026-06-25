@@ -362,12 +362,12 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 </div>
 
 <!-- Login Overlay -->
-<div class="login-overlay" id="loginOverlay">
+<div class="login-overlay" id="guestOverlay">
   <div class="logo-icon"><img src="/logo.jpg" alt="二豆"></div>
   <h1>二豆</h1>
   <p>校园二手 · 严格认证</p>
   <a class="btn" onclick="showLogin()">登录 / 注册</a>
-  <div class="link" onclick="document.getElementById('loginOverlay').style.display='none';showSchoolSelect()">先逛逛</div>
+  <div class="link" onclick="document.getElementById('guestOverlay').style.display='none';showSchoolSelect()">先逛逛</div>
 </div>
 
 <!-- Chat Backdrop -->
@@ -658,10 +658,10 @@ const PAGE_SIZE = 10;
 async function load(reset) {
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
   if (!currentUser) {
-    document.getElementById('loginOverlay').style.display = 'flex';
+    document.getElementById('guestOverlay').style.display = 'flex';
     if (!userSchool) { showSchoolSelect(); return; }
   } else {
-    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('guestOverlay').style.display = 'none';
   }
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML =
     '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }
@@ -843,7 +843,7 @@ function showSchoolSelect() {
   var nav = document.getElementById('pageNav');
   if (nav) nav.innerHTML = '';
 }
-function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.getElementById('loginOverlay').style.display='none';load();}}
+function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.getElementById('guestOverlay').style.display='none';load();}}
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
