@@ -35,7 +35,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
 .stat-card{background:#fff;border-radius:12px;padding:18px;transition:all .3s cubic-bezier(.34,1.56,.64,1);border:1px solid rgba(0,0,0,.04);box-shadow:0 2px 8px rgba(0,0,0,.02)}
 .stat-card:hover{transform:translateY(-6px);box-shadow:0 12px 24px rgba(0,0,0,.04)}
-.stat-card .num{font-size:26px;font-weight:700}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}.stat-card .num{font-size:26px;font-weight:700}
 .stat-card .num.green{color:#4e9e80}
 .stat-card .num.yellow{color:#c4a84c}
 .stat-card .num.red{color:#e74c3c}
@@ -130,7 +130,7 @@ tr:hover td{background:#fafaf5}
 .stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
 .stat-card{background:#fff;border-radius:14px;padding:18px;transition:all .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06)}
-.stat-card .num{font-size:26px;font-weight:700}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}.stat-card .num{font-size:26px;font-weight:700}
 .stat-card .num.green{color:#4e9e80}
 .stat-card .num.yellow{color:#c4a84c}
 .stat-card .num.red{color:#e74c3c}

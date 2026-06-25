@@ -1301,8 +1301,7 @@ function sendChat() {
     _chatImgData = null;
     document.getElementById('chatImgPreview').style.display = 'none';
     input.value = '';
-    var fullContent = text ? text + (imgData ? '
-[img]'+imgData : '') : (imgData ? '[img]'+imgData : '');
+    var fullContent = text; if (imgData) fullContent = text ? text + ' [img]' + imgData : '[img]' + imgData;
     fetch('/api/marketplace/messages', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:fullContent})
