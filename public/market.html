@@ -898,7 +898,7 @@ function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
-if (currentUser) { renderLoggedIn(); }
+if (currentUser) { renderLoggedIn(); startSessionCheck(); }
 if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
 
 function getSchoolName(id) {
@@ -939,6 +939,19 @@ async function doLogin(){
 }
 
 
+var _sessionTimer = null;
+function startSessionCheck() {
+  if (!currentUser || !currentUser.login_token) return;
+  if (_sessionTimer) clearInterval(_sessionTimer);
+  _sessionTimer = setInterval(function(){
+    if (!currentUser) { clearInterval(_sessionTimer); return; }
+    fetch('/api/marketplace/check-session?student_id='+currentUser.student_id+'&token='+currentUser.login_token)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if (!d.ok) { notify('账号在其他设备登录，已下线', '⚠️'); renderLoggedOut(); location.reload(); }
+      }).catch(function(){});
+  }, 15000);
+}
 function showMutedBanner(msg){var el=document.getElementById('mutedBanner');if(el){document.getElementById('mutedBannerMsg').textContent=msg;el.style.display='block';}}
 function logout(){
   document.getElementById('logoutModal').classList.add('show');
