@@ -442,6 +442,19 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   </div>
 </div>
 
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal" onclick="if(event.target===this)hideLogoutModal()">
+  <div class="pub-box" style="max-width:360px;text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">👋</div>
+    <h2 style="font-size:18px;color:rgba(0,0,0,.5);margin-bottom:4px">退出登录</h2>
+    <p style="font-size:13px;color:rgba(0,0,0,.2);margin-bottom:20px">确定要退出当前账号吗？</p>
+    <div class="btns">
+      <button class="submit" onclick="confirmLogout()" style="background:rgba(239,68,68,.1);color:#ef4444">退出</button>
+      <button class="cancel" onclick="hideLogoutModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- Login Modal -->
 <div class="pub-overlay" id="loginOverlay" onclick="if(event.target===this)hideLogin()">
   <div class="pub-box" style="max-width:400px;text-align:center">
@@ -878,7 +891,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');if(d.muted)showMutedBanner(d.msg);}
+    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');setTimeout(function(){location.reload();},500);if(d.muted)showMutedBanner(d.msg);}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -886,9 +899,10 @@ async function doLogin(){
 
 function showMutedBanner(msg){var el=document.getElementById('mutedBanner');if(el){document.getElementById('mutedBannerMsg').textContent=msg;el.style.display='block';}}
 function logout(){
-  if(!confirm('确认退出？'))return;
-  renderLoggedOut();
+  document.getElementById('logoutModal').classList.add('show');
 }
+function hideLogoutModal(){document.getElementById('logoutModal').classList.remove('show');}
+function confirmLogout(){hideLogoutModal();renderLoggedOut();setTimeout(function(){location.reload();},100);}
 
 function showLoginForPub() {
   if (!currentUser) { notify('请先登录再发布', '🔑'); showLogin(); return false; }
