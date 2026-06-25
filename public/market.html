@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>二豆 · 校园二手</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="manifest" href="/manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color:#555;min-height:100vh}
@@ -501,6 +500,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 </div>
 
 <script>
+if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister();});});
 let selCat = '';
 let itemTypeFilter = 'sell';
 const SCHOOLS = [
