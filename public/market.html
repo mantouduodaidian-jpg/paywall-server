@@ -542,7 +542,7 @@ if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(funct
 let selCat = '';
 let itemTypeFilter = 'sell';
 const SCHOOLS = [
-  { id: 'gxny', name: '广西农业职业技术大学', sidLen: 13, sidHint: 'XXXXXXXXXXXX' },
+  { id: 'gxny', name: '广西农业职业技术大学', sidLen: [12,13], sidHint: '12-13位' },
   { id: 'hnkj', name: '海南科技职业大学', sidLen: 13, sidHint: 'XXXXXXXXXXXX' },
   { id: 'gdcj', name: '广东财经大学', sidLen: 11, sidHint: 'XXXXXXXXXXXX' },
   { id: 'lztd', name: '柳州铁道职业技术学院', sidLen: 11, sidHint: 'XXXXXXXXXXXX' },
@@ -955,7 +955,8 @@ async function applyVerify(){
   var schoolId = document.getElementById('vSchool').value;
   var school = SCHOOLS.find(function(s){return s.id===schoolId;});
   var expectedLen = school ? school.sidLen : 13;
-  if(s.length !== expectedLen){notify('学号应为'+expectedLen+'位', '⚠️');return}
+  var lenOk = Array.isArray(expectedLen) ? expectedLen.includes(s.length) : s.length === expectedLen;
+  if(!lenOk){notify('学号应为'+(Array.isArray(expectedLen)?expectedLen.join('或')+'位':expectedLen+'位'), '⚠️');return}
   if(p.length!==11){notify('手机号应为11位', '⚠️');return}
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
