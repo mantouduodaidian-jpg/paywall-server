@@ -164,11 +164,14 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .chat-conv{display:none;flex-direction:column;flex:1;min-height:0}
 .chat-conv.show{display:flex}
 
-.card-blur{position:relative;overflow:hidden}
-.card-blur .card-login-overlay{position:absolute;inset:0;background:rgba(5,15,8,.75);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;opacity:0;transition:opacity .25s}
-.card-blur:hover .card-login-overlay,.card-blur:active .card-login-overlay{opacity:1}
-.card-blur .info{filter:blur(3px);pointer-events:none}
-.card-blur .img{filter:blur(4px)}
+.login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:40;background:rgba(247,243,234,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.login-overlay .logo-icon{width:80px;height:80px;border-radius:50%;background:#fff;border:3px solid #bce0cc;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,.04)}
+.login-overlay .logo-icon img{width:80px;height:80px;border-radius:50%;object-fit:cover}
+.login-overlay h1{font-size:24px;font-weight:800;color:#60b88e;letter-spacing:3px;margin-bottom:4px}
+.login-overlay p{font-size:13px;color:rgba(0,0,0,.3);margin-bottom:24px}
+.login-overlay .btn{display:inline-block;padding:12px 40px;border-radius:10px;background:#60b88e;color:#fff;font-size:15px;font-weight:600;text-decoration:none;cursor:pointer;border:none;font-family:inherit;transition:background .2s}
+.login-overlay .btn:hover{background:#4e9e80}
+.login-overlay .link{margin-top:12px;font-size:12px;color:rgba(0,0,0,.2);cursor:pointer;text-decoration:underline}
 
 @keyframes shimmer{0%{background-position:-200px 0}100%{background-position:200px 0}}
 .skeleton{background:linear-gradient(90deg,rgba(0,0,0,.02) 25%,rgba(0,0,0,.06) 50%,rgba(0,0,0,.02) 75%);background-size:400px 100%;animation:shimmer 1.5s ease-in-out infinite;border-radius:8px}
@@ -356,6 +359,15 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <button class="cancel" onclick="hideReport()">取消</button>
     </div>
   </div>
+</div>
+
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="logo-icon"><img src="/logo.jpg" alt="二豆"></div>
+  <h1>二豆</h1>
+  <p>校园二手 · 严格认证</p>
+  <a class="btn" onclick="showLogin()">登录 / 注册</a>
+  <div class="link" onclick="document.getElementById('loginOverlay').style.display='none';showSchoolSelect()">先逛逛</div>
 </div>
 
 <!-- Chat Backdrop -->
@@ -645,7 +657,12 @@ const PAGE_SIZE = 10;
 
 async function load(reset) {
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
-  if (!userSchool && !currentUser && reset !== false) { showSchoolSelect(); return; }
+  if (!currentUser) {
+    document.getElementById('loginOverlay').style.display = 'flex';
+    if (!userSchool) { showSchoolSelect(); return; }
+  } else {
+    document.getElementById('loginOverlay').style.display = 'none';
+  }
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML =
     '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }
   const search = document.getElementById('searchInput').value.trim();
@@ -826,7 +843,7 @@ function showSchoolSelect() {
   var nav = document.getElementById('pageNav');
   if (nav) nav.innerHTML = '';
 }
-function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);load();}}
+function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.getElementById('loginOverlay').style.display='none';load();}}
 // ====== Login / Auth ======
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
