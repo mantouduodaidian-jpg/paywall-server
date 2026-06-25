@@ -1102,7 +1102,7 @@ function sendChat() {
     var input = document.getElementById('chatInput');
     var text = input.value.trim();
     if (!text) { notify('输入消息', '✏️'); return; }
-    if (chatProductId === null || chatProductId === undefined) { notify('请先选择对话', '💬'); return; }
+    if (!chatProductId) { notify('请先选择对话', '💬'); return; }
     if (!currentUser) { notify('请先登录', '🔑'); showLogin(); return; }
     input.value = '';
     fetch('/api/marketplace/messages', {
