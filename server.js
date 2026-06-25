@@ -512,7 +512,7 @@ app.get('/api/verify/list', schoolScope, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', fullAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/approve', schoolScope, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -599,7 +599,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.delete('/api/marketplace/products/:id', fullAdmin, async (req, res) => {
+app.delete('/api/marketplace/products/:id', schoolScope, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1073,7 +1073,7 @@ app.get('/api/verify/list', schoolScope, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/approve', fullAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/approve', schoolScope, express.json(), async (req, res) => {
   try {
     const { id, productIds } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
@@ -1088,7 +1088,7 @@ app.post('/api/verify/approve', fullAdmin, express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-app.post('/api/verify/reject', fullAdmin, express.json(), async (req, res) => {
+app.post('/api/verify/reject', schoolScope, express.json(), async (req, res) => {
   try {
     const { id, reason } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
