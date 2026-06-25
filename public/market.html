@@ -1018,22 +1018,37 @@ function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '�
 // ====== Student Card Upload ======
 window._paymentQR = '';
 window._cardImage = '';
+
+function compressImage(file, cb) {
+  if (file.size < 200*1024) {
+    var r = new FileReader();
+    r.onload = function(e) { cb(e.target.result); };
+    r.readAsDataURL(file); return;
+  }
+  var img = new Image();
+  img.onload = function() {
+    var cv = document.createElement('canvas');
+    var mw = 800, w = img.width, h = img.height;
+    if (w > mw) { h = h * mw / w; w = mw; }
+    cv.width = w; cv.height = h;
+    cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    cb(cv.toDataURL('image/jpeg', 0.6));
+  };
+  img.src = URL.createObjectURL(file);
+}
 function previewStudentCard(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('vCardName').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = function(e) { window._cardImage = e.target.result; };
+  compressImage(file, function(data) { window._cardImage = data; });
 }
 function previewPaymentQR(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('vQRName').textContent = file.name;
-  const reader = new FileReader();
-  reader.onload = function(e) { window._paymentQR = e.target.result; };
-  reader.readAsDataURL(file);
+  compressImage(file, function(data) { window._paymentQR = data; });
   input.value = '';
 }
 
