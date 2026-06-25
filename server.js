@@ -1250,7 +1250,7 @@ app.get('/api/marketplace/messages', async (req, res) => {
 // Get unique contacts for a user
 app.get('/api/marketplace/contacts', async (req, res) => {
   try {
-    const { student_id } = req.query;
+    const { student_id, school } = req.query;
     if (!student_id) return res.json([]);
     const r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at"), { headers: SB_HEADERS });
     let data = await r.json();
@@ -1285,6 +1285,19 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     } else {
       contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
       contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+    }
+    // Filter by school if requested
+    if (school && contacts.length) {
+      try {
+        var ids = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).join(',');
+        var vR = await fetch(SB("verifications?student_id=in.("+ids+")&select=student_id,school"), { headers: SB_HEADERS });
+        var vData = await vR.json();
+        if (Array.isArray(vData)) {
+          var schoolMap = {};
+          vData.forEach(function(v) { schoolMap[v.student_id] = v.school; });
+          contacts = contacts.filter(function(c) { return schoolMap[c.student_id] === school; });
+        }
+      } catch(e) {}
     }
     res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }

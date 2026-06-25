@@ -1122,7 +1122,7 @@ async function delBw(id, word) {
 let kefuContactId = null, kefuPollTimer = null, kefuLastId = 0;
 async function loadKefuContacts() {
   try {
-    const r = await apiFetch('/api/marketplace/contacts?student_id=kefu_001');
+    const r = await apiFetch(getSchoolParam('/api/marketplace/contacts?student_id=kefu_001'));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const el = document.getElementById('kefuContacts');
