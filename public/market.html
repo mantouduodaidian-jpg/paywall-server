@@ -138,6 +138,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .notif-btn{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:199;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.04);transition:transform .2s}
 .notif-btn:hover{transform:scale(1.1)}
 .notif-btn .bell-badge{position:absolute;top:-3px;right:-3px;background:#fbbf24;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(251,191,36,.3)}
+/* Notif Panel */
+.notif-panel{position:fixed;bottom:80px;right:24px;width:320px;max-height:400px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;z-index:200;box-shadow:0 4px 24px rgba(0,0,0,.08);overflow:hidden;display:none;flex-direction:column}
+.notif-panel.show{display:flex}
+.notif-panel .scroll{flex:1;overflow-y:auto;min-height:0}
 /* Contact Sidebar */
 .contact-sidebar{position:fixed;top:0;left:-320px;width:300px;height:100vh;background:#fff;border-right:1px solid rgba(0,0,0,.04);z-index:200;transition:left .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.06);overflow:hidden;display:flex;flex-direction:column}
 .contact-sidebar.show{left:0}
@@ -403,6 +407,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 
 <!-- Chat Backdrop -->
 <div class="chat-backdrop" id="chatBackdrop" onclick="toggleChat()"></div>
+<div class="chat-backdrop" id="notifBackdrop" onclick="document.getElementById('notifPanel').classList.remove('show')"></div>
 
 <!-- Chat Button -->
 <div class="chat-btn" id="chatBtn" onclick="toggleChat()" style="display:none">
@@ -413,6 +418,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#60b88e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
   <span class="bell-badge" id="bellBadge">0</span>
 </div>
+<div class="notif-panel" id="notifPanel"></div>
 
 <!-- Chat Panel -->
 <div class="chat-panel" id="chatPanel" onclick="event.stopPropagation()">
@@ -1559,8 +1565,22 @@ function startUnreadPoll() {
   }, 5000);
 }
 function openNotifChat() {
-  var kefuId = 'kefu_' + (currentUser.school||'admin');
-  openChat(0, kefuId, '系统通知', '');
+  var panel = document.getElementById('notifPanel');
+  var bd = document.getElementById('notifBackdrop');
+  if (panel.classList.contains('show')) { panel.classList.remove('show'); bd.classList.remove('show'); return; }
+  panel.classList.add('show');
+  document.getElementById('notifBackdrop').classList.add('show');
+  // Load notifications
+  fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var arr = Array.isArray(data)?data:[];
+      var notifs = arr.filter(function(m){ return (m.from_student_id||'').indexOf('kefu_') === 0 && m.to_student_id === currentUser.student_id; });
+      notifs.reverse();
+      panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e">📢 系统通知</div>'+
+        (!notifs.length ? '<div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">暂无通知</div>' :
+        notifs.map(function(m){ return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5">'+esc(m.content)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></div>'; }).join(''));
+    }).catch(function(){});
 }
 
 var _productTimer = null;

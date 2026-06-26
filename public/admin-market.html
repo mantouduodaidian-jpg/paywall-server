@@ -292,7 +292,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadRentals()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -369,7 +369,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>¥</th><th>分类</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -1029,8 +1029,10 @@ async function loadProds() {
     if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
+      var prodImg = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src)">' : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
+        '<td>'+prodImg+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
@@ -1237,6 +1239,12 @@ async function showPaymentQR(id) {
       toast('暂无收款码');
     }
   } catch(e) { toast('加载失败'); }
+}
+
+function showProdImg(src) {
+  if (!src) return;
+  document.getElementById('imgPreviewContent').src = src;
+  document.getElementById('imgPreviewModal').classList.add('show');
 }
 
 function openChatImage(src) {
