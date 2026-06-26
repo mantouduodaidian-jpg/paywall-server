@@ -1197,10 +1197,23 @@ async function loadKefuContacts() {
   try {
     const r = await apiFetch('/api/marketplace/contacts?student_id='+kefuId()+'&school='+(localStorage.getItem('adminSchool')||''));
     const data = await r.json();
-    const arr = Array.isArray(data) ? data : [];
+    var contacts = Array.isArray(data) ? data : [];
+    // Also load all verified users from this school so admin can message them
+    try {
+      const vR = await apiFetch(getSchoolParam('/api/verify/list'));
+      const vData = await vR.json();
+      var users = Array.isArray(vData) ? vData : [];
+      var existing = {};
+      contacts.forEach(function(c) { existing[c.student_id] = true; });
+      users.forEach(function(u) {
+        if (!existing[u.student_id] && !u.student_id.startsWith('kefu_')) {
+          contacts.push({ student_id: u.student_id, name: u.name, last_message: '', unread: 0 });
+        }
+      });
+    } catch(e) {}
     const el = document.getElementById('kefuContacts');
-    if (!arr.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">暂无消息</div>'; return; }
-    el.innerHTML = arr.map(function(c) {
+    if (!contacts.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">暂无用户</div>'; return; }
+    el.innerHTML = contacts.map(function(c) {
       var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
       return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02)">'+
         esc(c.name)+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
