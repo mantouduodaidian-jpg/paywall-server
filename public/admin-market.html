@@ -957,7 +957,7 @@ async function loadProds() {
           (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
           (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
           '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
-          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',''+esc(p.title)+'')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
+          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</td></tr>';
     }).join('');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载失败</div></td></tr>'; }
@@ -1021,12 +1021,11 @@ async function saveEditProd() {
   })});
   toast('✅ 已保存'); closeEditProd(); loadProds();
 }
-async function delProd(id, title) {
-  if (!await showConfirm('确认删除「'+title+'」？不可恢复。')) return;
+async function delProd(id) {
+  if (!await showConfirm('确认删除此商品？不可恢复。')) return;
   await apiFetch('/api/marketplace/products/'+id, {method:'DELETE'});
-  toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadProds(); loadOverview();
+  toast('🗑️ 已删除'); loadProds(); loadOverview();
 }
-
 // ====== Rentals ======
 async function loadRentals() {
   try {
