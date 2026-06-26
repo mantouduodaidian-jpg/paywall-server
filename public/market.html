@@ -553,9 +553,9 @@ let sellerFilter = null;
 let reportingProductId = null;
 
 function updateTypeFilterUI(type) {
-  var BASE = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;';
+  const BASE = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;';
   ['Sell','Rent'].forEach(function(btn){
-    var a = btn.toLowerCase() === type;
+    const a = btn.toLowerCase() === type;
     document.getElementById('typeFilter'+btn).style.cssText = BASE + 'background:' + (a?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (a?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (a?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
   });
 }
@@ -578,7 +578,7 @@ function notify(msg, icon) {
 }
 
 // ====== Sound ======
-var _soundEnabled = localStorage.getItem('chatSound') !== 'off';
+let _soundEnabled = localStorage.getItem('chatSound') !== 'off';
 function playMsgSound() {
   if (!_soundEnabled) return;
   try {
@@ -820,7 +820,7 @@ function nextImg() {
 }
 
 // ====== Publish ======
-var _pubType = 'sell';
+let _pubType = 'sell';
 function setItemType(type) {
   _pubType = type;
   document.getElementById('typeSell').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='sell'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06)');
@@ -828,7 +828,7 @@ function setItemType(type) {
   document.getElementById('rentFields').style.display = type==='rent' ? '' : 'none';
   document.getElementById('priceWrap').style.display = type==='rent' ? 'none' : '';
 }
-var _nego = false;
+let _nego = false;
 function setNego(v) {
   _nego = v;
   document.getElementById('negoOn').style.cssText = 'padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:' + (v?'rgba(96,184,142,.1)':'rgba(0,0,0,.04)') + ';color:' + (v?'#60b88e':'rgba(0,0,0,.25)');
@@ -946,13 +946,13 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');setTimeout(function(){location.reload();},500);if(d.muted)showMutedBanner(d.msg);}
+    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');load();if(d.muted)showMutedBanner(d.msg);}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
 
 
-var _sessionTimer = null;
+let _sessionTimer = null;
 function startSessionCheck() {
   if (!currentUser) return;
   if (!currentUser.login_token) { currentUser.login_token = String(Date.now()); }
@@ -1244,7 +1244,7 @@ function closeConv(key) {
   loadConvs();
 }
 
-var _lastChatTime = 0;
+let _lastChatTime = 0;
 function updateTradeButtons(p) {
   var actions = document.getElementById('tradeActions');
   var status = document.getElementById('tradeStatus');
@@ -1349,7 +1349,7 @@ function confirmRejectTrade() {
     }).catch(function(){});
 }
 
-var _chatImgData = null;
+let _chatImgData = null;
 function clearChatImg() {
   _chatImgData = null;
   document.getElementById('chatImgPreview').style.display = 'none';
@@ -1404,7 +1404,7 @@ function sendChat() {
   } catch(e) { notify('发送出错', '❌'); console.error(e); }
 }
 
-var _chatPollTimer = null;
+let _chatPollTimer = null;
 function startChatPoll() {
   stopChatPoll();
   if (chatProductId === null || chatProductId === undefined || !currentUser) return;
@@ -1452,8 +1452,8 @@ function loadContacts() {
 }
 function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
 
-var _lastUnreadCount = 0;
-var _unreadTimer = null;
+let _lastUnreadCount = 0;
+let _unreadTimer = null;
 function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
   if (!currentUser) return;
@@ -1480,7 +1480,7 @@ function startUnreadPoll() {
   }, 2000);
 }
 
-var _productTimer = null;
+let _productTimer = null;
 function startProductPoll() {
   if (_productTimer) clearInterval(_productTimer);
   var lastCount = 0;
@@ -1520,7 +1520,7 @@ function loadMyProducts() {
     }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
 }
 
-var _nickCache = null;
+let _nickCache = null;
 function getNick(studentId) {
   if (_nickCache) return Promise.resolve(_nickCache);
   return fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
@@ -1574,7 +1574,7 @@ try {
   }
 } catch(e) {}
 // Populate school selector
-var schoolSel = document.getElementById('vSchool');
+let schoolSel = document.getElementById('vSchool');
 if (schoolSel && SCHOOLS) {
   SCHOOLS.forEach(function(s) {
     var opt = document.createElement('option');
@@ -1583,7 +1583,7 @@ if (schoolSel && SCHOOLS) {
   });
 }
 // Populate visitor school selector
-var visSel = document.getElementById('visitorSchool');
+let visSel = document.getElementById('visitorSchool');
 if (visSel && SCHOOLS) {
   SCHOOLS.forEach(function(s) {
     var opt = document.createElement('option');

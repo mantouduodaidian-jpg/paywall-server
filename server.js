@@ -568,6 +568,18 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Send notification message from system kefu to user
+async function sendNotify(ownerStudentId, ownerName, school, msg) {
+  if (!ownerStudentId) return;
+  const kefuId = 'kefu_' + (school || 'admin');
+  try {
+    await fetch(SB('messages'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ product_id: 0, from_student_id: kefuId, from_name: '系统通知', to_student_id: ownerStudentId, to_name: ownerName, content: msg, created_at: new Date().toISOString(), read: false })
+    });
+  } catch(e) {}
+}
+
 app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -591,6 +603,18 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
       method: 'PATCH', headers: SB_HEADERS2,
       body: JSON.stringify(fields)
     });
+    // Send notification on approve/reject
+    if (status === 'approved' || status === 'rejected') {
+      try {
+        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+        const prodD = await prodR.json();
+        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
+        if (prod && prod.owner_student_id) {
+          var nMsg = status === 'approved' ? '✅ 你的商品「'+prod.title+'」已通过审核，现在可以在集市上看到了' : '✕ 你的商品「'+prod.title+'」未通过审核' + (reject_reason ? '，原因：'+reject_reason : '');
+          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', nMsg);
+        }
+      } catch(e) {}
+    }
     addLog('product_update', 'product', id, JSON.stringify(fields));
     notifyAdmin('product_update', { id, fields });
     onlineUsers.forEach(function(ws) {
@@ -1097,6 +1121,13 @@ app.post('/api/verify/approve', schoolScope, express.json(), async (req, res) =>
         await fetch(SB('products?id=eq.'+pid), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ verified: true }) });
       }
     }
+    // Send notification
+    try {
+      const vr = await fetch(SB('verifications?id=eq.'+id+'&select=student_id,name,school'), { headers: SB_HEADERS });
+      const vd = await vr.json();
+      const v = Array.isArray(vd) ? vd[0] : vd;
+      if (v && v.student_id) sendNotify(v.student_id, v.name||'', v.school||'', '✅ 你的学生认证已通过审核 🎉');
+    } catch(e) {}
     addLog('verify_approve', 'verification', id, '');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1109,6 +1140,13 @@ app.post('/api/verify/reject', schoolScope, express.json(), async (req, res) => 
     const fields = { status: 'rejected' };
     if (reason) fields.reject_reason = reason;
     await fetch(SB('verifications?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
+    // Send notification
+    try {
+      const vr = await fetch(SB('verifications?id=eq.'+id+'&select=student_id,name,school'), { headers: SB_HEADERS });
+      const vd = await vr.json();
+      const v = Array.isArray(vd) ? vd[0] : vd;
+      if (v && v.student_id) sendNotify(v.student_id, v.name||'', v.school||'', '✕ 你的学生认证未通过审核' + (reason ? '，原因：'+reason : ''));
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
