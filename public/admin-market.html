@@ -974,7 +974,7 @@ async function loadRentals() {
 // ====== VERIFICATIONS ======
 async function loadVers() {
   try {
-    const r = await apiFetch('/api/verify/list');
+    const r = await apiFetch(getSchoolParam('/api/verify/list'));
     let data = await r.json();
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
