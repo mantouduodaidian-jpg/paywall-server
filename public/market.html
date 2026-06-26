@@ -1513,6 +1513,17 @@ function loadMyProducts() {
     }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
 }
 
+var _nickCache = null;
+function getNick(studentId) {
+  if (_nickCache) return Promise.resolve(_nickCache);
+  return fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
+    var arr = Array.isArray(vers)?vers:[];
+    _nickCache = {};
+    arr.forEach(function(v){ if(v.student_id) _nickCache[v.student_id] = v.nickname||v.name||''; });
+    return _nickCache;
+  }).catch(function(){return {};});
+}
+
 function appendMsg(m, isHistory) {
   var el = document.getElementById('chatMsgs');
   if (!el) return;
@@ -1522,17 +1533,6 @@ function appendMsg(m, isHistory) {
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
   var name = m.from_name || (mine ? '我' : '对方');
-  // Try to show nickname
-  if (!mine) {
-    fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
-      var arr = Array.isArray(vers)?vers:[];
-      var sender = arr.find(function(v){ return v.student_id === m.from_student_id; });
-      if (sender && sender.nickname) {
-        var msgDiv = el.lastChild;
-        if (msgDiv) { var s = msgDiv.querySelector('.sender'); if (s) s.textContent = sender.nickname; }
-      }
-    }).catch(function(){});
-  }
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
   if (m.id) div.setAttribute('data-msgid', m.id);
@@ -1545,6 +1545,11 @@ function appendMsg(m, isHistory) {
   }
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
+  // Nick name lookup (cached)
+  if (!mine) getNick(m.from_student_id).then(function(cache){
+    var nick = cache[m.from_student_id];
+    if (nick) { var s = div.querySelector('.sender'); if (s) s.textContent = nick; }
+  });
 }
 
 // ====== Init ======

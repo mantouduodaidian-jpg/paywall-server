@@ -926,23 +926,18 @@ function renderTxChart(transactions) {
 // ====== PRODUCTS ======
 async function loadProds() {
   try {
-    document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载中... ' + new Date().toLocaleTimeString() + '</div></td></tr>';
-    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=1000'));
-    document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">API返回: ' + r.status + '</div></td></tr>';
-    let data = await r.json();
-    const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
-    document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">数据条数: ' + arr.length + '</div></td></tr>';
-    const search = document.getElementById('prodSearch').value.trim().toLowerCase();
-    const sf = document.getElementById('prodStatusFilter').value;
-    const cf = document.getElementById('prodCatFilter').value;
-    let f = arr;
-    if (search) f = f.filter(p => (p.title||'').toLowerCase().includes(search) || (p.owner_name||'').toLowerCase().includes(search) || (p.owner_student_id||'').includes(search));
-    if (sf) f = f.filter(p => p.status === sf);
-    if (cf) f = f.filter(p => p.category === cf);
-      f = f.filter(p => p.item_type !== 'rent');
-    const tbody = document.getElementById('prodTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">无匹配(过滤后:'+f.length+'/'+arr.length+')</div></td></tr>'; return; }
-    tbody.innerHTML = f.map(p => {
+    document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载中...</div></td></tr>';
+    var rx = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=1000'));
+    if (!rx.ok) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">HTTP错误: '+rx.status+'</div></td></tr>'; return; }
+    var d2 = await rx.json();
+    var a2 = Array.isArray(d2) ? d2 : (d2 && Array.isArray(d2.data) ? d2.data : []);
+    if (!a2.length) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">数据库无商品</div></td></tr>'; return; }
+    var html2 = '';
+    for (var i2 = 0; i2 < a2.length && i2 < 5; i2++) {
+      var p2 = a2[i2];
+      html2 += '<tr><td><input type="checkbox" class="prodCb" value="'+p2.id+'"></td><td>'+p2.id+'</td><td>'+esc(p2.title)+'</td><td>¥'+parseFloat(p2.price).toFixed(0)+'</td><td>'+esc(p2.category)+'</td><td>'+p2.status+'</td><td>'+(p2.listed!==false?'上架':'下架')+'</td><td>'+(p2.sold?'已售':'在售')+'</td><td>'+esc(p2.owner_name||'')+'</td><td>'+fmtDate(p2.created_at)+'</td><td></td></tr>';
+    }
+    document.getElementById('prodTbody').innerHTML = html2;
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+

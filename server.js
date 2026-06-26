@@ -1255,21 +1255,15 @@ app.get('/api/marketplace/messages', async (req, res) => {
   try {
     const { product_id, student_id, other_student_id, since_id } = req.query;
     var fields = 'id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at';
-    // Two-participant chat: filter both sides via Supabase
+    // Two-participant chat: targeted query instead of full scan
     if (student_id && other_student_id) {
-      var url1 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
-      var url2 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(other_student_id)+",to_student_id.eq."+encodeURIComponent(other_student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
-      var [r1,r2] = await Promise.all([fetch(url1,{headers:SB_HEADERS}), fetch(url2,{headers:SB_HEADERS})]);
-      var [d1,d2] = await Promise.all([r1.json(), r2.json()]);
-      var intersect = (Array.isArray(d1)?d1:[]).concat(Array.isArray(d2)?d2:[]);
-      var seen = {}; intersect = intersect.filter(function(m){ if(seen[m.id])return false; seen[m.id]=true; return true; });
-      // Only show messages between these two participants
-      intersect = intersect.filter(function(m) {
-        return (m.from_student_id === student_id && m.to_student_id === other_student_id) ||
-               (m.from_student_id === other_student_id && m.to_student_id === student_id);
-      });
-      intersect.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
-      return res.json(intersect);
+      var urlA = SB("messages?from_student_id=eq."+encodeURIComponent(student_id)+"&to_student_id=eq."+encodeURIComponent(other_student_id)+"&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
+      var urlB = SB("messages?from_student_id=eq."+encodeURIComponent(other_student_id)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
+      var [rA,rB] = await Promise.all([fetch(urlA,{headers:SB_HEADERS}), fetch(urlB,{headers:SB_HEADERS})]);
+      var [dA,dB] = await Promise.all([rA.json(), rB.json()]);
+      var msgs = (Array.isArray(dA)?dA:[]).concat(Array.isArray(dB)?dB:[]);
+      msgs.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
+      return res.json(msgs);
     }
     var s = student_id || other_student_id;
     if (s) {
