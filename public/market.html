@@ -58,6 +58,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .card .info .price{font-size:17px;font-weight:700;color:#60b88e;margin:3px 0}
 .card .info .meta{display:flex;gap:6px;font-size:10px;color:rgba(0,0,0,.2);flex-wrap:wrap}
 .card .info .meta .tag{padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.04);color:rgba(0,0,0,.3)}
+.card .img img{width:100%;height:100%;object-fit:cover}
 .card .pin-bar{height:3px;background:linear-gradient(90deg,#4e9e80,#bce0cc,#4e9e80);border-radius:14px 14px 0 0;flex-shrink:0}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
 .card .mine-badge{position:absolute;top:8px;left:8px;background:rgba(96,184,142,.12);color:#60b88e;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px}
@@ -693,7 +694,7 @@ function setCat(c) {
 
 function viewSellerProducts(studentId, name) {
   sellerFilter = studentId;
-  window._sellerName = name;
+  _sellerName = name;
   selCat = '';
   // Clear category highlight
   document.querySelectorAll('#catList .cat').forEach(el => el.classList.toggle('active', el.textContent.includes('全部')));
@@ -733,7 +734,7 @@ async function load(reset) {
     var searchVal = document.getElementById('searchInput').value.trim();
     const total = searchVal ? data.length : (json.total || data.length);
     document.getElementById('statCount').textContent = total;
-    document.getElementById('resultLabel').textContent = (sellerFilter ? '卖家「'+(window._sellerName||'')+'」的商品' : (selCat||'全部'))+(search?' · "'+search+'"':'')+' · '+total+' 件';
+    document.getElementById('resultLabel').textContent = (sellerFilter ? '卖家「'+(_sellerName||'')+'」的商品' : (selCat||'全部'))+(search?' · "'+search+'"':'')+' · '+total+' 件';
     document.getElementById('sellerClear').style.display = sellerFilter ? 'inline' : 'none';
     const list = document.getElementById('productList');
     if (reset !== false) {
@@ -861,14 +862,14 @@ async function publish(){
     rent_period: document.getElementById('fRentPeriod').value || 'day',
     deposit: parseFloat(document.getElementById('fDeposit').value) || 0,
     negotiable: _nego,
-    images: window._uploadedImages || [],
+    images: _uploadedImages || [],
   };
   try{
     const r=await fetch('/api/marketplace/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
     const d=await r.json();
     btn.textContent='✅ 确认发布'; btn.disabled=false;
     const ok = d?.id || d?.[0]?.id || d?.ok;
-    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';window._uploadedImages=[];load();}
+    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';_uploadedImages=[];load();}
     else notify(d.error || '发布失败', '❌');
   }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; notify('发布失败', '❌');}
 }
@@ -996,10 +997,10 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:window._cardImage||'',payment_qr:window._paymentQR||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:_cardImage||'',payment_qr:_paymentQR||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
-    if(d.ok){notify(d.msg, '✅');hideVerify();window._cardImage='';window._paymentQR='';document.getElementById('vCardName').textContent='';document.getElementById('vQRName').textContent='';}
+    if(d.ok){notify(d.msg, '✅');hideVerify();_cardImage='';_paymentQR='';document.getElementById('vCardName').textContent='';document.getElementById('vQRName').textContent='';}
     else notify(d.msg||'提交失败', '❌');
   }catch(e){btn.textContent='提交认证';btn.disabled=false;notify('提交失败', '❌');}
 }
@@ -1030,8 +1031,8 @@ const CAT_ICONS_EMOJI = {
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
 
 // ====== Student Card Upload ======
-window._paymentQR = '';
-window._cardImage = '';
+_paymentQR = '';
+_cardImage = '';
 
 function compressImage(file, cb) {
   if (file.size < 200*1024) {
@@ -1055,24 +1056,24 @@ function previewStudentCard(input) {
   if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('vCardName').textContent = file.name;
-  compressImage(file, function(data) { window._cardImage = data; });
+  compressImage(file, function(data) { _cardImage = data; });
 }
 function previewPaymentQR(input) {
   const file = input.files[0];
   if (!file) return;
   if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
   document.getElementById('vQRName').textContent = file.name;
-  compressImage(file, function(data) { window._paymentQR = data; });
+  compressImage(file, function(data) { _paymentQR = data; });
   input.value = '';
 }
 
 // ====== Image Upload ======
-window._uploadedImages = [];
+_uploadedImages = [];
 function previewImg(input) {
   var files = Array.from(input.files || []).slice(0, 4);
   if (!files.length) return;
   document.getElementById('fImageName').textContent = files.length + '张图片 (压缩中...)';
-  window._uploadedImages = [];
+  _uploadedImages = [];
   var loaded = 0;
   files.forEach(function(file) {
     if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
@@ -1090,7 +1091,7 @@ function previewImg(input) {
         var quality = 0.6;
         var dataUrl = canvas.toDataURL('image/jpeg', quality);
         while (dataUrl.length > 200*1024 && quality > 0.1) { quality -= 0.1; dataUrl = canvas.toDataURL('image/jpeg', quality); }
-        window._uploadedImages.push(dataUrl);
+        _uploadedImages.push(dataUrl);
         loaded++;
         if (loaded === files.length) {
           document.getElementById('fImageName').textContent = files.length + '张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
@@ -1104,6 +1105,7 @@ function previewImg(input) {
 
 // ====== Chat ======
 let wsChat = null;
+let _wsRetryDelay = 1000;
 let chatProductId = null;
 let chatOtherStudent = null;
 let chatOtherName = '';
@@ -1136,6 +1138,7 @@ function connectWS() {
   wsChat = new WebSocket(proto + '//' + location.host);
   wsChat.onerror = function(e) { console.error('WS error', e); };
   wsChat.onopen = function() {
+    _wsRetryDelay = 1000;
     document.getElementById('chatBadge').textContent = '0';
     wsChat.send(JSON.stringify({type:'auth', student_id: currentUser.student_id}));
   };
@@ -1156,7 +1159,7 @@ function connectWS() {
       }
     } catch(e) {}
   };
-  wsChat.onclose = function() { setTimeout(connectWS, 3000); };
+  wsChat.onclose = function() { setTimeout(connectWS, _wsRetryDelay); _wsRetryDelay = Math.min(_wsRetryDelay * 3, 30000); };
 }
 
 function openChat(productId, sellerStudentId, sellerName, productTitle) {
@@ -1405,7 +1408,7 @@ function sendChat() {
   } catch(e) { notify('发送出错', '❌'); console.error(e); }
 }
 
-let _chatPollTimer = null;
+var _chatPollTimer = null;
 function startChatPoll() {
   stopChatPoll();
   if (chatProductId === null || chatProductId === undefined || !currentUser) return;
@@ -1453,8 +1456,8 @@ function loadContacts() {
 }
 function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
 
-let _lastUnreadCount = 0;
-let _unreadTimer = null;
+var _lastUnreadCount = 0;
+var _unreadTimer = null;
 function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
   if (!currentUser) return;
@@ -1481,7 +1484,7 @@ function startUnreadPoll() {
   }, 5000);
 }
 
-let _productTimer = null;
+var _productTimer = null;
 function startProductPoll() {
   if (_productTimer) clearInterval(_productTimer);
   var lastCount = 0;
@@ -1506,7 +1509,7 @@ function showMyProducts() {
 function hideMyProducts() { document.getElementById('myOverlay').classList.remove('show'); }
 function loadMyProducts() {
   if (!currentUser) return;
-  fetch('/api/marketplace/products?owner='+currentUser.student_id+'&limit=50&offset=0')
+  fetch('/api/marketplace/products?owner='+currentUser.student_id+'&limit=200&offset=0')
     .then(function(r){return r.json();})
     .then(function(json){
       var data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
