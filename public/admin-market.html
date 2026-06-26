@@ -837,7 +837,8 @@ async function loadOverview() {
       '<div class="stat-card"><div class="num green">'+d.announcements+'</div><div class="label">公告</div></div>';
     // Badges
     const pb = document.getElementById('prodBadge');
-    if (d.pending > 0) { pb.textContent = d.pending; pb.style.display = 'inline'; } else pb.style.display = 'none';
+    var sellPending = d.pending - (d.rentPending||0);
+    if (sellPending > 0) { pb.textContent = sellPending; pb.style.display = 'inline'; } else pb.style.display = 'none';
     const rb2 = document.getElementById('rentBadge');
     if (d.rentPending > 0) { rb2.textContent = d.rentPending; rb2.style.display = 'inline'; } else rb2.style.display = 'none';
     const rb = document.getElementById('reportBadge');
