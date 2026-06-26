@@ -355,14 +355,16 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabProducts" style="display:none">
     <div class="section">
       <div class="toolbar">
+        <input type="text" id="prodSearch" placeholder="搜索..." onkeydown="if(event.key==='Enter')loadProds()">
+        <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
+        <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
         <span id="prodBatchBar" style="display:none">
           <button class="btn btn-green btn-sm" onclick="batchProd('approve')">✅ 批量通过</button>
           <button class="btn btn-red btn-sm" onclick="batchProd('reject')">✕ 批量拒绝</button>
+          <button class="btn btn-red btn-sm" onclick="batchProd('delete')">🗑️ 批量删除</button>
           <span style="color:#ccc;margin:0 4px">|</span>
         </span>
-        <input type="text" id="prodSearch" placeholder="搜索商品..." onkeydown="if(event.key==='Enter')loadProds()">
-        <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
-        <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
+        
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
@@ -371,7 +373,7 @@ tr:hover td{background:#f8fcf9}
     </div>
   </div>
 
-  <!-- ===== SELLERS ===== -->
+  <!-- ===== VERIFICATIONS ===== -->
   <div class="tab-content" id="tabVerifications" style="display:none">
     <div class="section">
       <div class="toolbar">
@@ -925,38 +927,38 @@ function renderTxChart(transactions) {
 async function loadProds() {
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=1000'));
-    const d = await r.json();
-    const all = Array.isArray(d) ? d : (d.data || []);
-    const arr = all.filter(function(p) { return p.item_type !== 'rent'; });
+    let data = await r.json();
+    const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
     const search = document.getElementById('prodSearch').value.trim().toLowerCase();
     const sf = document.getElementById('prodStatusFilter').value;
     const cf = document.getElementById('prodCatFilter').value;
     let f = arr;
-    if (search) f = f.filter(function(p) { return (p.title||'').toLowerCase().includes(search); });
-    if (sf) f = f.filter(function(p) { return p.status === sf; });
-    if (cf) f = f.filter(function(p) { return p.category === cf; });
+    if (search) f = f.filter(p => (p.title||'').toLowerCase().includes(search) || (p.owner_name||'').toLowerCase().includes(search) || (p.owner_student_id||'').includes(search));
+    if (sf) f = f.filter(p => p.status === sf);
+    if (cf) f = f.filter(p => p.category === cf);
+      f = f.filter(p => p.item_type !== 'rent');
     const tbody = document.getElementById('prodTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">暂无商品</div></td></tr>'; return; }
-    tbody.innerHTML = f.map(function(p) {
-      var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">无匹配</div></td></tr>'; return; }
+    tbody.innerHTML = f.map(p => {
+      const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
-        '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
+        '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
-        '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
+        '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
         '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
         '<td>'+ (p.sold?'<span class="badge badge-red">已售</span>':'<span class="badge badge-gray">在售</span>') +'</td>'+
         '<td style="color:#bbb;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||p.contact||'-')+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
-        '<td style="text-align:center">'+
+        '<td style="text-align:center"><span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
           (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
           (p.pinned ? '<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>' : '<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+
           (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
           (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
           '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
-          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
-        '</td></tr>';
+          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
+        '</span></td></tr>';
     }).join('');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载失败</div></td></tr>'; }
 }
@@ -1019,11 +1021,12 @@ async function saveEditProd() {
   })});
   toast('✅ 已保存'); closeEditProd(); loadProds();
 }
-async function delProd(id) {
-  if (!await showConfirm('确认删除此商品？不可恢复。')) return;
+async function delProd(id, title) {
+  if (!await showConfirm('确认删除「'+title+'」？不可恢复。')) return;
   await apiFetch('/api/marketplace/products/'+id, {method:'DELETE'});
-  toast('🗑️ 已删除'); loadProds(); loadOverview();
+  toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadProds(); loadOverview();
 }
+
 // ====== Rentals ======
 async function loadRentals() {
   try {
@@ -1067,7 +1070,7 @@ async function loadVers() {
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
-    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="9"><div class="empty">暂无</div></td></tr>' :
+    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
       filtered.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#4e9e80;font-size:10px">📷 学生证</a>':'<span style="color:#ccc;font-size:10px">无</span>')+' <a href="#" onclick="showPaymentQR('+v.id+');return false" style="color:#c4a84c;font-size:10px">📷 收款码</a></td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
@@ -1407,7 +1410,7 @@ async function loadTransactions() {
           (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">🔄 重试转账</button>':'')+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="9"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; }
 }
 async function markTx(id, status) {
   if (status === 'paid' && !confirm('确认已转账给卖家？')) return;
