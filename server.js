@@ -615,6 +615,17 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
         }
       } catch(e) {}
     }
+    // Delist notification (seller's product taken down)
+    if (listed === false && status === undefined) {
+      try {
+        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+        const prodD = await prodR.json();
+        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
+        if (prod && prod.owner_student_id) {
+          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已被管理员下架');
+        }
+      } catch(e) {}
+    }
     addLog('product_update', 'product', id, JSON.stringify(fields));
     notifyAdmin('product_update', { id, fields });
     onlineUsers.forEach(function(ws) {

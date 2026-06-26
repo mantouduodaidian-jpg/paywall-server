@@ -757,8 +757,12 @@ async function load(reset) {
       var typeTag = '';
       if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
       if (p.negotiable) typeTag += '<span class="tag" style="background:rgba(251,191,36,.1);color:#d4a030">💰 可议价</span>';
-      div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">📦</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
+      var imgHtml = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'">' : '📦';
+      var unlisted = (currentUser && p.owner_student_id === currentUser.student_id && p.listed === false);
+      div.style.opacity = unlisted ? '.5' : '';
+      div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">'+imgHtml+'</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
         (p.sold?'<div class="sold-badge">已售罄</div>':'')+
+        (unlisted?'<div class="sold-badge" style="background:#999">已下架</div>':'')+
         (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
       list.appendChild(div);
     });
@@ -1095,6 +1099,8 @@ function previewImg(input) {
         loaded++;
         if (loaded === files.length) {
           document.getElementById('fImageName').textContent = files.length + '张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
+          var pv = document.getElementById('fImagePreview');
+          if (pv) { document.getElementById('fImagePreviewImg').src = _uploadedImages[0]; pv.style.display = ''; }
         }
       };
       img.src = e.target.result;
