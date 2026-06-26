@@ -107,6 +107,18 @@ D:\OneDrive\桌面\创造i\server\
 - 弹簧动画 `cubic-bezier(.34,1.56,.64,1)`
 - 自定义确认弹窗取代浏览器原生 confirm
 
+## 工作流程（新对话必读）
+
+1. **先出方案，后动手** — 每次改东西前先给方案，用户说「开搞」才写代码
+2. **推前检查** — 修改 admin-market.html 后必须检查 JS 括号平衡:
+   ```bash
+   python3 -c "import re;c=open('public/admin-market.html').read();m=re.search(r'<script>(.*?)</script>',c,re.DOTALL);js=m.group(1);print('{' + str(js.count('{')) + ' }' + str(js.count('}')) + ' diff=' + str(js.count('{')-js.count('}')))"
+   ```
+   修改 server.js 后必须 `node --check server.js`
+3. **diff 为 0 才能推**，否则部署后白屏
+4. 所有图标用二豆主题 SVG（不要 emoji）
+5. 用户是超级管理员，密码在 Render 环境变量里
+
 ## 待完善功能
 1. 商品图片上传（目前只有 📦 emoji）
 2. 用户通知（审核结果通知）
