@@ -760,12 +760,18 @@ async function load(reset) {
       if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
       if (p.negotiable) typeTag += '<span class="tag" style="background:rgba(251,191,36,.1);color:#d4a030">💰 可议价</span>';
       var imgHtml = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'">' : '📦';
-      var unlisted = (currentUser && p.owner_student_id === currentUser.student_id && p.listed === false);
+      var isMine = currentUser && p.owner_student_id === currentUser.student_id;
+      var unlisted = isMine && p.listed === false;
       div.style.opacity = unlisted ? '.5' : '';
+      var statusBadge = '';
+      if (isMine && p.sold) statusBadge = '<div class="sold-badge">✅ 已售罄</div>';
+      else if (isMine && p.status === 'pending') statusBadge = '<div class="sold-badge" style="background:#fbbf24;color:#fff">⏳ 待审核</div>';
+      else if (isMine && p.status === 'rejected') statusBadge = '<div class="sold-badge" style="background:#ef4444;color:#fff">✕ 未通过</div>';
+      else if (unlisted) statusBadge = '<div class="sold-badge" style="background:#999">📌 已下架</div>';
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">'+imgHtml+'</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
-        (p.sold?'<div class="sold-badge">已售罄</div>':'')+
-        (unlisted?'<div class="sold-badge" style="background:#999">已下架</div>':'')+
-        (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'')+
+        (p.sold && !isMine?'<div class="sold-badge">已售罄</div>':'')+
+        statusBadge+
+        (isMine ? '<div class="mine-badge">我的</div>':'')+
         (p.images && p.images.length > 1 ? '<div class="photos-badge">📷×'+p.images.length+'</div>':'');
       list.appendChild(div);
     });
