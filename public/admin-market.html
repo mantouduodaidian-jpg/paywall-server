@@ -355,25 +355,23 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabProducts" style="display:none">
     <div class="section">
       <div class="toolbar">
-        <input type="text" id="prodSearch" placeholder="搜索..." onkeydown="if(event.key==='Enter')loadProds()">
-        <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
-        <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
         <span id="prodBatchBar" style="display:none">
           <button class="btn btn-green btn-sm" onclick="batchProd('approve')">✅ 批量通过</button>
           <button class="btn btn-red btn-sm" onclick="batchProd('reject')">✕ 批量拒绝</button>
-          <button class="btn btn-red btn-sm" onclick="batchProd('delete')">🗑️ 批量删除</button>
           <span style="color:#ccc;margin:0 4px">|</span>
         </span>
-        
+        <input type="text" id="prodSearch" placeholder="搜索商品..." onkeydown="if(event.key==='Enter')loadProds()">
+        <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
+        <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>¥</th><th>分类</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
       </div>
     </div>
   </div>
 
-  <!-- ===== VERIFICATIONS ===== -->
+  <!-- ===== SELLERS ===== -->
   <div class="tab-content" id="tabVerifications" style="display:none">
     <div class="section">
       <div class="toolbar">
