@@ -61,6 +61,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .card .img img{width:100%;height:100%;object-fit:cover}
 .card .pin-bar{height:3px;background:linear-gradient(90deg,#4e9e80,#bce0cc,#4e9e80);border-radius:14px 14px 0 0;flex-shrink:0}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
+.card .photos-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;backdrop-filter:blur(4px)}
 .card .mine-badge{position:absolute;top:8px;left:8px;background:rgba(96,184,142,.12);color:#60b88e;font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px}
 .card.pinned{border-top:3px solid #60b88e}
 .status-badge{font-size:10px;padding:2px 8px;border-radius:4px;display:inline-block}
@@ -763,7 +764,8 @@ async function load(reset) {
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">'+imgHtml+'</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
         (p.sold?'<div class="sold-badge">已售罄</div>':'')+
         (unlisted?'<div class="sold-badge" style="background:#999">已下架</div>':'')+
-        (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'');
+        (currentUser && p.owner_student_id === currentUser.student_id ? '<div class="mine-badge">我的</div>':'')+
+        (p.images && p.images.length > 1 ? '<div class="photos-badge">📷×'+p.images.length+'</div>':'');
       list.appendChild(div);
     });
     // Page navigation
@@ -1074,10 +1076,12 @@ function previewPaymentQR(input) {
 // ====== Image Upload ======
 _uploadedImages = [];
 function previewImg(input) {
-  var files = Array.from(input.files || []).slice(0, 4);
+  var files = Array.from(input.files || []);
   if (!files.length) return;
-  document.getElementById('fImageName').textContent = files.length + '张图片 (压缩中...)';
-  _uploadedImages = [];
+  var remaining = 4 - _uploadedImages.length;
+  if (files.length > remaining) { files = files.slice(0, remaining); }
+  if (!files.length) { notify('最多4张，还可加'+remaining+'张', '⚠️'); input.value = ''; return; }
+  document.getElementById('fImageName').textContent = '压缩中...';
   var loaded = 0;
   files.forEach(function(file) {
     if (file.size > 5*1024*1024) { notify('图片不能超过5MB', '⚠️'); return; }
@@ -1098,7 +1102,7 @@ function previewImg(input) {
         _uploadedImages.push(dataUrl);
         loaded++;
         if (loaded === files.length) {
-          document.getElementById('fImageName').textContent = files.length + '张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
+          document.getElementById('fImageName').textContent = _uploadedImages.length + '/4张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
           var pv = document.getElementById('fImagePreview');
           if (pv) { document.getElementById('fImagePreviewImg').src = _uploadedImages[0]; pv.style.display = ''; }
         }
@@ -1522,12 +1526,20 @@ function loadMyProducts() {
       var el = document.getElementById('myProductList');
       if (!data.length) { el.innerHTML = '<div class="empty" style="padding:30px">还没有发布过商品</div>'; return; }
       el.innerHTML = '<div style="display:grid;gap:8px">' + data.map(function(p){
-        var statusMap = {pending:'待审核',approved:'已上架',rejected:'未通过'};
-        var sLabel = p.sold ? '已售罄' : (statusMap[p.status]||p.status);
-        var sClass = p.sold ? 'sold' : p.status;
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 12px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="status-badge '+sClass+'">'+sLabel+'</span></div>';
+        var sc = 'status-badge ';
+        if (p.sold) sc += 'sold'; else if (p.status==='pending') sc += 'pending'; else if (p.status==='approved') sc += 'approved'; else if (p.status==='rejected') sc += 'rejected';
+        var sl = p.sold ? '✅ 已售罄' : p.status==='pending' ? '⏳ 待审核' : p.status==='approved'&&p.listed===false ? '📌 已下架' : p.status==='approved' ? '✅ 已上架' : p.status==='rejected' ? '✕ 未通过' : p.status||'未知';
+        var canDel = p.sold || p.listed===false || p.status==='rejected' || p.status==='pending';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 8px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="'+sc+'">'+sl+'</span>'+(canDel?'<button class="btn btn-red btn-sm" style="margin-left:6px" onclick="delMyProduct('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M3 6h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button>':'')+'</div>';
       }).join('') + '</div>';
     }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
+}
+function delMyProduct(id, title) {
+  if (!confirm('确认删除「'+title+'」？不可恢复。')) return;
+  fetch('/api/marketplace/products/'+id+'/owner-delete', {method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(d.ok) { notify('已删除','🗑️'); loadMyProducts(); load(); } else notify(d.error||'删除失败','❌'); })
+    .catch(function(){notify('删除失败','❌');});
 }
 
 let _nickCache = null;

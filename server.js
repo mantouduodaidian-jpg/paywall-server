@@ -644,6 +644,22 @@ app.delete('/api/marketplace/products/:id', schoolScope, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Owner self-delete product (sold/listed/rejected/pending only)
+app.delete('/api/marketplace/products/:id/owner-delete', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id } = req.body;
+    if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,sold,status,listed'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const p = Array.isArray(d) ? d[0] : null;
+    if (!p) return res.status(404).json({ error: '商品不存在' });
+    if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
+    if (!p.sold && p.listed !== false && p.status !== 'rejected' && p.status !== 'pending') return res.status(400).json({ error: '仅已售/下架/拒绝/待审核商品可删除' });
+    await fetch(SB('products?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ====== Promotions API ======
 app.get('/api/marketplace/promotions', async (req, res) => {
