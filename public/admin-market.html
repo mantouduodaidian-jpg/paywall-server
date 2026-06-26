@@ -326,6 +326,9 @@ tr:hover td{background:#f8fcf9}
           <div style="flex:1;min-width:120px;text-align:center">
             <div style="font-size:10px;font-weight:600;color:#bbb;margin-bottom:6px">商品状态</div>
             <div id="chartStatus" style="display:flex;justify-content:center"></div>
+          <div style="flex:2;min-width:260px;margin-top:12px">
+            <div style="font-size:10px;font-weight:600;color:#bbb;margin-bottom:6px">近 7 日成交额</div>
+            <div id="chartBar2" style="height:80px;display:flex;align-items:flex-end;gap:4px"></div>
           </div>
         </div>
       </div>
@@ -742,6 +745,17 @@ async function loadOverview() {
     renderCatChart(all);
     renderStatusChart(all);
   } catch(e) {}
+  // Transactions
+  try {
+    const txR = await apiFetch(getSchoolParam('/api/marketplace/transactions'));
+    const txData = await txR.json();
+    var txArr = Array.isArray(txData) ? txData : [];
+    var pendingTotal = 0, pendingCount = 0;
+    txArr.forEach(function(t) { if ((t.payment_status||'pending') === 'pending') { pendingTotal += parseFloat(t.price||0); pendingCount++; } });
+    renderTxChart(txArr);
+    var sc = document.getElementById('statsContainer');
+    if (sc) sc.innerHTML += '<div class="stat-card"><div class="num blue">¥'+pendingTotal.toFixed(0)+'</div><div class="label">待转账金额 <span style="color:#ccc">('+pendingCount+'笔)</span></div></div>';
+  } catch(e) {}
   // Recent
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=5'));
@@ -858,6 +872,32 @@ function renderStatusChart(products) {
     ['pending','approved','rejected'].filter(function(k){return st[k];}).map(function(k){
       return '<span style="display:flex;align-items:center;gap:3px;color:#999"><span style="width:8px;height:8px;border-radius:2px;background:'+colors[k]+'"></span>'+labels[k]+' '+st[k]+'</span>';
     }).join('')+'</div>';
+}
+function renderTxChart(transactions) {
+  var days = [], now = new Date();
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(now); d.setDate(d.getDate() - i);
+    days.push({ label: (d.getMonth()+1)+'/'+d.getDate(), key: d.toISOString().slice(0,10), total: 0 });
+  }
+  transactions.forEach(function(t) {
+    if (!t.created_at) return;
+    var dk = t.created_at.slice(0,10);
+    var amt = parseFloat(t.price||0);
+    days.forEach(function(d) { if (d.key === dk) d.total += amt; });
+  });
+  var max = Math.max(1, ...days.map(function(d) { return d.total; }));
+  var el = document.getElementById('chartBar2');
+  if (!el) return;
+  if (!el._bars2) {
+    el.innerHTML = days.map(function(d) {
+      var h = Math.round((d.total / max) * 60);
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
+        '<span style="font-size:8px;color:#5b9bd5;margin-bottom:1px">¥'+d.total.toFixed(0)+'</span>'+
+        '<div style="width:100%;max-width:30px;height:'+Math.max(2,h)+'px;background:linear-gradient(to top,#5b9bd5,#8bb8f0);border-radius:3px 3px 0 0;transition:height .4s ease;opacity:'+(0.3+0.7*(d.total/max))+'"></div>'+
+        '<span style="font-size:8px;color:#ccc;margin-top:2px">'+d.label+'</span></div>';
+    }).join('');
+    el._bars2 = el.querySelectorAll('div div:last-child');
+  }
 }
 
 // ====== PRODUCTS ======
