@@ -444,7 +444,9 @@ tr:hover td{background:#f8fcf9}
     <div class="section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px">
       <div style="display:flex;flex:1;overflow:hidden">
         <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(0,0,0,.04);overflow-y:auto;flex-shrink:0">
-          <div style="padding:10px;font-size:11px;color:#bbb;border-bottom:1px solid rgba(0,0,0,.04)">联系人</div>
+          <div style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)">
+            <input type="text" id="kefuSearch" placeholder="搜索用户..." onkeyup="renderKefuContacts()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#4a4a4a;font-size:11px;outline:none;font-family:inherit">
+          </div>
           <div id="kefuContacts"></div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column">

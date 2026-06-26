@@ -482,7 +482,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div style="font-size:48px;margin-bottom:8px">🔑</div>
     <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">欢迎回来</h2>
     <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
-    
+    <div id="visitorSchoolDiv" style="display:none">
+      <select id="visitorSchool" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:14px;outline:none;font-family:inherit"><option value="">选择学校浏览</option></select>
+    </div>
     <input type="text" id="loginId" placeholder="学号">
     <input type="password" id="loginPhone" placeholder="电话">
     <div style="font-size:12px;color:rgba(0,0,0,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
