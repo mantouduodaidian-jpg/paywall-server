@@ -555,6 +555,7 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
       total: arr(products).length,
       verified: arr(products).filter(p => p.verified).length,
       pending: arr(products).filter(p => p.status === 'pending').length,
+      rentPending: arr(products).filter(p => p.status === 'pending' && p.item_type === 'rent').length,
       approved: arr(products).filter(p => p.status === 'approved').length,
       listed: arr(products).filter(p => p.listed !== false).length,
       verTotal: arr(verifications).length,
@@ -1174,7 +1175,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
-        notifyAdmin('new_product', { id: t?.id, title });
+        notifyAdmin('new_product', { id: t?.id, title, item_type: req.body.item_type||'sell' });
     res.json(t ? JSON.parse(JSON.stringify(t)) : { ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
