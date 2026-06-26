@@ -841,7 +841,7 @@ async function publish(){
   const btn = document.querySelector('.pub-box .submit');
   btn.textContent='⏳ 发布中...'; btn.disabled=true;
   const data={
-    title,price:parseFloat(price),category:document.getElementById('fCat').value||'其他',
+    title,price:parseFloat(price)||0,category:document.getElementById('fCat').value||'其他',
     quality:document.getElementById('fQuality').value||'八成新',
     desc:document.getElementById('fDesc').value.trim(),
     owner_student_id: currentUser ? currentUser.student_id : '',
