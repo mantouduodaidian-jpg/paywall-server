@@ -1568,8 +1568,9 @@ function openNotifChat() {
   var panel = document.getElementById('notifPanel');
   var bd = document.getElementById('notifBackdrop');
   if (panel.classList.contains('show')) { panel.classList.remove('show'); bd.classList.remove('show'); return; }
+  bd.classList.add('show');
+  panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e">📢 系统通知</div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
   panel.classList.add('show');
-  document.getElementById('notifBackdrop').classList.add('show');
   // Load notifications
   fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
     .then(function(r){return r.json();})
@@ -1579,8 +1580,8 @@ function openNotifChat() {
       notifs.reverse();
       panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e">📢 系统通知</div>'+
         (!notifs.length ? '<div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">暂无通知</div>' :
-        notifs.map(function(m){ var txt = m.content||''; if (txt.indexOf('[img]')>=0) txt = txt.substring(0, txt.indexOf('[img]')); if (txt.length>100) txt = txt.substring(0,100)+'...'; return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5">'+esc(txt)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></div>'; }).join(''));
-    }).catch(function(){});
+        '<div style="overflow-y:auto;max-height:350px">'+notifs.map(function(m){ var txt = m.content||''; if (txt.indexOf('[img]')>=0) txt = txt.substring(0, txt.indexOf('[img]')); if (txt.length>100) txt = txt.substring(0,100)+'...'; return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5">'+esc(txt)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></div>'; }).join('')+'</div>');
+    }).catch(function(){panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e">📢 系统通知</div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载失败</div>';});
 }
 
 var _productTimer = null;

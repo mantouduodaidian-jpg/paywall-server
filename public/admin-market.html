@@ -569,6 +569,11 @@ tr:hover td{background:#f8fcf9}
 <div class="modal-overlay" id="imgPreviewModal" onclick="if(event.target===this)closeImgPreview()">
   <div class="modal" style="max-width:500px;text-align:center">
     <img id="imgPreviewContent" style="max-width:100%;max-height:70vh;border-radius:8px">
+    <div id="imgPreviewNav" style="display:none;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:rgba(0,0,0,.3)">
+      <span onclick="prevPreviewImg()" style="cursor:pointer;padding:4px 10px;border:1px solid rgba(0,0,0,.06);border-radius:6px">‹</span>
+      <span id="imgPreviewIdx"></span>
+      <span onclick="nextPreviewImg()" style="cursor:pointer;padding:4px 10px;border:1px solid rgba(0,0,0,.06);border-radius:6px">›</span>
+    </div>
     <div class="btns" style="margin-top:12px"><button class="btn-ghost" onclick="closeImgPreview()">关闭</button></div>
   </div>
 </div>
@@ -1029,7 +1034,8 @@ async function loadProds() {
     if (!f.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
-      var prodImg = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src)">' : '<span style="color:#ccc;font-size:10px">-</span>';
+      var prodImgs = p.images && p.images.length ? p.images : [];
+      var prodImg = prodImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(prodImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src,'+JSON.stringify(prodImgs).replace(/'/g,"\\'")+',0)">'+(prodImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+prodImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td>'+prodImg+'</td>'+
@@ -1243,10 +1249,23 @@ async function showPaymentQR(id) {
   } catch(e) { toast('加载失败'); }
 }
 
-function showProdImg(src) {
+var _previewImages = [];
+var _previewIdx = 0;
+function showProdImg(src, all, idx) {
   if (!src) return;
-  document.getElementById('imgPreviewContent').src = src;
+  _previewImages = all && all.length ? all : [src];
+  _previewIdx = idx || 0;
+  document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx];
+  var nav = document.getElementById('imgPreviewNav');
+  if (_previewImages.length > 1) { nav.style.display = 'flex'; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
+  else nav.style.display = 'none';
   document.getElementById('imgPreviewModal').classList.add('show');
+}
+function prevPreviewImg() {
+  if (_previewIdx > 0) { _previewIdx--; document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx]; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
+}
+function nextPreviewImg() {
+  if (_previewIdx < _previewImages.length-1) { _previewIdx++; document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx]; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
 }
 
 function openChatImage(src) {
