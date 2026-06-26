@@ -92,11 +92,39 @@ tr:hover td{background:#fafaf5}
 #kefuMsgs{color:#4a4a4a}
 #kefuChatHeader{color:#999}
 #kefuContactList{border-right-color:rgba(0,0,0,.04)!important}
-@media(max-width:700px){
-.app{padding:14px}
-.stats{grid-template-columns:repeat(2,1fr)}
-.tabs{overflow-x:auto;flex-wrap:nowrap}
-.header{flex-direction:column;align-items:flex-start}
+@media(max-width:768px){
+.app{padding:10px}
+.stats{grid-template-columns:repeat(2,1fr);gap:6px}
+.stat-card{padding:12px}
+.stat-card .num{font-size:20px}
+.tabs{overflow-x:auto;flex-wrap:nowrap;gap:0;padding:2px 2px 0;border-radius:8px 8px 0 0}
+.tab{padding:8px 10px;font-size:11px;white-space:nowrap;flex-shrink:0}
+.tab svg{width:12px;height:12px}
+.header{flex-direction:column;align-items:flex-start;padding:12px 14px;gap:8px}
+.header h1{font-size:17px}
+.header .actions{width:100%;justify-content:flex-end}
+.header .actions a,.header .actions button{padding:6px 10px;font-size:11px}
+.section{padding:12px;border-radius:10px}
+.toolbar{gap:4px}
+.toolbar input,.toolbar select{font-size:11px;padding:6px 10px;min-width:60px}
+.table-wrap{max-height:400px;font-size:10px}
+th,td{padding:6px 4px;font-size:9px}
+.btn{padding:5px 8px;font-size:10px}
+.btn-sm{padding:3px 6px;font-size:9px}
+.login-box{padding:28px 20px;width:92%;max-width:360px;margin:20px auto}
+.login-box h1{font-size:20px}
+.login-box input{padding:12px 14px;font-size:14px}
+.modal{padding:18px;margin:20px 10px;max-width:100%}
+.modal input,.modal select,.modal textarea{font-size:11px;padding:8px 10px}
+.modal .btns button{padding:8px}
+.badge{font-size:9px;padding:2px 6px}
+.empty{padding:20px;font-size:11px}
+.toast{font-size:11px;padding:8px 16px 8px 12px;white-space:normal;max-width:90vw}
+#kefuContactList{width:120px;font-size:10px}
+#kefuMsgs{font-size:10px;padding:6px 8px}
+#kefuInput{font-size:11px}
+#chartBody > div > div{min-width:100%!important;margin-bottom:10px}
+#schoolSelector{max-width:100px;font-size:10px!important}
 }
 
 .login-gate{position:fixed;inset:0;background:#f0f0f0;display:flex;align-items:center;justify-content:center;z-index:100}
