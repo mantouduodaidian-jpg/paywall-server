@@ -551,6 +551,7 @@ const SCHOOLS = [
 ];
 let sellerFilter = null;
 let reportingProductId = null;
+let _promos, _sellerName, _cardImage, _paymentQR, _uploadedImages;
 
 function updateTypeFilterUI(type) {
   const BASE = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;';
@@ -659,7 +660,7 @@ async function loadPromos() {
     const r = await fetch('/api/marketplace/promotions');
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
-    window._promos = arr;
+    _promos = arr;
     if (arr.length) {
       var p = arr[0];
       document.getElementById('promoText').textContent = '🎁 ' + p.title + (p.desc ? ' — ' + p.desc : '');
@@ -669,7 +670,7 @@ async function loadPromos() {
   } catch(e) {}
 }
 function showPromoDetail(idx) {
-  var arr = window._promos || [];
+  var arr = _promos || [];
   var p = arr[idx];
   if (!p) return;
   document.getElementById('promoModalTitle').textContent = p.title;
@@ -952,7 +953,7 @@ async function doLogin(){
 }
 
 
-let _sessionTimer = null;
+var _sessionTimer = null;
 function startSessionCheck() {
   if (!currentUser) return;
   if (!currentUser.login_token) { currentUser.login_token = String(Date.now()); }
@@ -1421,7 +1422,7 @@ function startChatPoll() {
           if (m.id > lastId) { lastId = m.id; appendMsg(m, true); }
         });
       }).catch(function(){});
-  }, 1000);
+  }, 2000);
 }
 function stopChatPoll() {
   if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
@@ -1477,7 +1478,7 @@ function startUnreadPoll() {
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
       }).catch(function(){});
-  }, 2000);
+  }, 5000);
 }
 
 let _productTimer = null;
@@ -1492,7 +1493,7 @@ function startProductPoll() {
         if (lastCount > 0 && total !== lastCount) { load(); }
         lastCount = total;
       }).catch(function(){});
-  }, 5000);
+  }, 10000);
 }
 
 
@@ -1521,11 +1522,14 @@ function loadMyProducts() {
 }
 
 let _nickCache = null;
+let _nickCacheTime = 0;
+const NICK_TTL = 300000;
 function getNick(studentId) {
-  if (_nickCache) return Promise.resolve(_nickCache);
+  if (_nickCache && Date.now() - _nickCacheTime < NICK_TTL) return Promise.resolve(_nickCache);
   return fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
     var arr = Array.isArray(vers)?vers:[];
     _nickCache = {};
+    _nickCacheTime = Date.now();
     arr.forEach(function(v){ if(v.student_id) _nickCache[v.student_id] = v.nickname||v.name||''; });
     return _nickCache;
   }).catch(function(){return {};});
