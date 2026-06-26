@@ -867,7 +867,7 @@ function renderStatusChart(products) {
   });
   var total = st.pending + st.approved + st.rejected;
   if (!total) { document.getElementById('chartStatus').innerHTML = '<div style="color:#ddd;font-size:11px;padding:20px">暂无</div>'; return; }
-  var colors = { pending: '#fbbf24', approved: '#34d399', rejected: '#ef4444' };
+  var colors = { pending: '#fbbf24', approved: '#4e9e80', rejected: '#e74c3c' };
   var labels = { pending: '待审核', approved: '已通过', rejected: '已拒绝' };
   var cx = 70, cy = 70, r = 50, sw = 20;
   var arcs = [], curAngle = -90;
@@ -875,6 +875,7 @@ function renderStatusChart(products) {
     if (!st[k]) return;
     var pct = st[k] / total;
     var angle = pct * 360;
+    if (pct === 1) angle = 359.9;
     var a1 = curAngle, a2 = curAngle + angle;
     var x1 = cx + r * Math.cos(a1 * Math.PI / 180);
     var y1 = cy + r * Math.sin(a1 * Math.PI / 180);
