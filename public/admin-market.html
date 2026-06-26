@@ -851,7 +851,7 @@ async function loadProds() {
           (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
           (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
           '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
-          '('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
+          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
         '</span></td></tr>';
     }).join('');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
