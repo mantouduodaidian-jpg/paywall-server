@@ -1022,6 +1022,7 @@ async function loadProds() {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=1000'));
     let data = await r.json();
     const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+    _prodImgArr = [];
     const search = document.getElementById('prodSearch').value.trim().toLowerCase();
     const sf = document.getElementById('prodStatusFilter').value;
     const cf = document.getElementById('prodCatFilter').value;
@@ -1035,7 +1036,8 @@ async function loadProds() {
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var prodImgs = p.images && p.images.length ? p.images : [];
-      var prodImg = prodImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(prodImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src,'+JSON.stringify(prodImgs).replace(/'/g,"\\'")+',0)">'+(prodImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+prodImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
+      var imgIdx = _prodImgArr.push(prodImgs) - 1;
+      var prodImg = prodImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(prodImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImgFromArr('+imgIdx+')">'+(prodImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+prodImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td>'+prodImg+'</td>'+
@@ -1140,7 +1142,9 @@ async function loadRentals() {
     tbody.innerHTML = f.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var periodMap = {day:'/天',week:'/周',month:'/月'};
-      var rentImg = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src)">' : '<span style="color:#ccc;font-size:10px">-</span>';
+      var rentImgs = p.images && p.images.length ? p.images : [];
+      var rImgIdx = _prodImgArr.push(rentImgs) - 1;
+      var rentImg = rentImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(rentImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImgFromArr('+rImgIdx+')">'+(rentImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+rentImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
         '<td>'+rentImg+'</td>'+
@@ -1251,6 +1255,7 @@ async function showPaymentQR(id) {
 
 var _previewImages = [];
 var _previewIdx = 0;
+var _prodImgArr = [];
 function showProdImg(src, all, idx) {
   if (!src) return;
   _previewImages = all && all.length ? all : [src];
@@ -1260,6 +1265,11 @@ function showProdImg(src, all, idx) {
   if (_previewImages.length > 1) { nav.style.display = 'flex'; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
   else nav.style.display = 'none';
   document.getElementById('imgPreviewModal').classList.add('show');
+}
+function showProdImgFromArr(idx) {
+  var arr = _prodImgArr[idx] || [];
+  if (!arr.length) return;
+  showProdImg(arr[0], arr, 0);
 }
 function prevPreviewImg() {
   if (_previewIdx > 0) { _previewIdx--; document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx]; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }

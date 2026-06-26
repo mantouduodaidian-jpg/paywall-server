@@ -407,7 +407,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 
 <!-- Chat Backdrop -->
 <div class="chat-backdrop" id="chatBackdrop" onclick="toggleChat()"></div>
-<div class="chat-backdrop" id="notifBackdrop" onclick="document.getElementById('notifPanel').classList.remove('show')"></div>
+<div class="chat-backdrop" id="notifBackdrop" onclick="document.getElementById('notifPanel').classList.remove('show');this.classList.remove('show')"></div>
 
 <!-- Chat Button -->
 <div class="chat-btn" id="chatBtn" onclick="toggleChat()" style="display:none">
