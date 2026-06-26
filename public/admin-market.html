@@ -1195,32 +1195,38 @@ async function delBw(id, word) {
 
 // ====== Kefu Chat ======
 let kefuContactId = null, kefuPollTimer = null, kefuLastId = 0;
+var _kefuAllContacts = [];
 async function loadKefuContacts() {
   try {
     const r = await apiFetch('/api/marketplace/contacts?student_id='+kefuId()+'&school='+(localStorage.getItem('adminSchool')||''));
     const data = await r.json();
-    var contacts = Array.isArray(data) ? data : [];
-    // Also load all verified users from this school so admin can message them
+    _kefuAllContacts = Array.isArray(data) ? data : [];
+    // Also load all verified users from this school
     try {
       const vR = await apiFetch(getSchoolParam('/api/verify/list'));
       const vData = await vR.json();
       var users = Array.isArray(vData) ? vData : [];
       var existing = {};
-      contacts.forEach(function(c) { existing[c.student_id] = true; });
+      _kefuAllContacts.forEach(function(c) { existing[c.student_id] = true; });
       users.forEach(function(u) {
-        if (!existing[u.student_id] && !u.student_id.startsWith('kefu_')) {
-          contacts.push({ student_id: u.student_id, name: u.name, last_message: '', unread: 0 });
+        if (!existing[u.student_id] && u.student_id.indexOf('kefu_') !== 0) {
+          _kefuAllContacts.push({ student_id: u.student_id, name: u.name, last_message: '', unread: 0 });
         }
       });
     } catch(e) {}
-    const el = document.getElementById('kefuContacts');
-    if (!contacts.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">暂无用户</div>'; return; }
-    el.innerHTML = contacts.map(function(c) {
-      var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
-      return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02)">'+
-        esc(c.name)+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
-    }).join('');
+    renderKefuContacts();
   } catch(e) {}
+}
+function renderKefuContacts() {
+  var search = (document.getElementById('kefuSearch').value || '').trim().toLowerCase();
+  var filtered = search ? _kefuAllContacts.filter(function(c) { return (c.name||'').toLowerCase().indexOf(search) >= 0 || (c.student_id||'').indexOf(search) >= 0; }) : _kefuAllContacts;
+  var el = document.getElementById('kefuContacts');
+  if (!filtered.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">' + (search ? '未找到用户' : '暂无用户') + '</div>'; return; }
+  el.innerHTML = filtered.map(function(c) {
+    var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
+    return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02)">'+
+      esc(c.name)+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
+  }).join('');
 }
 async function openKefuChat(studentId, name) {
   kefuContactId = studentId; kefuLastId = 0;
