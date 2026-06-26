@@ -831,7 +831,11 @@ function hidePub(){document.getElementById('pubOverlay').classList.remove('show'
 async function publish(){
   const title=document.getElementById('fTitle').value.trim();
   const price=document.getElementById('fPrice').value;
-  if(!title||!price){notify('请填写名称和价格', '⚠️');return}
+  const isRent=document.getElementById('typeRent').style.background.includes('rgba(52,211,153,.12)');
+  const rentPrice=document.getElementById('fRentPrice').value;
+  if(!title){notify('请填写名称', '⚠️');return}
+  if(!isRent&&!price){notify('请填写价格', '⚠️');return}
+  if(isRent&&!rentPrice){notify('请填写租金', '⚠️');return}
   const btn = document.querySelector('.pub-box .submit');
   btn.textContent='⏳ 发布中...'; btn.disabled=true;
   const data={
@@ -1176,18 +1180,17 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
   document.getElementById('chatConvLabel').textContent = '💬 ' + ((sellerStudentId||'').indexOf('kefu_') === 0 ? (sellerName||'客服') : sellerName);
   startChatPoll();
-  setTimeout(function() {
-    fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var arr = Array.isArray(data) ? data : [];
-        document.getElementById('chatMsgs').innerHTML = '';
-        arr.forEach(function(m) { appendMsg(m, true); });
-        var msgs = document.getElementById('chatMsgs');
-        msgs.scrollTop = msgs.scrollHeight;
-        fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_student_id:sellerStudentId,student_id:currentUser.student_id})});
-      }).catch(function(){});
-  }, 100);
+  // Load messages immediately (no setTimeout)
+  fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var arr = Array.isArray(data) ? data : [];
+      document.getElementById('chatMsgs').innerHTML = '';
+      arr.forEach(function(m) { appendMsg(m, true); });
+      var msgs = document.getElementById('chatMsgs');
+      msgs.scrollTop = msgs.scrollHeight;
+      fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_student_id:sellerStudentId,student_id:currentUser.student_id})});
+    }).catch(function(){});
 }
 
 function showConvs() {
