@@ -1139,8 +1139,10 @@ app.get('/api/verify/payment-qr/:id', schoolScope, async (req, res) => {
 // ====== Marketplace API ======
 app.post('/api/marketplace/products', express.json(), async (req, res) => {
   try {
-    const { title, price, category, desc, images, contact, quality } = req.body;
-    if (!title || !price) return res.status(400).json({ error: 'title and price required' });
+    const { title, price, category, desc, images, contact, quality, item_type, rent_price } = req.body;
+    if (!title) return res.status(400).json({ error: 'title required' });
+    if (item_type !== 'rent' && !price) return res.status(400).json({ error: 'price required' });
+    if (item_type === 'rent' && !rent_price) return res.status(400).json({ error: 'rent_price required' });
 
     // Check if user is muted
     if (req.body.owner_student_id) {
