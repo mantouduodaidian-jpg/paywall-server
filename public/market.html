@@ -813,7 +813,9 @@ function nextImg() {
 }
 
 // ====== Publish ======
+var _pubType = 'sell';
 function setItemType(type) {
+  _pubType = type;
   document.getElementById('typeSell').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='sell'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06)');
   document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06');
   document.getElementById('rentFields').style.display = type==='rent' ? '' : 'none';
@@ -831,7 +833,7 @@ function hidePub(){document.getElementById('pubOverlay').classList.remove('show'
 async function publish(){
   const title=document.getElementById('fTitle').value.trim();
   const price=document.getElementById('fPrice').value;
-  const isRent=document.getElementById('typeRent').style.background.includes('rgba(52,211,153,.12)');
+  const isRent=_pubType==='rent';
   const rentPrice=document.getElementById('fRentPrice').value;
   if(!title){notify('请填写名称', '⚠️');return}
   if(!isRent&&!price){notify('请填写价格', '⚠️');return}
@@ -846,7 +848,7 @@ async function publish(){
     owner_name: currentUser ? currentUser.name : '',
     school: currentUser ? (currentUser.school || '') : '',
     gender_pref: document.getElementById('fGenderPref').value || 'all',
-    item_type: document.getElementById('typeRent').style.background.includes('rgba(52,211,153,.12)') ? 'rent' : 'sell',
+    item_type: _pubType,
     rent_price: parseFloat(document.getElementById('fRentPrice').value) || 0,
     rent_period: document.getElementById('fRentPeriod').value || 'day',
     deposit: parseFloat(document.getElementById('fDeposit').value) || 0,
