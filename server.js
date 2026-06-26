@@ -913,6 +913,12 @@ app.post('/api/marketplace/reports/resolve', anyAdmin, express.json(), async (re
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+app.delete('/api/marketplace/reports/:id', anyAdmin, async (req, res) => {
+  try {
+    await fetch(SB('reports?id=eq.'+req.params.id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ====== Announcements API ======
 app.get('/api/marketplace/announcements', async (req, res) => {
