@@ -61,7 +61,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .card .img img{width:100%;height:100%;object-fit:cover}
 .card .pin-bar{height:3px;background:linear-gradient(90deg,#4e9e80,#bce0cc,#4e9e80);border-radius:14px 14px 0 0;flex-shrink:0}
 .card .sold-badge{position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px}
-.card .pending-badge{position:absolute;top:8px;right:8px;background:rgba(96,184,142,.12);color:#4e9e80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid rgba(96,184,142,.2)}
+.card .pending-badge{position:absolute;top:8px;right:8px;background:rgba(251,191,36,.12);color:#d97706;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid rgba(251,191,36,.3)}
 .card .rejected-badge{position:absolute;top:8px;right:8px;background:rgba(239,68,68,.08);color:#ef4444;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid rgba(239,68,68,.12)}
 .card .unlisted-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.04);color:rgba(0,0,0,.35);font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.06)}
 .card .photos-badge{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;backdrop-filter:blur(4px)}
@@ -768,7 +768,7 @@ async function load(reset) {
       div.style.opacity = unlisted ? '.5' : '';
       var statusBadge = '';
       if (isMine && p.sold) statusBadge = '<div class="sold-badge">✅ 已售罄</div>';
-      else if (isMine && p.status === 'pending') statusBadge = '<div class="pending-badge">⏳ 待审核</div>';
+      else if (isMine && p.status === 'pending') statusBadge = '<div class="pending-badge">📋 待审核</div>';
       else if (isMine && p.status === 'rejected') statusBadge = '<div class="rejected-badge">✕ 未通过</div>';
       else if (unlisted) statusBadge = '<div class="unlisted-badge">📌 已下架</div>';
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">'+imgHtml+'</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
@@ -1113,6 +1113,8 @@ function previewImg(input) {
         loaded++;
         if (loaded === files.length) {
           document.getElementById('fImageName').textContent = _uploadedImages.length + '/4张';
+          document.getElementById('fImageLabel').textContent = '('+_uploadedImages.length+'/4)';
+          input.value = '';
           renderThumbnails();
         }
       };
