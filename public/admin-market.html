@@ -1070,7 +1070,7 @@ async function loadVers() {
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
-    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="8"><div class="empty">暂无</div></td></tr>' :
+    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="9"><div class="empty">暂无</div></td></tr>' :
       filtered.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#4e9e80;font-size:10px">📷 学生证</a>':'<span style="color:#ccc;font-size:10px">无</span>')+' <a href="#" onclick="showPaymentQR('+v.id+');return false" style="color:#c4a84c;font-size:10px">📷 收款码</a></td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
@@ -1410,7 +1410,7 @@ async function loadTransactions() {
           (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">🔄 重试转账</button>':'')+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="9"><div class="empty">加载失败</div></td></tr>'; }
 }
 async function markTx(id, status) {
   if (status === 'paid' && !confirm('确认已转账给卖家？')) return;
