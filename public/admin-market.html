@@ -1283,8 +1283,8 @@ async function loadTransactions() {
         '<td style="color:#ccc;font-size:10px">'+fmtDate(t.created_at)+'</td>'+
         '<td><span class="badge '+(statusBadge[status]||'badge-gray')+'" style="background:'+statusColor[status]+'15;color:'+statusColor[status]+'">'+(statusMap[status]||status)+'</span></td>'+
         '<td style="text-align:center">'+
-          (status==='pending'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',\\'paid\\')">✅ 确认转账</button><button class="btn btn-red btn-sm" onclick="markTx('+t.id+',\\'failed\\')">✕ 失败</button>':'')+
-          (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',\\'paid\\')">🔄 重试转账</button>':'')+
+          (status==='pending'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">✅ 确认转账</button><button class="btn btn-red btn-sm" onclick="markTx('+t.id+',&apos;failed&apos;)">✕ 失败</button>':'')+
+          (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">🔄 重试转账</button>':'')+
         '</td></tr>';
     }).join('');
   } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; }
