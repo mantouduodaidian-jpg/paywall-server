@@ -1247,9 +1247,15 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset, owner, item_type, school } = req.query;
+    const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
+    var orderBy = 'pinned.desc,created_at.desc';
+    if (sort === 'oldest') orderBy = 'pinned.desc,created_at.asc';
+    if (sort === 'price_asc' || sort === 'price_desc') {
+      var pf = item_type === 'rent' ? 'rent_price' : 'price';
+      orderBy = 'pinned.desc,'+pf+'.'+(sort === 'price_asc' ? 'asc' : 'desc');
+    }
     // Get total count first
     let countUrl = SB('products?select=id');
     if (!admin) countUrl = SB('products?status=eq.approved&listed=eq.true&select=id');
@@ -1301,8 +1307,14 @@ app.get('/api/marketplace/products', async (req, res) => {
       url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
       if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
     }
+    if (orderBy !== 'pinned.desc,created_at.desc') url = url.replace(/pinned\.desc,created_at\.desc/g, orderBy);
+    var priceField = item_type === 'rent' ? 'rent_price' : 'price';
+    if (price_min) { url += '&'+priceField+'=gte.'+price_min; countUrl += '&'+priceField+'=gte.'+price_min; }
+    if (price_max) { url += '&'+priceField+'=lte.'+price_max; countUrl += '&'+priceField+'=lte.'+price_max; }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
+    if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
+    if (price_max) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v <= parseFloat(price_max); });
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }

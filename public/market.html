@@ -1498,6 +1498,7 @@ function closeContacts() { var _ov=document.getElementById('contactsOverlay');do
 
 var _lastUnreadCount = 0;
 var _unreadTimer = null;
+var _lastNotifId = 0;
 function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
   if (!currentUser) return;
@@ -1514,6 +1515,11 @@ function startUnreadPoll() {
           var t = new Date(m.created_at).getTime();
           if (t > latest) latest = t;
           if (m.to_student_id === currentUser.student_id && !m.read) unread++;
+          // Toast for new system notifications
+          if (m.id > _lastNotifId && (m.from_student_id||'').indexOf('kefu_') === 0 && m.to_student_id === currentUser.student_id) {
+            _lastNotifId = m.id;
+            notify(m.content||'收到系统通知', '📢');
+          }
         });
         if (latest > lastCheck) { lastCheck = latest; }
         var badge = document.getElementById('chatBadge');
