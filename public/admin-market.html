@@ -88,7 +88,7 @@ tr:hover td{background:#fafaf5}
 .modal .row{display:flex;gap:10px}
 .modal .row>*{flex:1}
 .kefu-contact:hover{background:#fafaf5!important}
-.kefu-contact{color:#4a4a4a;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-text-size-adjust:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.kefu-contact{color:#4a4a4a;-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-text-size-adjust:none;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 #kefuMsgs{color:#4a4a4a}
 #kefuChatHeader{color:#999}
 #kefuContactList{border-right-color:rgba(0,0,0,.04)!important}
@@ -1272,8 +1272,10 @@ async function openKefuChat(studentId, name) {
   }
   
 }
+var _kefuLoading = false;
 async function loadKefuMsgs() {
-  if (!kefuContactId) return;
+  if (!kefuContactId || _kefuLoading) return;
+  _kefuLoading = true;
   try {
     var url = '/api/marketplace/messages?student_id='+kefuId()+'&other_student_id='+kefuContactId;
     if (kefuLastId) url += '&since_id='+kefuLastId;
@@ -1294,6 +1296,7 @@ async function loadKefuMsgs() {
     });
     el.scrollTop = el.scrollHeight;
   } catch(e) {}
+  _kefuLoading = false;
 }
 var _kefuImgData = null;
 function previewKefuImage(input) {
@@ -1314,7 +1317,6 @@ async function sendKefuMsg() {
   try {
     await apiFetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({product_id:0,from_student_id:kefuId(),from_name:'校园严选客服',to_student_id:kefuContactId,to_name:'',content:content})});
-    await loadKefuMsgs();
   } catch(e) { toast('发送失败'); }
 }
 
