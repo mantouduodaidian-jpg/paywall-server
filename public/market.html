@@ -135,7 +135,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .chat-btn:hover{transform:scale(1.1)}
 .chat-btn .chat-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 8px rgba(239,68,68,.3)}
 /* Notif Bell */
-.notif-btn{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:199;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.04);transition:transform .2s;display:none}
+.notif-btn{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:199;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.04);transition:transform .2s}
 .notif-btn:hover{transform:scale(1.1)}
 .notif-btn .bell-badge{position:absolute;top:-3px;right:-3px;background:#fbbf24;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(251,191,36,.3)}
 /* Contact Sidebar */
@@ -957,7 +957,7 @@ function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); startSessionCheck(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('notifBtn').style.display = 'flex'; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
 
 function getSchoolName(id) {
   var s = SCHOOLS.find(function(x){return x.id===id;});
@@ -991,7 +991,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');load();if(d.muted)showMutedBanner(d.msg);}
+    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('notifBtn').style.display='flex';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');load();if(d.muted)showMutedBanner(d.msg);}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
@@ -1552,11 +1552,7 @@ function startUnreadPoll() {
         if (unread > 0) { badge.textContent = unread; if (unread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = unread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
         // System notification bell badge
         var nb = document.getElementById('bellBadge');
-        var nbtn = document.getElementById('notifBtn');
-        if (nb && nbtn) {
-          if (notifUnread > 0) { nbtn.style.display = 'flex'; nb.textContent = notifUnread; }
-          else { nbtn.style.display = 'none'; }
-        }
+        if (nb) { nb.textContent = notifUnread > 0 ? notifUnread : '0'; }
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
       }).catch(function(){});
