@@ -548,7 +548,32 @@ tr:hover td{background:#f8fcf9}
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)_confirmCb(false)" style="z-index:200">
+  <div class="modal" id="confirmBox" style="max-width:400px;text-align:center">
+    <div id="confirmIcon" style="font-size:32px;margin-bottom:8px">🤔</div>
+    <div id="confirmMsg" style="font-size:13px;color:#555;margin-bottom:16px;line-height:1.6"></div>
+    <div class="btns">
+      <button id="confirmCancelBtn" class="btn-ghost" onclick="_confirmCb(false)" style="flex:1">取消</button>
+      <button id="confirmOkBtn" class="btn-red" onclick="_confirmCb(true)" style="flex:1;font-weight:700">确认</button>
+    </div>
+  </div>
+</div>
+
 <script>
+
+
+
+var _confirmResolve = null;
+function showConfirm(msg) {
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmIcon').textContent = msg.includes('删除') ? '🗑️' : msg.includes('封禁') ? '🚫' : msg.includes('禁言') ? '🔇' : msg.includes('转账') ? '💰' : '🤔';
+  document.getElementById('confirmModal').classList.add('show');
+  return new Promise(function(resolve) {
+    _confirmResolve = resolve;
+  });
+}
+function _confirmCb(ok) { document.getElementById('confirmModal').classList.remove('show'); if (_confirmResolve) _confirmResolve(ok); }
+
 let token = localStorage.getItem('marketAdminToken');
 let role = localStorage.getItem('marketAdminRole');
 let editingProdId = null, rejectingProdId = null;
@@ -897,7 +922,7 @@ async function togglePin(id, pin) {
   toast(pin?'✅ 已置顶':'已取消置顶'); loadProds();
 }
 async function markSold(id) {
-  if (!confirm('确认标记为已售出？')) return;
+  if (!await showConfirm('确认标记为已售出？')) return;
   await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})});
   toast('✅ 已标记售出'); loadProds(); loadOverview();
 }
@@ -933,7 +958,7 @@ async function saveEditProd() {
   toast('✅ 已保存'); closeEditProd(); loadProds();
 }
 async function delProd(id, title) {
-  if (!confirm('确认删除「'+title+'」？不可恢复。')) return;
+  if (!await showConfirm('确认删除「'+title+'」？不可恢复。')) return;
   await apiFetch('/api/marketplace/products/'+id, {method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadProds(); loadOverview();
 }
@@ -1030,8 +1055,8 @@ async function confirmRejectVer() {
   setTimeout(function() { loadVers(); loadOverview(); }, 500);
 }
 async function delVer(id, name) {
-  if (!confirm('确认删除「'+name+'」的账号？此操作不可恢复，该用户所有数据将被清除。')) return;
-  if (!confirm('再次确认：删除「'+name+'」的所有记录？（商品、聊天记录将保留，仅删除认证信息）')) return;
+  if (!await showConfirm('确认删除「'+name+'」的账号？此操作不可恢复，该用户所有数据将被清除。')) return;
+  if (!await showConfirm('再次确认：删除「'+name+'」的所有记录？（商品、聊天记录将保留，仅删除认证信息）')) return;
   await apiFetch('/api/verify/'+id, {method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 账号已删除'); loadVers(); loadOverview();
 }
@@ -1104,7 +1129,7 @@ async function updateCatSort(id, sort) {
   await apiFetch('/api/marketplace/categories/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
 }
 async function delCat(id, name) {
-  if (!confirm('删除分类「'+name+'」？')) return;
+  if (!await showConfirm('删除分类「'+name+'」？')) return;
   await apiFetch('/api/marketplace/categories/'+id,{method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadCats();
 }
@@ -1162,7 +1187,7 @@ async function toggleAnn(id, active) {
   toast(active?'已关闭':'已开启'); loadAnns();
 }
 async function delAnn(id) {
-  if (!confirm('删除此公告？')) return;
+  if (!await showConfirm('删除此公告？')) return;
   await apiFetch('/api/marketplace/announcements/'+id,{method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadAnns(); loadOverview();
 }
@@ -1188,7 +1213,7 @@ async function addBw() {
   } catch(e) { toast('添加失败（可能已存在）'); }
 }
 async function delBw(id, word) {
-  if (!confirm('删除「'+word+'」？')) return;
+  if (!await showConfirm('删除「'+word+'」？')) return;
   await apiFetch('/api/marketplace/blocked-words/'+id,{method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadBws();
 }
@@ -1357,7 +1382,7 @@ async function updatePromoSort(id, sort) {
   await apiFetch('/api/marketplace/promotions/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({sort_order:parseInt(sort)||0})});
 }
 async function delPromo(id, title) {
-  if (!confirm('删除「'+title+'」？')) return;
+  if (!await showConfirm('删除「'+title+'」？')) return;
   await apiFetch('/api/marketplace/promotions/'+id,{method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadPromos();
 }
@@ -1394,19 +1419,19 @@ async function confirmBan() {
   var reason = document.getElementById('banReason').value;
   var detail = document.getElementById('banDetail').value.trim();
   var fullReason = reason + (detail ? ' - '+detail : '');
-  if (!confirm('确认封禁此账号？该用户所有商品将下架。')) return;
+  if (!await showConfirm('确认封禁此账号？该用户所有商品将下架。')) return;
   await fetch('/api/marketplace/sellers/ban', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:banningSid,reason:fullReason})});
   toast('🚫 已封禁'); closeBan(); loadSellers();
 }
 
 
 async function muteSeller(sid, name) {
-  if (!confirm('确认禁言「'+name+'」？该用户可登录聊天，但无法发布商品。')) return;
+  if (!await showConfirm('确认禁言「'+name+'」？该用户可登录聊天，但无法发布商品。')) return;
   await apiFetch('/api/marketplace/sellers/mute', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,action:'mute',reason:'被管理员禁言'})});
   toast('🔇 已禁言'); loadSellers();
 }
 async function unmuteSeller(sid, name) {
-  if (!confirm('确认解除「'+name+'」的禁言？')) return;
+  if (!await showConfirm('确认解除「'+name+'」的禁言？')) return;
   await apiFetch('/api/marketplace/sellers/mute', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,action:'unmute'})});
   toast('🔇 已解除禁言'); loadSellers();
 }
@@ -1416,7 +1441,7 @@ function filterSeller(sid, name) {
   loadProds();
 }
 async function toggleAllSeller(sid, listed, name) {
-  if (!confirm((listed?'上架':'下架')+'「'+name+'」所有已通过商品？')) return;
+  if (!await showConfirm((listed?'上架':'下架')+'「'+name+'」所有已通过商品？')) return;
   const r = await fetch('/api/marketplace/sellers/toggle-all', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,listed})});
   const d = await r.json();
   toast((listed?'已上架':'已下架')+' '+d.count+' 件商品'); loadSellers();
