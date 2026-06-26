@@ -4,18 +4,25 @@
 ```
 D:\OneDrive\桌面\创造i\server\
 ├── server.js              ← 后端 API + WebSocket (Express + Supabase)
+├── CHECKLIST.md           ← 改前检查清单（AI 必读）
+├── PROJECT_SUMMARY.md     ← 本文件
 ├── package.json
-├── data/                  ← SQLite 数据（旧系统，不用管）
-└── public/
-    ├── market.html        ← 前台（二手集市）
-    └── admin-market.html  ← 后台管理面板
+├── Procfile               ← Render 启动命令
+├── render.yaml
+├── .gitignore             ← 屏蔽 node_modules/ data/ *.bak
+├── public/
+│   ├── market.html        ← 前台（二手集市）
+│   └── admin-market.html  ← 后台管理面板
+└── api/
+    └── verify.js          ← 认证附加路由
 ```
 
 ## 部署信息
 - **Render:** paywall-server.onrender.com
 - **Supabase:** hcinnimptpsjocbkkbna.supabase.co
 - **GitHub:** github.com/mantouduodaidian-jpg/paywall-server.git
-- **自动部署:** GitHub push → Render 自动部署（已配好）
+- **自动部署:** GitHub push → Render 自动部署（约 2 分钟）
+- **已清理:** 废弃部署配置（fly/vercel/railway/wrangler/deno）已删除
 
 ## 权限体系（3 层）
 
@@ -51,21 +58,21 @@ D:\OneDrive\桌面\创造i\server\
 概览 → 商品 → 租借 → 卖家 → 认证 → 分类 → 举报 → 公告 → 敏感词 → 日志 → 消息 → 周边有礼 → 💰交易
 ```
 
-| Tab | 功能 |
-|-----|------|
-| 概览 | 统计数字 + 图表（近7日发布/分类/状态/成交额）|
-| 商品 | 审核/上下架/置顶/编辑/删除/标记已售（仅显示 item_type='sell'）|
-| 租借 | 同商品，仅显示 item_type='rent' |
-| 卖家 | 查看商品/全部上下架/封禁/禁言 |
-| 认证 | 审核/删除/查看学生证+收款码 |
-| 分类 | 增删改排序 |
-| 举报 | 处理/驳回 |
-| 公告 | 按学校发布/全局发布（黄色标识）|
-| 敏感词 | 增删 |
-| 日志 | 操作记录 |
-| 消息 | 客服回复用户（可主动联系）+ 发图片 |
-| 周边有礼 | 增删改 |
-| 💰交易 | 已售商品列表 + 确认转账/标记失败 |
+| Tab | 功能 | 批量处理 |
+|-----|------|----------|
+| 概览 | 统计数字 + 图表（近7日发布/分类/状态/成交额） | - |
+| 商品 | 审核/上下架/置顶/编辑/删除/标记已售（仅显示 item_type='sell'）| ✅ 批量通过/拒绝/删除 |
+| 租借 | 同商品，仅显示 item_type='rent' | ✅ 批量通过/拒绝 |
+| 卖家 | 查看商品/全部上下架/封禁/禁言 | ✅ 批量上下架 |
+| 认证 | 审核/删除/查看学生证+收款码 | ✅ 批量通过/拒绝/删除 |
+| 分类 | 增删改排序 | ✅ 批量删除 |
+| 举报 | 处理/驳回 | ✅ 批量删除 |
+| 公告 | 按学校发布/全局发布（黄色标识）| ✅ 批量删除 |
+| 敏感词 | 增删 | ✅ 批量删除 |
+| 日志 | 操作记录 | - |
+| 消息 | 客服回复用户（可主动联系）+ 发图片 | - |
+| 周边有礼 | 增删改 | ✅ 批量删除 |
+| 💰交易 | 已售商品列表 + 确认转账/标记失败 | ✅ 批量确认转账/标记失败 |
 
 ### 认证系统
 - 注册上传: 学生证 + 收款码（微信/支付宝）
@@ -110,16 +117,35 @@ D:\OneDrive\桌面\创造i\server\
 ## 工作流程（新对话必读）
 
 1. **先出方案，后动手** — 每次改东西前先给方案，用户说「开搞」才写代码
-2. **推前检查** — 修改 admin-market.html 后必须检查 JS 括号平衡:
+2. **推前检查** — 必须做的三项:
    ```bash
-   python3 -c "import re;c=open('public/admin-market.html').read();m=re.search(r'<script>(.*?)</script>',c,re.DOTALL);js=m.group(1);print('{' + str(js.count('{')) + ' }' + str(js.count('}')) + ' diff=' + str(js.count('{')-js.count('}')))"
+   node --check server.js                              # 后端语法
+   grep -o '{' public/admin-market.html | wc -l         # 数 {
+   grep -o '}' public/admin-market.html | wc -l         # 数 }，必须相等
+   grep -o '{' public/market.html | wc -l
+   grep -o '}' public/market.html | wc -l
    ```
-   修改 server.js 后必须 `node --check server.js`
 3. **diff 为 0 才能推**，否则部署后白屏
-4. 所有图标用二豆主题 SVG（不要 emoji）
-5. 用户是超级管理员，密码在 Render 环境变量里
+4. **修改 admin-market.html 后的陷阱**:
+   - `<div>` 缺 `</div>` 会导致后续所有 tab-content 被嵌套，页面空白
+   - 排查方法: `cat -A file.html` 看真实缩进，分批隔离法（工作 vs 不工作找分界线）
+5. **不要用 CSS 字符串检测状态**（如 `style.background.includes('green')`），用 JS 变量
+6. **前端送 Supabase 的数值字段必须归一化**: `parseFloat(x) || 0`
+7. **前后端校验规则必须一致**: 出租判 `rent_price`，不出售判 `price`
+8. 所有图标用二豆主题 SVG（不要 emoji）
+9. 用户是超级管理员，密码在 Render 环境变量里
 
-## 待完善功能
+## 最近更新（2025/06/26）
+- 全部列表 Tab 增加批量处理（全选 checkbox + 批量操作按钮）
+- 修复 tabOverview 缺 `</div>` 导致部分 Tab 无法显示
+- 修复出租商品通知错误派发到商品 Tab
+- 租借 Tab 增加待审核计数 badge
+- 清理废弃部署配置（fly/vercel/railway/wrangler/deno）
+- 增加 `.gitignore` 屏蔽 `node_modules/` 和 `data/`
+- 增加 `CHECKLIST.md` 改前检查清单
+- 性能优化: 消息查询改为定向 SQL（不再拉全量再过滤），昵称读取加缓存
+
+## 已知问题 / 待完善
 1. 商品图片上传（目前只有 📦 emoji）
 2. 用户通知（审核结果通知）
 3. 数据导出 Excel
