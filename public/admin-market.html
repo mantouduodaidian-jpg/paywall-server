@@ -830,6 +830,7 @@ async function loadProds() {
     if (search) f = f.filter(p => (p.title||'').toLowerCase().includes(search) || (p.owner_name||'').toLowerCase().includes(search) || (p.owner_student_id||'').includes(search));
     if (sf) f = f.filter(p => p.status === sf);
     if (cf) f = f.filter(p => p.category === cf);
+      f = f.filter(p => p.item_type !== 'rent');
     const tbody = document.getElementById('prodTbody');
     if (!f.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
