@@ -348,7 +348,6 @@ tr:hover td{background:#f8fcf9}
       <div class="toolbar">
         <input type="text" id="prodSearch" placeholder="搜索..." onkeydown="if(event.key==='Enter')loadProds()">
         <select id="prodStatusFilter" onchange="loadProds()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
-        <select id="prodTypeFilter" onchange="loadProds()"><option value="">全部类型</option><option value="sell">二手</option><option value="rent">出租</option></select>
         <select id="prodCatFilter" onchange="loadProds()"><option value="">全部分类</option></select>
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
@@ -826,12 +825,10 @@ async function loadProds() {
     const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
     const search = document.getElementById('prodSearch').value.trim().toLowerCase();
     const sf = document.getElementById('prodStatusFilter').value;
-    const tf = document.getElementById('prodTypeFilter').value;
     const cf = document.getElementById('prodCatFilter').value;
     let f = arr;
     if (search) f = f.filter(p => (p.title||'').toLowerCase().includes(search) || (p.owner_name||'').toLowerCase().includes(search) || (p.owner_student_id||'').includes(search));
     if (sf) f = f.filter(p => p.status === sf);
-    if (tf) f = f.filter(p => p.item_type === tf);
     if (cf) f = f.filter(p => p.category === cf);
     const tbody = document.getElementById('prodTbody');
     if (!f.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">无匹配</div></td></tr>'; return; }
