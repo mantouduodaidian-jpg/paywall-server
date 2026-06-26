@@ -134,6 +134,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .chat-btn{position:fixed;bottom:24px;left:24px;width:56px;height:56px;border-radius:50%;background:#60b88e;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:199;box-shadow:0 4px 12px rgba(96,184,142,.2);transition:transform .2s}
 .chat-btn:hover{transform:scale(1.1)}
 .chat-btn .chat-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 8px rgba(239,68,68,.3)}
+/* Notif Bell */
+.notif-btn{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:199;box-shadow:0 2px 12px rgba(0,0,0,.06);border:1px solid rgba(0,0,0,.04);transition:transform .2s;display:none}
+.notif-btn:hover{transform:scale(1.1)}
+.notif-btn .bell-badge{position:absolute;top:-3px;right:-3px;background:#fbbf24;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 2px 6px rgba(251,191,36,.3)}
 /* Contact Sidebar */
 .contact-sidebar{position:fixed;top:0;left:-320px;width:300px;height:100vh;background:#fff;border-right:1px solid rgba(0,0,0,.04);z-index:200;transition:left .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.06);overflow:hidden;display:flex;flex-direction:column}
 .contact-sidebar.show{left:0}
@@ -264,6 +268,19 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div style="display:flex;gap:4px;margin-bottom:10px">
       <span id="typeFilterSell" onclick="setTypeFilter('sell')" style="flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:rgba(96,184,142,.08);color:#60b88e;border:1px solid rgba(96,184,142,.15)"><svg viewBox="0 0 24 24" width="14" height="14" style="flex-shrink:0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="none" stroke="currentColor" stroke-width="1.5"/><polyline points="3.27 6.96 12 12.01 20.73 6.96" fill="none" stroke="currentColor" stroke-width="1.2"/><line x1="12" y1="22.08" x2="12" y2="12" stroke="currentColor" stroke-width="1.2"/></svg> 二手</span>
       <span id="typeFilterRent" onclick="setTypeFilter('rent')" style="flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:rgba(0,0,0,.02);color:rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.06)"><svg viewBox="0 0 24 24" width="14" height="14" style="flex-shrink:0"><rect x="3" y="6" width="18" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.2"/><polyline points="8 6 8 2 16 2 16 6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg> 出租</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+      <select id="sortSelect" onchange="load()" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:rgba(0,0,0,.3);font-size:11px;outline:none;font-family:inherit">
+        <option value="">最新</option>
+        <option value="oldest">最早</option>
+        <option value="price_asc">价格 ↑</option>
+        <option value="price_desc">价格 ↓</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:4px;margin-bottom:8px">
+      <input id="priceMin" type="number" placeholder="¥最低" onchange="load()" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:11px;outline:none;font-family:inherit;min-width:0">
+      <span style="color:rgba(0,0,0,.1);font-size:11px;align-self:center">—</span>
+      <input id="priceMax" type="number" placeholder="¥最高" onchange="load()" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:11px;outline:none;font-family:inherit;min-width:0">
     </div>
     <div class="section-title">分类</div>
     <div class="cats" id="catList"></div>
@@ -733,6 +750,12 @@ async function load(reset) {
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
   else if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
+  var _sort = document.getElementById('sortSelect').value;
+  var _pmin = document.getElementById('priceMin').value;
+  var _pmax = document.getElementById('priceMax').value;
+  if (_sort) url += '&sort='+_sort;
+  if (_pmin) url += '&price_min='+_pmin;
+  if (_pmax) url += '&price_max='+_pmax;
   try {
     const r = await fetch(url); const json = await r.json();
     const data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
