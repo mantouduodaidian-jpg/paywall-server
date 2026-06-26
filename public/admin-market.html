@@ -1026,7 +1026,7 @@ async function loadProds() {
     if (cf) f = f.filter(p => p.category === cf);
       f = f.filter(p => p.item_type !== 'rent');
     const tbody = document.getElementById('prodTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">无匹配</div></td></tr>'; return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var prodImg = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src)">' : '<span style="color:#ccc;font-size:10px">-</span>';
@@ -1050,7 +1050,7 @@ async function loadProds() {
           '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</span></td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="12"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 async function approveProd(id) {
@@ -1130,12 +1130,14 @@ async function loadRentals() {
     if (search) f = f.filter(function(p) { return (p.title||'').toLowerCase().includes(search); });
     if (sf) f = f.filter(function(p) { return p.status === sf; });
     const tbody = document.getElementById('rentTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty">暂无租借商品</div></td></tr>'; return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty">暂无租借商品</div></td></tr>'; return; }
     tbody.innerHTML = f.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var periodMap = {day:'/天',week:'/周',month:'/月'};
+      var rentImg = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImg(this.src)">' : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
+        '<td>'+rentImg+'</td>'+
         '<td style="color:#fbbf24;font-weight:600">¥'+parseFloat(p.rent_price||0).toFixed(0)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
         '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(0)+'</td>'+
@@ -1149,7 +1151,7 @@ async function loadRentals() {
           (p.pinned?'<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>':'<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+'<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="12"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 // ====== VERIFICATIONS ======
