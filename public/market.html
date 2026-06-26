@@ -158,6 +158,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .chat-input-row{display:flex;gap:6px;padding:10px 12px;border-top:1px solid rgba(0,0,0,.04);flex-shrink:0}
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
+#tradeSeller{display:flex;gap:6px}
 .chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;color:rgba(0,0,0,.5)}
 .chat-conv-item:hover{background:rgba(96,184,142,.06)}
@@ -411,7 +412,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(0,0,0,.04)">
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button onclick="requestTrade()" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
-        <div id="tradeSeller" style="display:none;display:flex;gap:6px">
+        <div id="tradeSeller" style="display:none">
           <button onclick="confirmTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(52,211,153,.12);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(52,211,153,.15)">✅ 确认成交</button>
           <button onclick="cancelTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(239,68,68,.12)">✕ 取消交易</button>
         </div>
@@ -551,10 +552,16 @@ const SCHOOLS = [
 let sellerFilter = null;
 let reportingProductId = null;
 
+function updateTypeFilterUI(type) {
+  var BASE = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;';
+  ['Sell','Rent'].forEach(function(btn){
+    var a = btn.toLowerCase() === type;
+    document.getElementById('typeFilter'+btn).style.cssText = BASE + 'background:' + (a?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (a?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (a?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
+  });
+}
 function setTypeFilter(type) {
   itemTypeFilter = type;
-  document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (type==='sell'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (type==='sell'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
-  document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (type==='rent'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (type==='rent'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06');
+  updateTypeFilterUI(type);
   selCat = '';
   pageOffset = 0;
   load();
@@ -631,7 +638,7 @@ async function loadCats() {
   } catch(e) {
     // Fallback hardcoded
     document.getElementById('catList').innerHTML = '<div class="cat active" onclick="setCat(\'\')">🏠 全部</div>' +
-      ['教材笔记','数码配件','宿舍神器','生活百货','其他'].map(c => '<div class="cat" onclick="setCat(\''+c+'\')">'+c+'</div>').join('');
+      ['教材笔记','数码配件','宿舍用品','生活百货','其他'].map(c => '<div class="cat" onclick="setCat(\''+c+'\')">'+c+'</div>').join('');
   }
 }
 
@@ -905,7 +912,7 @@ function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); startSessionCheck(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); startProductPoll(); }
+if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
 
 function getSchoolName(id) {
   var s = SCHOOLS.find(function(x){return x.id===id;});
@@ -1562,8 +1569,7 @@ try {
     if (saved.page && saved.page > 1) { pageOffset = (saved.page - 1) * 10; }
     if (saved.type) {
         itemTypeFilter = saved.type;
-        document.getElementById('typeFilterSell').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (saved.type==='sell'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (saved.type==='sell'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (saved.type==='sell'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06)');
-        document.getElementById('typeFilterRent').style.cssText = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;background:' + (saved.type==='rent'?'rgba(96,184,142,.08)':'rgba(0,0,0,.02)') + ';color:' + (saved.type==='rent'?'#60b88e':'rgba(0,0,0,.25)') + ';border:1px solid ' + (saved.type==='rent'?'rgba(96,184,142,.15)':'rgba(0,0,0,.06');
+        updateTypeFilterUI(saved.type);
       }
   }
 } catch(e) {}

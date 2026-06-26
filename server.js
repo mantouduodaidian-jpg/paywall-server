@@ -541,7 +541,7 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
   try {
     var sf = req.adminSchool ? '&school=eq.'+req.adminSchool : '';
     const [prodR, verR, reportR, annR] = await Promise.all([
-      fetch(SB('products?select=id,verified,status,listed'+sf), { headers: SB_HEADERS }),
+      fetch(SB('products?select=id,item_type,verified,status,listed'+sf), { headers: SB_HEADERS }),
       fetch(SB('verifications?select=id,status'+sf), { headers: SB_HEADERS }),
       fetch(SB('reports?select=id,status'+sf), { headers: SB_HEADERS }),
       fetch(SB('announcements?select=id'+sf), { headers: SB_HEADERS }),
