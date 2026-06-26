@@ -321,13 +321,13 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 添加照片
+      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 添加照片 <span id="fImageLabel"></span>
         <input type="file" id="fImage" accept="image/*" multiple style="display:none" onchange="previewImg(this)">
       </label>
       <span id="fImageName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
     </div>
     <div id="fImagePreview" style="margin-bottom:10px;display:none">
-      <img id="fImagePreviewImg" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid rgba(0,0,0,.06)">
+      <div id="fImageThumbs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
     <div class="btns">
       <button class="submit" onclick="publish()">✅ 确认发布</button>
@@ -723,7 +723,8 @@ async function load(reset) {
   const search = document.getElementById('searchInput').value.trim();
   // Save state
   try { localStorage.setItem('marketState', JSON.stringify({cat:selCat,search:search,page:Math.floor(pageOffset/10)+1,type:itemTypeFilter})); } catch(e) {}
-  let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset+'&item_type='+itemTypeFilter;
+  let url = '/api/marketplace/products?limit='+PAGE_SIZE+'&offset='+pageOffset;
+  if (selCat !== '__mine__' && !sellerFilter) url += '&item_type='+itemTypeFilter;
   if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
@@ -875,7 +876,7 @@ async function publish(){
     const d=await r.json();
     btn.textContent='✅ 确认发布'; btn.disabled=false;
     const ok = d?.id || d?.[0]?.id || d?.ok;
-    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';_uploadedImages=[];load();}
+    if(ok){hidePub();document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';document.getElementById('fImageLabel').textContent='';_uploadedImages=[];load();}
     else notify(d.error || '发布失败', '❌');
   }catch(e){btn.textContent='✅ 确认发布'; btn.disabled=false; notify('发布失败', '❌');}
 }
@@ -1081,6 +1082,7 @@ function previewImg(input) {
   var remaining = 4 - _uploadedImages.length;
   if (files.length > remaining) { files = files.slice(0, remaining); }
   if (!files.length) { notify('最多4张，还可加'+remaining+'张', '⚠️'); input.value = ''; return; }
+  document.getElementById('fImageLabel').textContent = '('+_uploadedImages.length+'/4)';
   document.getElementById('fImageName').textContent = '压缩中...';
   var loaded = 0;
   files.forEach(function(file) {
@@ -1102,15 +1104,33 @@ function previewImg(input) {
         _uploadedImages.push(dataUrl);
         loaded++;
         if (loaded === files.length) {
-          document.getElementById('fImageName').textContent = _uploadedImages.length + '/4张 (' + Math.round(dataUrl.length/1024) + 'KB/张)';
-          var pv = document.getElementById('fImagePreview');
-          if (pv) { document.getElementById('fImagePreviewImg').src = _uploadedImages[0]; pv.style.display = ''; }
+          document.getElementById('fImageName').textContent = _uploadedImages.length + '/4张';
+          renderThumbnails();
         }
       };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   });
+}
+function renderThumbnails() {
+  var container = document.getElementById('fImageThumbs');
+  var preview = document.getElementById('fImagePreview');
+  if (!container || !preview) return;
+  if (!_uploadedImages.length) { preview.style.display = 'none'; return; }
+  preview.style.display = '';
+  container.innerHTML = _uploadedImages.map(function(src,i){
+    return '<div style="position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.06);flex-shrink:0">'+
+      '<img src="'+src+'" style="width:100%;height:100%;object-fit:cover">'+
+      '<span onclick="removePhoto('+i+')" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:rgba(239,68,68,.85);color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2)">✕</span>'+
+      '</div>';
+  }).join('');
+}
+function removePhoto(idx) {
+  _uploadedImages.splice(idx, 1);
+  document.getElementById('fImageLabel').textContent = '('+_uploadedImages.length+'/4)';
+  document.getElementById('fImageName').textContent = _uploadedImages.length + '/4张';
+  renderThumbnails();
 }
 
 // ====== Chat ======
