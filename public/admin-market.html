@@ -938,26 +938,6 @@ async function loadProds() {
       html2 += '<tr><td><input type="checkbox" class="prodCb" value="'+p2.id+'"></td><td>'+p2.id+'</td><td>'+esc(p2.title)+'</td><td>¥'+parseFloat(p2.price).toFixed(0)+'</td><td>'+esc(p2.category)+'</td><td>'+p2.status+'</td><td>'+(p2.listed!==false?'上架':'下架')+'</td><td>'+(p2.sold?'已售':'在售')+'</td><td>'+esc(p2.owner_name||'')+'</td><td>'+fmtDate(p2.created_at)+'</td><td></td></tr>';
     }
     document.getElementById('prodTbody').innerHTML = html2;
-      const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
-      return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
-        '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
-        '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
-        '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
-        '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
-        '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
-        '<td>'+ (p.sold?'<span class="badge badge-red">已售</span>':'<span class="badge badge-gray">在售</span>') +'</td>'+
-        '<td style="color:#bbb;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||p.contact||'-')+'</td>'+
-        '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
-        '<td style="text-align:center"><span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+
-          (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
-          (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="toggleListed('+p.id+','+(p.listed!==false)+')">'+(p.listed!==false?'📌 下架':'📌 上架')+'</button>':'')+
-          (p.pinned ? '<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>' : '<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+
-          (p.status==='approved'&&!p.sold?'<button class="btn btn-yellow btn-sm" onclick="markSold('+p.id+')">✅ 已售</button>':'')+
-          (p.sold?'<button class="btn btn-ghost btn-sm" onclick="markUnsold('+p.id+')">↩️ 恢复</button>':'')+
-          '<button class="btn btn-ghost btn-sm" onclick="editProd('+p.id+')">✏️</button>'+
-          '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
-        '</span></td></tr>';
-    }).join('');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="11"><div class="empty">加载失败</div></td></tr>'; }
 }
 
