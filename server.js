@@ -970,10 +970,6 @@ app.get('/api/marketplace/logs', schoolScope, async (req, res) => {
     let url = SB('logs?order=created_at.desc&select=*');
     if (lmt) url = SB('logs?order=created_at.desc&select=*&limit='+lmt);
     else url = SB('logs?order=created_at.desc&select=*&limit=200');
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-    }
     const r = await fetch(url, { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
