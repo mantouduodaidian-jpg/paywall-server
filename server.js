@@ -1518,6 +1518,26 @@ function addSchoolFilter(url, req) {
   return url;
 }
 
+// ====== Transactions API ======
+app.get('/api/marketplace/transactions', schoolScope, async (req, res) => {
+  try {
+    var sf = req.adminSchool ? '&school=eq.'+req.adminSchool : '';
+    const r = await fetch(SB('products?sold=eq.true&select=id,title,price,owner_name,owner_student_id,trade_buyer_name,trade_buyer_id,trade_status,payment_status,created_at'+sf+'&order=created_at.desc'), { headers: SB_HEADERS });
+    let data = await r.json();
+    res.json(Array.isArray(data) ? data : []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async (req, res) => {
+  try {
+    const { id, status } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ payment_status: status || 'paid' }) });
+    addLog('transaction_pay', 'product', id, status||'paid');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 const PORT = process.env.PORT || 3456;
 
 // ====== WebSocket Server ======
