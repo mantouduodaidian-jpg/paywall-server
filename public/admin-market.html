@@ -1132,6 +1132,7 @@ async function loadRentals() {
     const d = await r.json();
     const all = Array.isArray(d) ? d : (d.data || []);
     const arr = all.filter(function(p) { return p.item_type === 'rent'; });
+    _prodImgArr = [];
     const search = document.getElementById('rentSearch').value.trim().toLowerCase();
     const sf = document.getElementById('rentStatusFilter').value;
     let f = arr;
