@@ -298,6 +298,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-size:13px;color:rgba(0,0,0,.2)" id="resultLabel">全部商品</span>
       <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
+      <span id="mineFilterBar" style="display:none;margin-left:8px"><span class="minef active" data-mf="" onclick="setMineFilter(this,'')">全部</span><span class="minef" data-mf="approved" onclick="setMineFilter(this,'approved')">✅ 已上架</span><span class="minef" data-mf="pending" onclick="setMineFilter(this,'pending')">⏳ 待审核</span><span class="minef" data-mf="rejected" onclick="setMineFilter(this,'rejected')">✕ 未通过</span></span>
     </div>
     <div style="display:flex;flex-direction:column;min-height:520px">
       <div class="grid" id="productList"><div class="empty">加载中...</div></div>
@@ -480,6 +481,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .myf{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(0,0,0,.03);color:rgba(0,0,0,.3);transition:all.1s}
 .myf.active{background:rgba(96,184,142,.1);color:#60b88e}
 .myf:hover{background:rgba(96,184,142,.06)}
+.minef{padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(0,0,0,.03);color:rgba(0,0,0,.3);transition:all.1s}
+.minef.active{background:rgba(96,184,142,.1);color:#60b88e}
+.minef:hover{background:rgba(96,184,142,.06)}
 </style>
 
 
@@ -764,6 +768,12 @@ function myListToggle(id) {
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok){notify('已下架','📌');load();}}).catch(function(){});
 }
+var _mineFilter = '';
+function setMineFilter(el, f) {
+  _mineFilter = f;
+  document.querySelectorAll('#mineFilterBar .minef').forEach(function(x){ x.classList.toggle('active', x.dataset.mf === f); });
+  load();
+}
 
 let pageOffset = 0;
 const PAGE_SIZE = 10;
@@ -797,6 +807,27 @@ async function load(reset) {
   try {
     const r = await fetch(url); const json = await r.json();
     const data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+    // Mine filter + sort by status
+    var mfBar = document.getElementById('mineFilterBar');
+    if (selCat === '__mine__') {
+      mfBar.style.display = 'inline';
+      var filtered = _mineFilter ? data.filter(function(p){
+        if (_mineFilter === 'approved') return p.status==='approved' && p.listed!==false && !p.sold;
+        if (_mineFilter === 'pending') return p.status==='pending';
+        if (_mineFilter === 'rejected') return p.status==='rejected';
+        return true;
+      }) : data;
+      // Sort: approved > pending > rejected > unlisted
+      filtered.sort(function(a,b){
+        var pri = {approved:0, pending:1, rejected:2};
+        var pa = a.sold ? 4 : (a.listed===false ? 3 : (pri[a.status]!==undefined?pri[a.status]:5));
+        var pb = b.sold ? 4 : (b.listed===false ? 3 : (pri[b.status]!==undefined?pri[b.status]:5));
+        return pa - pb;
+      });
+      data.length = 0; data.push.apply(data, filtered);
+    } else {
+      mfBar.style.display = 'none';
+    }
     var searchVal = document.getElementById('searchInput').value.trim();
     const total = searchVal ? data.length : (json.total || data.length);
     document.getElementById('statCount').textContent = total;
