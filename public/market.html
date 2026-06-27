@@ -1554,7 +1554,10 @@ function switchTradeProd(pid) {
   fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2)updateTradeCard(cp2);}).catch(function(){});
 }
 function updateTradeCard(p){
-  document.getElementById('tradeProductCard').innerHTML='<span style="font-weight:600;color:#4e9e80">'+esc(p.title||'')+'</span> <span style="color:#34d399;font-weight:600">\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0)+'</span>'+(p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929')+'</span>':'');
+  var c=document.getElementById('tradeProductCard');
+  c.style.opacity='0';
+  c.innerHTML='<span style="font-weight:600;color:#4e9e80">'+esc(p.title||'')+'</span> <span style="color:#34d399;font-weight:600">\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0)+'</span>'+(p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929')+'</span>':'');
+  setTimeout(function(){c.style.opacity='1';},10);
   var st=document.getElementById('tradeStatus');
   var iO=currentUser&&p.owner_student_id===currentUser.student_id;
   var iB=currentUser&&p.trade_buyer_id===currentUser.student_id;
