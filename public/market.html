@@ -1437,7 +1437,7 @@ function quickRequest(pid) {
   fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(p){
     if (!p || p.sold) { notify('商品已售罄', '❌'); return; }
     if (p.owner_student_id === currentUser.student_id) return;
-    fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid,buyer_id:currentUser.student_id,buyer_name:currentUser.name})})
+    fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid,buyer_id:currentUser.student_id,buyer_name:_nickCache?(_nickCache[currentUser.student_id]||currentUser.name):currentUser.name})})
       .then(function(r){return r.json();})
       .then(function(d){
         if(d.ok){
@@ -1451,7 +1451,7 @@ function quickRequest(pid) {
 }
 function requestTrade() {
   if (!chatProductId || !currentUser) return;
-  fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId,buyer_id:currentUser.student_id,buyer_name:currentUser.name})})
+  fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:chatProductId,buyer_id:currentUser.student_id,buyer_name:_nickCache?(_nickCache[currentUser.student_id]||currentUser.name):currentUser.name})})
     .then(function(r){return r.json();})
     .then(function(d){
       if(d.ok){
