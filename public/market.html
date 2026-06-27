@@ -1393,7 +1393,7 @@ function updateChatHeader() {
   if (!chatProductId || !chatOtherStudent) return;
   fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){
     if (!p) return;
-    }
+    updateTradeButtons(p);
   }).catch(function(){});
 }
 function updateTradeButtons(p) {
