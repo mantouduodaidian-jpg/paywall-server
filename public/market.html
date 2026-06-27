@@ -511,17 +511,16 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <!-- Login Modal -->
 <div class="pub-overlay" id="loginOverlay" onclick="if(event.target===this)hideLogin()">
   <div class="pub-box" style="max-width:400px;text-align:center">
-    <div style="font-size:48px;margin-bottom:8px">🔑</div>
-    <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">欢迎回来</h2>
-    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:20px">登录后可以发布闲置和联系卖家</p>
-    <div id="visitorSchoolDiv" style="display:none">
-      <select id="visitorSchool" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:14px;outline:none;font-family:inherit"><option value="">选择学校浏览</option></select>
+    <div style="font-size:48px;margin-bottom:8px">👋</div>
+    <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">二豆集市</h2>
+    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:12px">输入手机号即可浏览商品</p>
+    <input type="tel" id="phoneLoginInput" placeholder="手机号" style="margin-bottom:8px">
+    <div class="btns" style="margin-bottom:12px">
+      <button class="submit" onclick="doPhoneLogin()" style="padding:12px">📱 浏览集市</button>
     </div>
-    <input type="text" id="loginId" placeholder="学号">
-    <input type="password" id="loginPhone" placeholder="电话">
-    <div style="font-size:12px;color:rgba(0,0,0,.15);margin-bottom:14px">还没有账号？<a href="#" onclick="hideLogin();showVerify();return false" style="color:#34d399;font-weight:600">立即认证 →</a></div>
-    <div class="btns">
-      <button class="submit" onclick="doLogin()" style="padding:12px">登录</button>
+    <div style="border-top:1px solid rgba(0,0,0,.04);padding-top:12px">
+      <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:8px">想发布闲置或联系卖家？</p>
+      <button onclick="hideLogin();showVerify();return false" style="padding:10px 20px;border-radius:10px;border:1px solid rgba(96,184,142,.2);background:rgba(96,184,142,.06);color:#4e9e80;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎓 学生认证</button>
     </div>
     <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(0,0,0,.15);text-decoration:none">稍后再说</a></div>
   </div>
@@ -925,7 +924,7 @@ async function publish(){
 
 // ====== Report ======
 function showReport(id) {
-  if (!currentUser) { notify('请先登录后举报', '🔑'); showLogin(); return; }
+  if (!requireFullAuth('请先认证后再举报')) return;
   reportingProductId = id;
   document.getElementById('reportOverlay').classList.add('show');
 }
@@ -963,7 +962,7 @@ function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.
 let currentUser = null;
 try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
 if (currentUser) { renderLoggedIn(); startSessionCheck(); }
-if (currentUser) { document.getElementById('chatBtn').style.display = ''; document.getElementById('notifBtn').style.display = 'flex'; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
+if (currentUser && currentUser.tier === 'full') { document.getElementById('chatBtn').style.display = ''; document.getElementById('notifBtn').style.display = 'flex'; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
 
 function getSchoolName(id) {
   var s = SCHOOLS.find(function(x){return x.id===id;});
@@ -973,7 +972,9 @@ function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
   var schoolName = getSchoolName(currentUser?.school);
+  var tierBadge = currentUser?.tier !== 'full' ? '<span style="font-size:10px;color:rgba(0,0,0,.2);margin-left:4px">👤 游客</span>' : '';
   document.getElementById('userName').textContent = '👤 ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '');
+  document.getElementById('userName').innerHTML = '👤 ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '') + tierBadge;
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -986,6 +987,25 @@ function renderLoggedOut() {
 
 function showLogin(){document.getElementById('loginOverlay').classList.add('show')}
 function hideLogin(){document.getElementById('loginOverlay').classList.remove('show')}
+async function doPhoneLogin(){
+  var phone = document.getElementById('phoneLoginInput').value.trim();
+  if (!phone || phone.length !== 11) { notify('请输入11位手机号', '⚠️'); return; }
+  try {
+    var r = await fetch('/api/marketplace/phone-login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    var d = await r.json();
+    if (d.ok && d.user) {
+      currentUser = d.user;
+      localStorage.setItem('marketUser', JSON.stringify(d.user));
+      renderLoggedIn();
+      document.getElementById('chatBtn').style.display = 'none';
+      hideLogin();
+      notify('欢迎来二豆逛逛！认证后可发布和聊天', '👋');
+      load();
+    } else {
+      notify(d.msg || '登录失败', '❌');
+    }
+  } catch(e) { notify('登录失败', '❌'); }
+}
 async function doLogin(){
   const student_id = document.getElementById('loginId').value.trim();
   const phone = document.getElementById('loginPhone').value.trim();
@@ -1025,10 +1045,14 @@ function logout(){
 function hideLogoutModal(){document.getElementById('logoutModal').classList.remove('show');}
 function confirmLogout(){hideLogoutModal();renderLoggedOut();setTimeout(function(){location.reload();},100);}
 
-function showLoginForPub() {
-  if (!currentUser) { notify('请先登录再发布', '🔑'); showLogin(); return false; }
-  if (currentUser.muted) { notify('账号已禁言，无法发布商品', '🔇'); return false; }
+function requireFullAuth(msg) {
+  if (!currentUser) { notify(msg || '请先登录', '🔑'); showLogin(); return false; }
+  if (currentUser.tier !== 'full') { notify('请先完成学生认证解锁此功能', '🎓'); showLogin(); return false; }
+  if (currentUser.muted) { notify('账号已禁言', '🔇'); return false; }
   return true;
+}
+function showLoginForPub() {
+  return requireFullAuth('请先认证后发布闲置');
 }
 
 // ====== Verification ======
@@ -1236,7 +1260,7 @@ function connectWS() {
 }
 
 function openChat(productId, sellerStudentId, sellerName, productTitle) {
-  if (!currentUser) { notify('请先登录后联系卖家', '🔑'); showLogin(); return; }
+  if (!requireFullAuth('请先认证后联系卖家')) return;
   if (sellerStudentId === 'unknown') { notify('卖家信息不完整', '⚠️'); return; }
   chatProductId = productId;
   chatOtherStudent = sellerStudentId;
@@ -1582,17 +1606,17 @@ function openNotifChat() {
       panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div>'+
         (!notifs.length ? '<div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">暂无通知</div>' :
         '<div style="overflow-y:auto;max-height:350px">'+notifs.map(function(m){ var txt = m.content||''; if (txt.indexOf('[img]')>=0) txt = txt.substring(0, txt.indexOf('[img]')); if (txt.length>100) txt = txt.substring(0,100)+'...'; return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5;display:flex;justify-content:space-between;align-items:flex-start"><span style="flex:1">'+esc(txt)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></span><span onclick="dismissNotif('+m.id+',this)" style="cursor:pointer;color:rgba(0,0,0,.15);font-size:14px;padding:2px 4px;flex-shrink:0">✕</span></div>'; }).join('')+'</div>');
-    function dismissNotif(id, el) {
+}).catch(function(){panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载失败</div>';});
+}
+
+
+function dismissNotif(id, el) {
   if (!window._dismissedNotifs.includes(id)) window._dismissedNotifs.push(id);
   localStorage.setItem('dismissedNotifs', JSON.stringify(window._dismissedNotifs));
-  var row = el.closest ? el.closest('div[style*="padding"]') : el.parentNode;
-  if (row) row.style.display = 'none';
-  // Update badge
+  var row = el.parentNode;
+  if (row && row.style) row.style.display = 'none';
   var nb = document.getElementById('bellBadge');
-  var vis = document.querySelectorAll('#notifPanel [style*="padding"]:not([style*="display:none"])').length;
   if (nb) nb.textContent = Math.max(0, parseInt(nb.textContent)-1);
-}
-}).catch(function(){panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载失败</div>';});
 }
 
 var _productTimer = null;

@@ -709,6 +709,29 @@ app.delete('/api/marketplace/promotions/:id', fullAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Phone-only (guest) login ======
+app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone || !phone.match(/^\d{11}$/)) return res.json({ ok: false, msg: '请输入11位手机号' });
+    const r = await fetch(SB("verifications?phone=eq."+encodeURIComponent(phone)+"&select=id,phone,name,status,school"), { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    var existing = arr.find(function(v){ return v.status === 'phone_only' || v.status === 'approved'; });
+    if (existing) {
+      return res.json({ ok: true, user: { id: existing.id, phone: existing.phone, name: existing.name || ('用户'+phone.slice(-4)), school: existing.school||'', tier: existing.status === 'approved' ? 'full' : 'phone' } });
+    }
+    // Create phone-only record
+    const cr = await fetch(SB('verifications'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify({ phone, status: 'phone_only', created_at: new Date().toISOString() })
+    });
+    const cd = await cr.json();
+    var newUser = Array.isArray(cd) ? cd[0] : cd;
+    res.json({ ok: true, user: { id: newUser.id, phone: newUser.phone, name: '用户'+phone.slice(-4), school: '', tier: 'phone' } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Login API ======
 app.post('/api/marketplace/login', express.json(), async (req, res) => {
   try {
@@ -745,7 +768,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         var loginToken = randomBytes(16).toString('hex');
         await fetch(SB('verifications?id=eq.'+approved[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ login_token: loginToken }) });
         approved[0].login_token = loginToken;
-        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'', login_token: loginToken } });
+        return res.json({ ok: true, user: { id: approved[0].id, name: approved[0].name, student_id: approved[0].student_id, phone: approved[0].phone, nickname: approved[0].nickname||'', school: approved[0].school||'', login_token: loginToken, tier: 'full' } });
       }
       const muted = arr.filter(v => v.status === 'muted');
       if (muted.length) {
