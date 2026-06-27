@@ -820,6 +820,11 @@ app.post('/api/marketplace/trade/request', express.json(), async (req, res) => {
     var realName = buyer_name||'';
     try { var nr = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(buyer_id)+"&select=name"), { headers: SB_HEADERS }); var nd = await nr.json(); if(Array.isArray(nd)&&nd[0]&&nd[0].name) realName = nd[0].name; } catch(e){}
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: realName }) });
+    try {
+      const rr = await fetch(SB('products?id=eq.'+product_id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+      const rd = await rr.json(); const rp = Array.isArray(rd) ? rd[0] : null;
+      if (rp && rp.owner_student_id) sendNotify(rp.owner_student_id, rp.owner_name, rp.school, '📦 有人想购买你的商品「'+rp.title+'」，快去看看吧');
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -829,6 +834,11 @@ app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_buyer' }) });
+    try {
+      const rr = await fetch(SB('products?id=eq.'+product_id+'&select=title,trade_buyer_id,trade_buyer_name,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+      const rd = await rr.json(); const rp = Array.isArray(rd) ? rd[0] : null;
+      if (rp && rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '✅ 卖家已确认购买「'+rp.title+'」，请确认收货');
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -856,6 +866,14 @@ app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '' }) });
+    try {
+      const rr = await fetch(SB('products?id=eq.'+product_id+'&select=title,owner_student_id,owner_name,trade_buyer_id,trade_buyer_name,school'), { headers: SB_HEADERS });
+      const rd = await rr.json(); const rp = Array.isArray(rd) ? rd[0] : null;
+      if (rp) {
+        sendNotify(rp.owner_student_id, rp.owner_name, rp.school, '✕ 商品「'+rp.title+'」的交易已取消');
+        if (rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '✕ 商品「'+rp.title+'」的交易已被卖家取消');
+      }
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
