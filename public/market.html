@@ -1549,9 +1549,13 @@ function cancelTrade() {
 function switchTradeProd(pid) {
   pid=parseInt(pid);if(!pid||pid==chatProductId)return;
   chatProductId=pid;
-  var cp=window._tradeCache?window._tradeCache[pid]:null;
-  if(cp){updateTradeCard(cp);return;}
-  fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2)updateTradeCard(cp2);}).catch(function(){});
+  if(window._tradeCache&&window._tradeCache[pid]){updateTradeCard(window._tradeCache[pid]);return;}
+  // Show loading card instantly using dropdown text
+  var sel=document.getElementById('tradeSelect');
+  var txt=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
+  var st=document.getElementById('tradeStatus');
+  st.style.display='';st.innerHTML='⏳ 加载中...';st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:rgba(0,0,0,.03);color:rgba(0,0,0,.3)';
+  fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2){window._tradeCache[pid]=cp2;updateTradeCard(cp2);}}).catch(function(){});
 }
 function updateTradeCard(p){
   var c=document.getElementById('tradeProductCard');
