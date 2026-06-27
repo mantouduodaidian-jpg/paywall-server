@@ -1719,7 +1719,7 @@ async function loadLogs() {
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function fmtDate(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
 function fmtDateTime(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0'); }
-function schoolName(code) { if (!code) return '-'; var s = SCHOOL_LIST.find(function(x){return x.code===code;}); return s ? s.name : code; }
+function schoolName(code) { if (!code) return '所有学校'; var s = SCHOOL_LIST.find(function(x){return x.code===code;}); return s ? s.name : code; }
 function toggleChart(headerEl) {
   var body = document.getElementById('chartBody');
   var arrow = document.getElementById('chartArrow');
