@@ -811,12 +811,12 @@ async function load(reset) {
     var mfBar = document.getElementById('mineFilterBar');
     if (selCat === '__mine__') {
       mfBar.style.display = 'inline';
-      var filtered = _mineFilter ? data.filter(function(p){
+      var filtered = (_mineFilter ? data.filter(function(p){
         if (_mineFilter === 'approved') return p.status==='approved' && p.listed!==false && !p.sold;
         if (_mineFilter === 'pending') return p.status==='pending';
         if (_mineFilter === 'rejected') return p.status==='rejected';
         return true;
-      }) : data;
+      }) : data.slice());
       // Sort: approved > pending > rejected > unlisted
       filtered.sort(function(a,b){
         var pri = {approved:0, pending:1, rejected:2};
