@@ -448,6 +448,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
       <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(0,0,0,.04)">
+        <div id="tradeDropdown" style="display:none;margin-bottom:6px"><select id="tradeSelect" onchange="switchTradeProd(this.value)" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:11px;outline:none;font-family:inherit"></select></div>
         <div id="tradeProductCard" style="display:none;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(96,184,142,.06);border:1px solid rgba(96,184,142,.1);font-size:11px;color:rgba(0,0,0,.45);line-height:1.5"></div>
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button id="tradeBuyerBtn" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
@@ -1373,7 +1374,7 @@ function loadConvs() {
           if (pid == c.product_id) return '';
           return '<div class="chat-conv-item" style="padding-left:28px;font-size:11px" onclick="openChat('+pid+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">📦 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">商品 #'+pid+'</span></div>';
         }).join('') : '';
-        var toggleIcon = hasMulti ? '<span style="cursor:pointer;margin-right:4px;font-size:10px;color:rgba(0,0,0,.15)" onclick="event.stopPropagation();var n=this.parentNode.nextElementSibling;if(n)n.style.display=n.style.display===\"none\"?\"\":\"none\"">▶</span>' : '';
+        var toggleIcon = hasMulti ? '<span style="cursor:pointer;margin-right:4px;font-size:10px;color:rgba(96,184,142,.6)" onclick="event.stopPropagation();var n=this.parentNode.nextElementSibling;if(n)n.style.display=n.style.display===\"none\"?\"\":\"none\"">◀ </span>' : '';
         return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">'+toggleIcon+'💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>'+(hasMulti?'<div style="display:none">'+subItems+'</div>':'');
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
@@ -1402,7 +1403,7 @@ function updateTradeButtons(p) {
   var buyerBtn = document.getElementById('tradeBuyer');
   var buyerBtnInner = document.getElementById('tradeBuyerBtn');
   var sellerBtns = document.getElementById('tradeSeller');
-  actions.style.display = 'none'; document.getElementById('tradeProductCard').style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
+  actions.style.display = 'none'; document.getElementById('tradeProductCard').style.display = 'none'; document.getElementById('tradeDropdown').style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
   if (!p || p.sold) return;
   var isOwner = currentUser && p.owner_student_id === currentUser.student_id;
   var isBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
@@ -1412,6 +1413,18 @@ function updateTradeButtons(p) {
   card.style.display = 'block';
   card.innerHTML = '<span style="font-weight:600;color:#4e9e80">' + esc(p.title||'') + '</span> <span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price||p.rent_price||0).toFixed(0) + '</span>' + (p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span>':'');
   actions.style.display = 'flex';
+  // Multi-trade dropdown
+  if (currentUser && p.owner_student_id) {
+    var sel = document.getElementById('tradeSelect');
+    fetch('/api/marketplace/products?owner='+p.owner_student_id+'&limit=50&offset=0').then(function(r){return r.json();}).then(function(jd){
+      var all = Array.isArray(jd.data)?jd.data:(Array.isArray(jd)?jd:[]);
+      var trades = all.filter(function(x){ return x.trade_status && x.trade_buyer_id === currentUser.student_id; });
+      if (trades.length > 1) {
+        document.getElementById('tradeDropdown').style.display = 'block';
+        sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'等待卖家确认':x.trade_status==='awaiting_buyer'?'请确认收货':'已完成')+'</option>'; }).join('');
+      }
+    }).catch(function(){});
+  }
 
   if (isOwner && p.trade_status === 'trading') {
     status.style.display = ''; status.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> ' + esc(p.trade_buyer_name||'买家') + ' 想购买';

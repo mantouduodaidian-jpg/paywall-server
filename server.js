@@ -699,11 +699,11 @@ app.get('/api/marketplace/promotions', async (req, res) => {
 
 app.post('/api/marketplace/promotions', schoolScope, express.json(), async (req, res) => {
   try {
-    const { title, desc, contact, image, sort_order } = req.body;
+    const { title, desc, contact, image, sort_order, school } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
     const r = await fetch(SB('promotions'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, desc: desc||'', contact: contact||'', image: image||'', sort_order: sort_order||0, active: true })
+      body: JSON.stringify({ title, desc: desc||'', contact: contact||'', image: image||'', sort_order: sort_order||0, active: true, school: school||'' })
     });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }

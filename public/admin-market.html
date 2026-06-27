@@ -519,6 +519,7 @@ tr:hover td{background:#f8fcf9}
         <input type="text" id="promoTitle" placeholder="标题" style="max-width:150px">
         <input type="text" id="promoDesc" placeholder="描述" style="max-width:200px">
         <input type="text" id="promoContact" placeholder="联系方式" style="max-width:130px">
+        <select id="promoSchool" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#555;font-size:12px;outline:none;font-family:inherit"><option value="">所有学校</option></select>
         <span id="promoBatchBar" style="display:none">
           <button class="btn btn-red btn-sm" onclick="batchDelete('promoCb','/api/marketplace/promotions/','活动')">🗑️ 批量删除</button>
           <span style="color:#ccc;margin:0 4px">|</span>
@@ -526,7 +527,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-primary" onclick="addPromo()">+ 添加</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'promoCb')"></th><th>ID</th><th>标题</th><th>描述</th><th>联系方式</th><th>排序</th><th>状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="promoTbody"></tbody></table><div id="promoPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'promoCb')"></th><th>ID</th><th>标题</th><th>描述</th><th>联系方式</th><th>学校</th><th>排序</th><th>状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="promoTbody"></tbody></table><div id="promoPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1398,7 +1399,7 @@ async function loadAnns() {
     const r = await apiFetch(getSchoolParam('/api/marketplace/announcements?all=1'));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
-    document.getElementById('annTbody').innerHTML = !arr.length ? '<tr><td colspan="7"><div class="empty">暂无公告</div></td></tr>' :
+    document.getElementById('annTbody').innerHTML = !arr.length ? '<tr><td colspan="9"><div class="empty">暂无公告</div></td></tr>' :
       arr.map(a => '<tr'+(a.school?'':' style="border-left:3px solid #c4a84c;background:rgba(196,168,76,.04)"')+'><td style="color:#ccc">'+a.id+'</td><td>'+esc(a.title)+(a.school?'':' <span style="font-size:9px;color:#c4a84c">[全局]</span>')+'</td><td style="color:#bbb;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(a.content)+'</td>'+
         '<td><span class="badge '+(a.active?'badge-green':'badge-gray')+'">'+(a.active?'显示中':'已关闭')+'</span></td>'+
         '<td style="font-size:10px;color:#ccc">'+fmtDate(a.created_at)+'</td>'+
@@ -1598,8 +1599,8 @@ async function loadPromos() {
     const r = await apiFetch(getSchoolParam('/api/marketplace/promotions?all=1'));
     const data = await r.json();
     const arr = Array.isArray(data) ? data : [];
-    document.getElementById('promoTbody').innerHTML = !arr.length ? '<tr><td colspan="7"><div class="empty">暂无</div></td></tr>' :
-      arr.map(p => '<tr><td style="color:#ccc">'+p.id+'</td><td>'+esc(p.title)+'</td><td style="color:#bbb;max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(p.desc||'-')+'</td><td style="color:#bbb">'+esc(p.contact||'-')+'</td>'+
+    document.getElementById('promoTbody').innerHTML = !arr.length ? '<tr><td colspan="9"><div class="empty">暂无</div></td></tr>' :
+      arr.map(p => '<tr><td><input type="checkbox" class="promoCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td><td>'+esc(p.title)+'</td><td style="color:#bbb;max-width:120px;overflow:hidden;text-overflow:ellipsis">'+esc(p.desc||'-')+'</td><td style="color:#bbb">'+esc(p.contact||'-')+'</td><td style="color:#999;font-size:10px">'+schoolName(p.school||'')+'</td>'+
         '<td><input type="number" value="'+(p.sort_order||0)+'" style="width:40px;padding:2px 4px;border-radius:4px;border:1px solid #ddd;background:rgba(0,0,0,.2);color:#4a4a4a;font-size:11px;outline:none" onchange="updatePromoSort('+p.id+',this.value)"></td>'+
         '<td><span class="badge '+(p.active?'badge-green':'badge-gray')+'">'+(p.active?'显示':'隐藏')+'</span></td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;justify-content:center">'+
@@ -1611,7 +1612,8 @@ async function loadPromos() {
 async function addPromo() {
   const title = document.getElementById('promoTitle').value.trim();
   if (!title) { toast('输入标题'); return; }
-  await apiFetch('/api/marketplace/promotions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:document.getElementById('promoDesc').value.trim(),contact:document.getElementById('promoContact').value.trim()})});
+  const promoSchool = document.getElementById('promoSchool').value;
+  await apiFetch('/api/marketplace/promotions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,desc:document.getElementById('promoDesc').value.trim(),contact:document.getElementById('promoContact').value.trim(),school:promoSchool})});
   document.getElementById('promoTitle').value='';document.getElementById('promoDesc').value='';document.getElementById('promoContact').value='';
   toast('✅ 已添加'); loadPromos();
 }
@@ -1751,6 +1753,12 @@ function init() {
     SCHOOL_LIST.forEach(function(s) { bwSel.innerHTML += '<option value="'+s.code+'">'+s.name+'</option>'; });
   }
   if (bwSel && role === 'school_admin') { bwSel.value = localStorage.getItem('adminSchool')||''; bwSel.style.display = 'none'; }
+  // Populate promo school selector
+  var promoSel = document.getElementById('promoSchool');
+  if (promoSel && SCHOOL_LIST.length) {
+    SCHOOL_LIST.forEach(function(s) { promoSel.innerHTML += '<option value="'+s.code+'">'+s.name+'</option>'; });
+  }
+  if (promoSel && role === 'school_admin') { promoSel.value = localStorage.getItem('adminSchool')||''; promoSel.style.display = 'none'; }
 }
 
 // WebSocket for instant updates
