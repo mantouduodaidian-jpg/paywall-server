@@ -1393,12 +1393,7 @@ function updateChatHeader() {
   if (!chatProductId || !chatOtherStudent) return;
   fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){
     if (!p) return;
-    var _dn = ownerDisplayName(p);
-    if (_nickCache && chatOtherStudent) {
-      var _nn = _nickCache[chatOtherStudent];
-      if (_nn && _nn !== p.owner_name) _dn = _nn + ' (' + (p.owner_name||'') + ')';
     }
-    document.getElementById('chatConvLabel').textContent = '\u{1f4ac} ' + _dn;
   }).catch(function(){});
 }
 function updateTradeButtons(p) {
@@ -1553,19 +1548,7 @@ function switchTradeProd(pid) {
   chatProductId = pid;
   fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(p){
     if (!p) return;
-    chatOtherStudent = p.owner_student_id;
-    chatOtherName = p.owner_name;
     updateTradeButtons(p);
-    updateChatHeader();
-    // Reload messages for this product
-    fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+chatOtherStudent)
-      .then(function(r){return r.json();}).then(function(data){
-        var arr = Array.isArray(data)?data:[];
-        document.getElementById('chatMsgs').innerHTML = '';
-        arr.forEach(function(m){ appendMsg(m, true); });
-        var msgs = document.getElementById('chatMsgs');
-        msgs.scrollTop = msgs.scrollHeight;
-      }).catch(function(){});
   }).catch(function(){});
 }
 function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
