@@ -760,6 +760,14 @@ function logout() {
 // School list for super admin
 var SCHOOL_LIST = [];
 try { var sl = localStorage.getItem('schoolList'); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) {}
+var _adminNickCache = {};
+async function loadAdminNickCache() {
+  try { var r = await fetch('/api/verify/list'); var d = await r.json(); var arr = Array.isArray(d)?d:[]; arr.forEach(function(v){ if(v.student_id) _adminNickCache[v.student_id] = v.nickname||v.name||''; }); } catch(e){}
+}
+function dispName(studentId, fallback) {
+  var nick = _adminNickCache[studentId];
+  return nick ? esc(nick)+' <span style="color:#aaa;font-size:9px">('+esc(fallback||'')+')</span>' : esc(fallback||'-');
+}
 
 function kefuId() { var s = localStorage.getItem('adminSchool'); return s ? 'kefu_'+s : 'kefu_admin'; }
 function isKefuId(id) { return id && id.indexOf('kefu_') === 0; }
@@ -1050,7 +1058,7 @@ async function loadProds() {
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
         '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
         '<td>'+ (p.sold?'<span class="badge badge-red">已售</span>':'<span class="badge badge-gray">在售</span>') +'</td>'+
-        '<td style="color:#bbb;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||p.contact||'-')+'</td>'+
+        '<td style="color:#bbb;font-size:10px;max-width:80px;overflow:hidden;text-overflow:ellipsis">'+dispName(p.owner_student_id, p.owner_name||p.contact)+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
         '<td style="text-align:center"><span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
@@ -1163,7 +1171,7 @@ async function loadRentals() {
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
-        '<td style="color:#bbb;font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||'')+'</td>'+
+        '<td style="color:#bbb;font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+dispName(p.owner_student_id, p.owner_name)+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
         '<td style="text-align:center">'+
           (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveProd('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
@@ -1186,7 +1194,7 @@ async function loadVers() {
     var _vPage = adminPage.verPagination || 0; var _vTotal = filtered.length;
     if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="11"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
     var _vd = filtered.slice(_vPage * ADMIN_PAGE_SIZE, (_vPage + 1) * ADMIN_PAGE_SIZE);
-    document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
+    document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+dispName(v.student_id, v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(v.school)+'</td>'+
         '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#4e9e80;font-size:10px">📷 学生证</a>':'<span style="color:#ccc;font-size:10px">无</span>')+' <a href="#" onclick="showPaymentQR('+v.id+');return false" style="color:#c4a84c;font-size:10px">📷 收款码</a></td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
@@ -1471,8 +1479,9 @@ function renderKefuContacts() {
   if (!filtered.length) { el.innerHTML = '<div style="padding:20px;text-align:center;color:#ccc;font-size:11px">' + (search ? '未找到用户' : '暂无用户') + '</div>'; return; }
   el.innerHTML = filtered.map(function(c) {
     var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
+    var dName = _adminNickCache[c.student_id] ? esc(_adminNickCache[c.student_id])+' <span style="color:#aaa;font-size:9px">('+esc(c.name)+')</span>' : esc(c.name);
     return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02)">'+
-      esc(c.name)+(c.school?' <span style="color:#ddd;font-size:9px>'+schoolName(c.school)+'</span>':'')+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
+      dName+(c.school?' <span style="color:#ddd;font-size:9px">'+schoolName(c.school)+'</span>':'')+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
   }).join('');
 }
 async function openKefuChat(studentId, name) {
@@ -1559,8 +1568,8 @@ async function loadTransactions() {
       return '<tr><td><input type="checkbox" class="txCb" value="'+t.id+'"></td><td style="color:#ccc">'+t.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</td>'+
         '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(0)+'</td>'+
-        '<td style="color:#555">'+esc(t.owner_name||t.owner_student_id||'-')+'</td>'+
-        '<td style="color:#555">'+esc(t.trade_buyer_name||t.trade_buyer_id||'-')+'</td>'+
+        '<td style="color:#555">'+dispName(t.owner_student_id, t.owner_name)+'</td>'+
+        '<td style="color:#555">'+dispName(t.trade_buyer_id, t.trade_buyer_name)+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(t.created_at)+'</td>'+
         '<td><span class="badge '+(statusBadge[status]||'badge-gray')+'" style="background:'+statusColor[status]+'15;color:'+statusColor[status]+'">'+(statusMap[status]||status)+'</span></td>'+
         '<td style="text-align:center">'+
@@ -1634,7 +1643,7 @@ async function loadSellers() {
     if (!arr.length) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="5"><div class="empty">暂无卖家</div></td></tr>'; renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers'); return; }
     var _sd = arr.slice(_sPage * ADMIN_PAGE_SIZE, (_sPage + 1) * ADMIN_PAGE_SIZE);
     document.getElementById('sellerTbody').innerHTML = _sd.map(function(s) {
-        return '<tr><td><strong style="color:#666">'+esc(s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
+        return '<tr><td><strong style="color:#666">'+dispName(s.student_id, s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
           '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td>'+
           '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center">'+
           '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button>'+
@@ -1721,6 +1730,7 @@ function toggleChart(headerEl) {
 }
 
 function init() {
+  loadAdminNickCache();
   loadOverview();
   loadCats();
   connectAdminWS();
