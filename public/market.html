@@ -1568,7 +1568,7 @@ function switchTradeProd(pid) {
   var sel=document.getElementById('tradeSelect');
   var txt=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'';
   var st=document.getElementById('tradeStatus');
-  st.style.display='';st.innerHTML='⏳ 加载中...';st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:rgba(0,0,0,.03);color:rgba(0,0,0,.3)';
+  st.style.display='';st.textContent='⏳ 加载中...';st.className='';
   fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2){window._tradeCache[pid]=cp2;updateTradeCard(cp2);}}).catch(function(){});
 }
 function updateTradeCard(p){

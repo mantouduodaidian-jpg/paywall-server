@@ -93,38 +93,41 @@ tr:hover td{background:#fafaf5}
 #kefuChatHeader{color:#999}
 #kefuContactList{border-right-color:rgba(0,0,0,.04)!important}
 @media(max-width:768px){
-.app{padding:10px}
+.app{padding:8px}
 .stats{grid-template-columns:repeat(2,1fr);gap:6px}
-.stat-card{padding:12px}
-.stat-card .num{font-size:20px}
-.tabs{overflow-x:auto;flex-wrap:nowrap;gap:0;padding:2px 2px 0;border-radius:8px 8px 0 0}
-.tab{padding:8px 10px;font-size:11px;white-space:nowrap;flex-shrink:0}
-.tab svg{width:12px;height:12px}
-.header{flex-direction:column;align-items:flex-start;padding:12px 14px;gap:8px}
-.header h1{font-size:17px}
-.header .actions{width:100%;justify-content:flex-end}
-.header .actions a,.header .actions button{padding:6px 10px;font-size:11px}
-.section{padding:12px;border-radius:10px}
-.toolbar{gap:4px}
-.toolbar input,.toolbar select{font-size:11px;padding:6px 10px;min-width:60px}
-.table-wrap{max-height:400px;font-size:10px}
-th,td{padding:6px 4px;font-size:9px}
-.btn{padding:5px 8px;font-size:10px}
-.btn-sm{padding:3px 6px;font-size:9px}
-.login-box{padding:28px 20px;width:92%;max-width:360px;margin:20px auto}
+.stat-card{padding:10px}
+.stat-card .num{font-size:18px}
+.tabs{overflow-x:auto;flex-wrap:nowrap;gap:0;padding:2px 2px 0;border-radius:8px 8px 0 0;-webkit-overflow-scrolling:touch}
+.tab{padding:8px 8px;font-size:10px;white-space:nowrap;flex-shrink:0}
+.tab svg{width:11px;height:11px}
+.header{flex-direction:column;align-items:flex-start;padding:10px 12px;gap:6px}
+.header h1{font-size:16px}
+.header .actions{width:100%;justify-content:flex-end;flex-wrap:wrap}
+.header .actions a,.header .actions button{padding:5px 8px;font-size:10px}
+.section{padding:10px;border-radius:8px}
+.toolbar{flex-wrap:wrap;gap:3px}
+.toolbar input,.toolbar select{font-size:11px;padding:5px 8px;min-width:50px;max-width:100px}
+.table-wrap{max-height:350px;font-size:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+th,td{padding:4px 3px;font-size:9px;white-space:nowrap}
+.btn{padding:4px 6px;font-size:9px}
+.btn-sm{padding:2px 5px;font-size:8px}
+.login-box{padding:24px 16px;width:92%;max-width:340px;margin:10px auto}
 .login-box h1{font-size:20px}
-.login-box input{padding:12px 14px;font-size:14px}
-.modal{padding:18px;margin:20px 10px;max-width:100%}
+.login-box input{padding:12px 14px;font-size:16px}
+.modal{padding:14px;margin:10px 8px;max-width:100%;border-radius:12px}
 .modal input,.modal select,.modal textarea{font-size:11px;padding:8px 10px}
-.modal .btns button{padding:8px}
-.badge{font-size:9px;padding:2px 6px}
-.empty{padding:20px;font-size:11px}
-.toast{font-size:11px;padding:8px 16px 8px 12px;white-space:normal;max-width:90vw}
-#kefuContactList{width:120px;font-size:10px}
+.modal .btns button{padding:8px;font-size:12px}
+.badge{font-size:8px;padding:2px 5px}
+.empty{padding:16px;font-size:11px}
+.toast{font-size:11px;padding:8px 14px;white-space:normal;max-width:90vw;bottom:10px;left:10px;right:10px;transform:none}
+#kefuContactList{width:100px;font-size:10px}
 #kefuMsgs{font-size:10px;padding:6px 8px}
-#kefuInput{font-size:11px}
+#kefuInput{font-size:16px!important}
 #chartBody > div > div{min-width:100%!important;margin-bottom:10px}
-#schoolSelector{max-width:100px;font-size:10px!important}
+#schoolSelector{max-width:80px;font-size:10px!important}
+#detailBox .img-big{max-height:200px}
+#detailBox .detail-img{max-height:180px!important}
+.kefu-btn{bottom:12px;right:12px;width:44px;height:44px}
 }
 
 .login-gate{position:fixed;inset:0;background:#f0f0f0;display:flex;align-items:center;justify-content:center;z-index:100}
