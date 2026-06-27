@@ -1325,6 +1325,11 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatConv').classList.add('show');
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
   document.getElementById('chatConvLabel').textContent = '💬 ' + ((sellerStudentId||'').indexOf('kefu_') === 0 ? (sellerName||'客服') : sellerName);
+  // Show nickname (realname) in header if cache available
+  if (_nickCache && sellerStudentId && sellerStudentId.indexOf('kefu_') !== 0) {
+    var _nk = _nickCache[sellerStudentId];
+    if (_nk && _nk !== sellerName) document.getElementById('chatConvLabel').textContent = '💬 ' + _nk + ' (' + sellerName + ')';
+  }
   startChatPoll();
   // Load messages immediately (no setTimeout)
   fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
@@ -1368,9 +1373,7 @@ function loadConvs() {
       }
       el.innerHTML = arr.map(function(c) {
         var sid = c.student_id;
-        var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
-        var prodCount = c.products && c.products.length > 1 ? ' <span style="color:#60b88e;font-size:10px">('+c.products.length+'笔)</span>' : '';
-return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+prodCount+unBadge+'</div>';
+        var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
       badge.textContent = totalUnread > 0 ? totalUnread : '0';
@@ -1840,24 +1843,25 @@ function appendMsg(m, isHistory) {
   var mine = currentUser && m.from_student_id === currentUser.student_id;
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-  var name = m.from_name || (mine ? '我' : '对方');
   var div = document.createElement('div');
   div.className = 'chat-msg ' + (mine ? 'mine' : 'other');
   if (m.id) div.setAttribute('data-msgid', m.id);
+  // Build display name: nickname (realname)
+  var showName = m.from_name || '对方';
+  if (_nickCache) {
+    var nk = _nickCache[m.from_student_id];
+    if (nk && nk !== m.from_name) showName = nk + ' (' + (m.from_name||'') + ')';
+    else if (nk) showName = nk;
+  }
   if (m.content && m.content.indexOf('[img]') >= 0) {
     var imgSrc = m.content.substring(m.content.indexOf('[img]')+5);
     var txtBefore = m.content.substring(0, m.content.indexOf('[img]'));
-    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block;cursor:pointer" onclick="showFullImage(this.src)"></div><span class="time">'+timeStr+'</span>';
+    div.innerHTML = '<div class="sender">'+esc(showName)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block;cursor:pointer" onclick="showFullImage(this.src)"></div><span class="time">'+timeStr+'</span>';
   } else {
-    div.innerHTML = '<div class="sender">'+esc(name)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
+    div.innerHTML = '<div class="sender">'+esc(showName)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   }
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
-  // Nick name lookup (cached)
-  if (!mine) getNick(m.from_student_id).then(function(cache){
-    var nick = cache[m.from_student_id];
-    if (nick) { var s = div.querySelector('.sender'); if (s) s.textContent = nick; }
-  });
 }
 
 // ====== Init ======
