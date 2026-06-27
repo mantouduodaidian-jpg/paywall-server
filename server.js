@@ -719,16 +719,15 @@ app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
     const arr = Array.isArray(data) ? data : [];
     var existing = arr.find(function(v){ return v.status === 'phone_only' || v.status === 'approved'; });
     if (existing) {
-      return res.json({ ok: true, user: { id: existing.id, phone: existing.phone, name: existing.name || ('用户'+phone.slice(-4)), school: existing.school||'', tier: existing.status === 'approved' ? 'full' : 'phone' } });
+      return res.json({ ok: true, user: { id: existing.id||phone, phone: existing.phone||phone, name: existing.name || ('用户'+phone.slice(-4)), school: existing.school||'', tier: existing.status === 'approved' ? 'full' : 'phone' } });
     }
     // Create phone-only record
-    const cr = await fetch(SB('verifications'), {
-      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ phone, status: 'phone_only', created_at: new Date().toISOString() })
+    var now = new Date().toISOString();
+    await fetch(SB('verifications'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, status: 'phone_only', created_at: now })
     });
-    const cd = await cr.json();
-    var newUser = Array.isArray(cd) ? cd[0] : cd;
-    res.json({ ok: true, user: { id: newUser.id, phone: newUser.phone, name: '用户'+phone.slice(-4), school: '', tier: 'phone' } });
+    res.json({ ok: true, user: { id: phone, phone: phone, name: '用户'+phone.slice(-4), school: '', tier: 'phone' } });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
