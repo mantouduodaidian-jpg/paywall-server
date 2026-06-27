@@ -1402,8 +1402,9 @@ function updateTradeButtons(p) {
   var buyerBtn = document.getElementById('tradeBuyer');
   var buyerBtnInner = document.getElementById('tradeBuyerBtn');
   var sellerBtns = document.getElementById('tradeSeller');
-  actions.style.display = 'none'; document.getElementById('tradeProductCard').style.display = 'none'; document.getElementById('tradeDropdown').style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
-  if (!p || p.sold) return;
+  if (!p || p.sold) { actions.style.display = 'none'; return; }
+  var wasHidden = actions.style.display === 'none';
+  if (wasHidden) { actions.style.display = 'none'; document.getElementById('tradeProductCard').style.display = 'none'; document.getElementById('tradeDropdown').style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none'; }
   var isOwner = currentUser && p.owner_student_id === currentUser.student_id;
   var isBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
 
