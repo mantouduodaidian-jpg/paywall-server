@@ -1305,9 +1305,10 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
       } catch(e) {}
     }
 
-    // Check blocked words
+    // Check blocked words (school-specific + global)
     try {
-      const bwR = await fetch(SB('blocked_words?select=word'), { headers: SB_HEADERS });
+      var schoolFilter = req.body.school ? '&school=eq.'+encodeURIComponent(req.body.school) : '';
+      const bwR = await fetch(SB('blocked_words?select=word'+schoolFilter), { headers: SB_HEADERS });
       const bwData = await bwR.json();
       const words = Array.isArray(bwData) ? bwData.map(w => w.word.toLowerCase()) : [];
       const checkText = (title + ' ' + (desc||'')).toLowerCase();

@@ -1443,7 +1443,7 @@ function quickRequest(pid) {
         if(d.ok){
           notify('已发送购买请求', '🤝');
           fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买此商品'})
+            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(0)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
           }).catch(function(){});
         } else notify('操作失败','❌');
       }).catch(function(){notify('操作失败','❌');});
