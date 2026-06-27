@@ -1115,9 +1115,8 @@ app.get('/api/marketplace/blocked-words', schoolScope, async (req, res) => {
 
 app.post('/api/marketplace/blocked-words', schoolScope, express.json(), async (req, res) => {
   try {
-    const { word } = req.body;
+    const { word, school } = req.body;
     if (!word) return res.status(400).json({ error: 'word required' });
-    var school = req.adminSchool || '';
     const r = await fetch(SB('blocked_words'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify({ word, school })
