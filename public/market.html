@@ -769,8 +769,8 @@ let pageOffset = 0;
 const PAGE_SIZE = 10;
 
 async function load(reset) {
-  // Pre-fetch nicknames for anonymous display
-  if (currentUser) getNick();
+  // Pre-fetch nicknames for display
+  getNick();
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
   if (!currentUser && !userSchool) {
     document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.15)"><div style="font-size:64px;margin-bottom:16px">🏫</div><div style="font-size:16px;margin-bottom:8px">选择学校浏览商品</div><div style="font-size:12px">在左侧选择你所在的学校<br>即可查看该校的闲置物品</div></div>';
@@ -910,11 +910,9 @@ function hideDetail(){document.getElementById('detailModal').classList.remove('s
 function ownerDisplayName(p) {
   if (currentUser && p.owner_student_id === currentUser.student_id) return p.owner_name||'卖家';
   var nickname = _nickCache ? (_nickCache[p.owner_student_id] || '') : '';
-  // Trade active or completed → show nickname (realname)
-  if (p.trade_status && p.trade_status !== '' && currentUser && (p.trade_buyer_id === currentUser.student_id || p.owner_student_id === currentUser.student_id)) {
-    return (nickname||'匿名') + ' (' + (p.owner_name||'卖家') + ')';
-  }
-  return nickname || '匿名卖家';
+  var realName = p.owner_name||'卖家';
+  if (nickname) return nickname + ' (' + realName + ')';
+  return realName;
 }
 
 function prevImg() {
