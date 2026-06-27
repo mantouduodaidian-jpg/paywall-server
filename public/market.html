@@ -960,7 +960,7 @@ function showSchoolSelect() {
 function selectSchool(v){if(v){localStorage.setItem("visitorSchool",v);document.getElementById('guestOverlay').style.display='none';load();}}
 // ====== Login / Auth ======
 let currentUser = null;
-try { const u = localStorage.getItem('marketUser'); if (u) currentUser = JSON.parse(u); } catch(e) {}
+try { const u = localStorage.getItem('marketUser'); if (u) { currentUser = JSON.parse(u); if (!currentUser.tier) currentUser.tier = 'full'; } } catch(e) {}
 if (currentUser) { renderLoggedIn(); startSessionCheck(); }
 if (currentUser && currentUser.tier === 'full') { document.getElementById('chatBtn').style.display = ''; document.getElementById('notifBtn').style.display = 'flex'; document.getElementById('hamburgerBtn').style.display = ''; startUnreadPoll(); }
 
@@ -1017,7 +1017,7 @@ async function doLogin(){
     const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,phone})});
     const d=await r.json();
     btn.textContent='登录';btn.disabled=false;
-    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();document.getElementById('chatBtn').style.display='';document.getElementById('notifBtn').style.display='flex';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();hideLogin();notify('登录成功', '✅');load();if(d.muted)showMutedBanner(d.msg);}
+    if(d.ok&&d.user){currentUser=d.user;currentUser.muted=d.muted;localStorage.setItem('marketUser',JSON.stringify(d.user));renderLoggedIn();if(currentUser.tier==='full'){document.getElementById('chatBtn').style.display='';document.getElementById('notifBtn').style.display='flex';document.getElementById('hamburgerBtn').style.display='';startUnreadPoll();}hideLogin();notify('登录成功', '✅');load();if(d.muted)showMutedBanner(d.msg);}
     else notify(d.msg||'登录失败', '❌');
   }catch(e){btn.textContent='登录';btn.disabled=false;notify('登录失败', '❌');}
 }
