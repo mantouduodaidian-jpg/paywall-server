@@ -762,7 +762,7 @@ var SCHOOL_LIST = [];
 try { var sl = localStorage.getItem('schoolList'); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) {}
 var _adminNickCache = {};
 async function loadAdminNickCache() {
-  try { var r = await apiFetch('/api/verify/list'); var d = await r.json(); var arr = Array.isArray(d)?d:[]; arr.forEach(function(v){ if(v.student_id) _adminNickCache[v.student_id] = v.nickname||v.name||''; }); } catch(e){} setTimeout(function(){var _a=document.querySelector(".tab-content[style*=display\:block],.tab-content[style*=display\:block]");if(!_a)return;var _n=_a.id.replace("tab","").toLowerCase();if(_n==="products")loadProds();else if(_n==="rentals")loadRentals();else if(_n==="verifications")loadVers();else if(_n==="sellers")loadSellers();},100);}
+  try { var r = await apiFetch('/api/verify/list'); var d = await r.json(); var arr = Array.isArray(d)?d:[]; arr.forEach(function(v){ if(v.student_id) _adminNickCache[v.student_id] = v.nickname||v.name||''; }); } catch(e){}}
 function dispName(studentId, fallback) {
   var nick = _adminNickCache[studentId];
   return nick ? esc(nick)+' <span style="color:#aaa;font-size:9px">('+esc(fallback||'')+')</span>' : esc(fallback||'-');
