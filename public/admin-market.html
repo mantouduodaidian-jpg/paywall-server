@@ -1038,6 +1038,7 @@ async function loadProds() {
     if (sf) f = f.filter(p => p.status === sf);
     if (cf) f = f.filter(p => p.category === cf);
       f = f.filter(p => p.item_type !== 'rent');
+    f.sort(function(a,b){ if(a.status==='pending' && b.status!=='pending') return -1; if(a.status!=='pending' && b.status==='pending') return 1; return new Date(b.created_at)-new Date(a.created_at); });
     const tbody = document.getElementById('prodTbody');
     var _page = adminPage.prodPagination || 0;
     var _total = f.length;
@@ -1150,6 +1151,7 @@ async function loadRentals() {
     let f = arr;
     if (search) f = f.filter(function(p) { return (p.title||'').toLowerCase().includes(search); });
     if (sf) f = f.filter(function(p) { return p.status === sf; });
+    f.sort(function(a,b){ if(a.status==='pending' && b.status!=='pending') return -1; if(a.status!=='pending' && b.status==='pending') return 1; return new Date(b.created_at)-new Date(a.created_at); });
     const tbody = document.getElementById('rentTbody');
     var _page = adminPage.rentPagination || 0;
     var _total = f.length;
