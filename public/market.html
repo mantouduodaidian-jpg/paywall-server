@@ -291,6 +291,10 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <span style="color:rgba(0,0,0,.1);font-size:11px;align-self:center">—</span>
       <input id="priceMax" type="number" placeholder="¥最高" onchange="load()" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:11px;outline:none;font-family:inherit;min-width:0">
     </div>
+    <div id="guestHint" style="display:none;padding:8px 10px;margin-bottom:8px;border-radius:8px;background:rgba(96,184,142,.06);border:1px solid rgba(96,184,142,.1);font-size:11px;color:#4e9e80;text-align:center;line-height:1.5">
+      💡 发布闲置或联系卖家？<br>
+      <a href="#" onclick="showLogin();return false" style="color:#4e9e80;font-weight:600;text-decoration:underline">请先完成学生认证 →</a>
+    </div>
     <div class="section-title">分类</div>
     <div class="cats" id="catList"></div>
     <div class="stats">
@@ -770,8 +774,10 @@ async function load(reset) {
     document.getElementById('statCount').textContent = '0';
     document.getElementById('resultLabel').textContent = '';
     document.getElementById('pageNavContainer').innerHTML = '';
+    document.getElementById('guestHint').style.display = 'none';
     return;
   }
+  document.getElementById('guestHint').style.display = currentUser ? 'none' : '';
 
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML =
     '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }

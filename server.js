@@ -910,6 +910,23 @@ app.post('/api/marketplace/sellers/mute', express.json(), async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Delete seller account + all products
+app.delete('/api/marketplace/sellers/:student_id', async (req, res) => {
+  try {
+    var sid = req.params.student_id;
+    // Delete all products by this seller
+    await fetch(SB("products?owner_student_id=eq."+encodeURIComponent(sid)), { method: 'DELETE', headers: SB_HEADERS });
+    // Delete verification records
+    var vR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(sid)+"&select=id"), { headers: SB_HEADERS });
+    var vD = await vR.json();
+    var ids = (Array.isArray(vD)?vD:[]).map(function(v){ return v.id; });
+    for (var vid of ids) {
+      await fetch(SB('verifications?id=eq.'+vid), { method: 'DELETE', headers: SB_HEADERS });
+    }
+    addLog('seller_delete', 'seller', sid, '');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ====== Categories API ======
 app.get('/api/marketplace/categories', async (req, res) => {

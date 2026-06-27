@@ -1641,7 +1641,7 @@ async function loadSellers() {
           (s.listed > 0 ? '<button class="btn btn-red btn-sm" onclick="toggleAllSeller('+s.student_id+',false,\''+esc(s.name)+'\')">📌 全部下架</button>' : '')+
           (s.listed === 0 && s.active > 0 ? '<button class="btn btn-green btn-sm" onclick="toggleAllSeller('+s.student_id+',true,\''+esc(s.name)+'\')">📌 全部上架</button>' : '')+
           '<button class="btn btn-red btn-sm" onclick="showBan(\''+s.student_id+'\',\''+esc(s.name)+'\')">🚫 封禁</button>'+(s.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 禁言</button>')+
-          '</span></td></tr>';
+          ''<button class="btn btn-red btn-sm" onclick="delSellerAccount('+s.student_id+',''+esc(s.name)+'')">🗑️ 删号</button>'+</span></td></tr>';
       }).join('');
     renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers');
   } catch(e) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="5"><div class="empty">加载失败</div></td></tr>'; }
@@ -1662,6 +1662,13 @@ async function confirmBan() {
   toast('🚫 已封禁'); closeBan(); loadSellers();
 }
 
+
+async function delSellerAccount(sid, name) {
+  if (!await showConfirm('确认删除「'+name+'」的账号？该用户的所有商品将被删除，不可恢复。')) return;
+  if (!await showConfirm('二次确认：此操作不可撤销！确定要删除'+name+'吗？')) return;
+  await apiFetch('/api/marketplace/sellers/'+sid, {method:'DELETE'});
+  toast('✅ 已删除账号'); loadSellers();
+}
 
 async function muteSeller(sid, name) {
   if (!await showConfirm('确认禁言「'+name+'」？该用户可登录聊天，但无法发布商品。')) return;
