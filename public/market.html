@@ -1369,7 +1369,8 @@ function loadConvs() {
       el.innerHTML = arr.map(function(c) {
         var sid = c.student_id;
         var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
-        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
+        var prodCount = c.products && c.products.length > 1 ? ' <span style="color:#60b88e;font-size:10px">('+c.products.length+'笔)</span>' : '';
+return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+prodCount+unBadge+'</div>';
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
       badge.textContent = totalUnread > 0 ? totalUnread : '0';
@@ -1412,12 +1413,19 @@ function updateTradeButtons(p) {
     var sel = document.getElementById('tradeSelect');
     fetch('/api/marketplace/products?owner='+p.owner_student_id+'&limit=50&offset=0').then(function(r){return r.json();}).then(function(jd){
       var all = Array.isArray(jd.data)?jd.data:(Array.isArray(jd)?jd:[]);
-      var trades = all.filter(function(x){ return x.trade_status && x.trade_buyer_id === currentUser.student_id; });
+      var trades = all.filter(function(x){
+        if (!x.trade_status) return false;
+        if (isBuyer) return x.trade_buyer_id === currentUser.student_id;
+        if (isOwner) return x.owner_student_id === currentUser.student_id;
+        return false;
+      });
       if (trades.length > 1) {
         document.getElementById('tradeDropdown').style.display = 'block';
-        sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'等待卖家确认':x.trade_status==='awaiting_buyer'?'请确认收货':'已完成')+'</option>'; }).join('');
+        sel.style.cssText = 'width:100%;padding:6px 10px;border-radius:8px;border:1px solid rgba(96,184,142,.2);background:rgba(96,184,142,.06);color:#4e9e80;font-size:12px;outline:none;font-family:inherit;font-weight:500';
+        sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'⏳ 等待':x.trade_status==='awaiting_buyer'?'📦 确认':x.trade_status==='completed'?'✅ 完成':'')+'</option>'; }).join('');
       }
     }).catch(function(){});
+  }    }).catch(function(){});
   }
 
   if (isOwner && p.trade_status === 'trading') {
