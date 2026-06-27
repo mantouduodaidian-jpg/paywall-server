@@ -899,7 +899,7 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span>'+(p.negotiable?'<span style="background:rgba(251,191,36,.1);color:#d4a030;padding:3px 10px;border-radius:6px;font-size:12px">💰 可议价</span>':'')+'</div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 10a2 2 0 0 1-2 2H5l-3 2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/></svg> 联系卖家</button><button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 7h12"/><path d="M5 1v4M11 1v4"/></svg> 我想租借':'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买')+'</button>' : '')+
+      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 10a2 2 0 0 1-2 2H5l-3 2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/></svg> 联系卖家</button><button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 7h12"/><path d="M5 1v4M11 1v4"/></svg> 我想租借':'→ 想购买')+'</button>' : '')+
       '<button class="close" onclick="hideDetail()">关闭</button>'+
       (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444">📌 下架</button>' : '')+
       (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(ownerDisplayName(p))+'\');return false" style="font-size:12px;color:rgba(52,211,153,.5);text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#34d399" stroke-width="1.5"/></svg> 查看 '+esc(ownerDisplayName(p))+' 的其他商品</a></div>' : '')+
@@ -1021,7 +1021,8 @@ function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
   var schoolName = getSchoolName(currentUser?.school);
-  document.getElementById('userName').innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '');
+  var myNick = _nickCache ? _nickCache[currentUser.student_id] : '';
+  document.getElementById('userName').innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> ' + (currentUser?.name || '用户') + (myNick ? ' ('+myNick+')' : '') + (schoolName ? ' · ' + schoolName : '');
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -1305,7 +1306,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
       if (p && (p.trade_status === 'completed' || p.trade_status === 'awaiting_buyer')) {
         document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
       } else {
-        fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
+        fetch('/api/marketplace/nicknames').then(function(r2){return r2.json();}).then(function(vers){
           var arr = Array.isArray(vers)?vers:[];
           var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
           document.getElementById('chatConvLabel').textContent = '💬 ' + ((seller&&seller.nickname)||sellerName||'买家');
@@ -1425,7 +1426,7 @@ function updateTradeButtons(p) {
     status.style.display = ''; status.innerHTML = '✅ 已收货 🎉';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
   } else if (!isOwner && !p.trade_status) {
-    buyerBtn.style.display = ''; buyerBtnInner.textContent = '<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买'; buyerBtnInner.onclick = requestTrade;
+    buyerBtn.style.display = ''; buyerBtnInner.textContent = '→ 想购买'; buyerBtnInner.onclick = requestTrade;
   } else if (isOwner && !p.trade_status) {
     actions.style.display = 'none';
   }
@@ -1434,7 +1435,7 @@ function updateTradeButtons(p) {
 
 function quickRequest(pid) {
   if (!currentUser || !pid) return;
-  fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(p){
+  getNick().then(function(){fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(p){
     if (!p || p.sold) { notify('商品已售罄', '❌'); return; }
     if (p.owner_student_id === currentUser.student_id) return;
     fetch('/api/marketplace/trade/request', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid,buyer_id:currentUser.student_id,buyer_name:_nickCache?(_nickCache[currentUser.student_id]||currentUser.name):currentUser.name})})
@@ -1443,11 +1444,12 @@ function quickRequest(pid) {
         if(d.ok){
           notify('已发送购买请求', '🤝');
           fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(0)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
+            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'→ 想购买「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(0)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
           }).catch(function(){});
         } else notify('操作失败','❌');
       }).catch(function(){notify('操作失败','❌');});
   }).catch(function(){notify('加载失败','❌');});
+});
 }
 function requestTrade() {
   if (!chatProductId || !currentUser) return;
@@ -1458,7 +1460,7 @@ function requestTrade() {
         notify('已发送购买请求', '🤝');
         // Send chat message
         fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买此商品'})
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'→ 想购买此商品'})
         }).catch(function(){});
         // Reload product to update buttons
         fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
