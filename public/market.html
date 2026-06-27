@@ -1532,6 +1532,7 @@ function closeContacts() { var _ov=document.getElementById('contactsOverlay');do
 var _lastUnreadCount = 0;
 var _unreadTimer = null;
 var _lastNotifId = 0;
+window._dismissedNotifs = JSON.parse(localStorage.getItem('dismissedNotifs')||'[]');
 function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
   if (!currentUser) return;
@@ -1550,7 +1551,7 @@ function startUnreadPoll() {
           if (t > latest) latest = t;
           if (m.to_student_id === currentUser.student_id && !m.read) {
             unread++;
-            if ((m.from_student_id||'').indexOf('kefu_') === 0) notifUnread++;
+            if ((m.from_student_id||'').indexOf('kefu_') === 0 && !window._dismissedNotifs.includes(m.id)) notifUnread++;
           }
         });
         if (latest > lastCheck) { lastCheck = latest; }
@@ -1576,12 +1577,22 @@ function openNotifChat() {
     .then(function(r){return r.json();})
     .then(function(data){
       var arr = Array.isArray(data)?data:[];
-      var notifs = arr.filter(function(m){ return (m.from_student_id||'').indexOf('kefu_') === 0 && m.to_student_id === currentUser.student_id; });
+      var notifs = arr.filter(function(m){ return (m.from_student_id||'').indexOf('kefu_') === 0 && m.to_student_id === currentUser.student_id && !window._dismissedNotifs.includes(m.id); });
       notifs.reverse();
       panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div>'+
         (!notifs.length ? '<div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">暂无通知</div>' :
-        '<div style="overflow-y:auto;max-height:350px">'+notifs.map(function(m){ var txt = m.content||''; if (txt.indexOf('[img]')>=0) txt = txt.substring(0, txt.indexOf('[img]')); if (txt.length>100) txt = txt.substring(0,100)+'...'; return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5">'+esc(txt)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></div>'; }).join('')+'</div>');
-    }).catch(function(){panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载失败</div>';});
+        '<div style="overflow-y:auto;max-height:350px">'+notifs.map(function(m){ var txt = m.content||''; if (txt.indexOf('[img]')>=0) txt = txt.substring(0, txt.indexOf('[img]')); if (txt.length>100) txt = txt.substring(0,100)+'...'; return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.03);font-size:12px;color:rgba(0,0,0,.5);line-height:1.5;display:flex;justify-content:space-between;align-items:flex-start"><span style="flex:1">'+esc(txt)+'<div style="font-size:10px;color:rgba(0,0,0,.15);margin-top:4px">'+fmtDate(m.created_at)+'</div></span><span onclick="dismissNotif('+m.id+',this)" style="cursor:pointer;color:rgba(0,0,0,.15);font-size:14px;padding:2px 4px;flex-shrink:0">✕</span></div>'; }).join('')+'</div>');
+    function dismissNotif(id, el) {
+  if (!window._dismissedNotifs.includes(id)) window._dismissedNotifs.push(id);
+  localStorage.setItem('dismissedNotifs', JSON.stringify(window._dismissedNotifs));
+  var row = el.closest ? el.closest('div[style*="padding"]') : el.parentNode;
+  if (row) row.style.display = 'none';
+  // Update badge
+  var nb = document.getElementById('bellBadge');
+  var vis = document.querySelectorAll('#notifPanel [style*="padding"]:not([style*="display:none"])').length;
+  if (nb) nb.textContent = Math.max(0, parseInt(nb.textContent)-1);
+}
+}).catch(function(){panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div><div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">加载失败</div>';});
 }
 
 var _productTimer = null;
