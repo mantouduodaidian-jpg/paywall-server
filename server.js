@@ -507,9 +507,18 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/marketplace/nicknames', async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+    const d = await r.json();
+    var map = {};
+    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; });
+    res.json(map);
+  } catch(e) { res.json({}); }
 });
 
 app.post('/api/verify/approve', schoolScope, express.json(), async (req, res) => {
@@ -1155,9 +1164,18 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.get('/api/marketplace/nicknames', async (req, res) => {
+  try {
+    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+    const d = await r.json();
+    var map = {};
+    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; });
+    res.json(map);
+  } catch(e) { res.json({}); }
 });
 
 app.post('/api/verify/approve', schoolScope, express.json(), async (req, res) => {

@@ -780,7 +780,7 @@ const PAGE_SIZE = 10;
 
 async function load(reset) {
   // Pre-fetch nicknames for anonymous display
-  if (currentUser) getNick('');
+  if (currentUser) getNick();
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
   if (!currentUser) {
     document.getElementById('guestOverlay').style.display = 'flex';
@@ -844,14 +844,8 @@ async function load(reset) {
     }
     data.forEach(function(p) {
       var div = document.createElement('div');
-      div.className = 'card' + (!currentUser ? ' card-blur' : '') + (p.pinned ? ' pinned' : '');
-      if (!currentUser) {
-        var overlay = document.createElement('div');
-        overlay.className = 'card-login-overlay';
-        overlay.innerHTML = '<svg viewBox="0 0 28 28" width="32" height="32"><path d="M6 2h12l4 4v18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1" stroke-linejoin="round"/><path d="M18 2v4h4" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".8" stroke-linejoin="round"/><polygon points="14 8 17.5 12.5 14 17 10.5 12.5" fill="url(#lo2)" stroke="#a7f3d0" stroke-width=".8" stroke-linejoin="round"/></svg><div style="font-size:11px;margin-top:6px;color:rgba(52,211,153,.4);font-weight:500">登录查看</div>';
-        div.appendChild(overlay);
-      }
-      div.onclick = function() { if (!currentUser) { hideDetail();notify('请登录查看商品', '🔑'); showLogin(); return; } showDetail(p.id); };
+      div.className = 'card' + (p.pinned ? ' pinned' : '');
+      div.onclick = function() { showDetail(p.id); };
       var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
       var typeTag = '';
       if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
@@ -1764,11 +1758,9 @@ let _nickCacheTime = 0;
 const NICK_TTL = 300000;
 function getNick(studentId) {
   if (_nickCache && Date.now() - _nickCacheTime < NICK_TTL) return Promise.resolve(_nickCache);
-  return fetch('/api/verify/list').then(function(r){return r.json();}).then(function(vers){
-    var arr = Array.isArray(vers)?vers:[];
-    _nickCache = {};
+  return fetch('/api/marketplace/nicknames').then(function(r){return r.json();}).then(function(map){
+    _nickCache = map || {};
     _nickCacheTime = Date.now();
-    arr.forEach(function(v){ if(v.student_id) _nickCache[v.student_id] = v.nickname||v.name||''; });
     return _nickCache;
   }).catch(function(){return {};});
 }
