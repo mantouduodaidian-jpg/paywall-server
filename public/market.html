@@ -1428,7 +1428,7 @@ function updateTradeButtons(p) {
       if (trades.length > 1) {
         document.getElementById('tradeDropdown').style.display = 'block';
         sel.style.cssText = 'width:100%;padding:6px 10px;border-radius:8px;border:1px solid rgba(96,184,142,.2);background:rgba(96,184,142,.06);color:#4e9e80;font-size:12px;outline:none;font-family:inherit;font-weight:500';
-        sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'⏳ 等待':x.trade_status==='awaiting_buyer'?'📦 确认':x.trade_status==='completed'?'✅ 完成':'')+'</option>'; }).join('');
+        sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'⏳ 等待':x.trade_status==='awaiting_buyer'?'📦 确认':x.trade_status==='completed'?'✅ 完成':'')+'</option>'; }).join(''); window._tradeCache={};trades.forEach(function(x){window._tradeCache[x.id]=x;});
       }
     }).catch(function(){});
   }
@@ -1545,23 +1545,24 @@ function cancelTrade() {
 }
 
 function switchTradeProd(pid) {
-  pid = parseInt(pid);
-  if (!pid || pid == chatProductId) return;
-  chatProductId = pid;
-  fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(p){
-    if (!p) return;
-    // Update card and status without full reset (no flicker)
-    document.getElementById('tradeProductCard').innerHTML = '<span style="font-weight:600;color:#4e9e80">' + esc(p.title||'') + '</span> <span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price||p.rent_price||0).toFixed(0) + '</span>' + (p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span>':'');
-    var st = document.getElementById('tradeStatus');
-    var isSwOwner = currentUser && p.owner_student_id === currentUser.student_id;
-    var isSwBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
-    if (isSwOwner && p.trade_status === 'trading') { st.style.display=''; st.innerHTML='<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> '+'⏳ 买家下单'; st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)'; document.getElementById('tradeSeller').style.display='flex'; document.getElementById('tradeBuyer').style.display='none'; }
-    else if (isSwBuyer && p.trade_status === 'trading') { st.style.display=''; st.innerHTML='<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg> 等待卖家确认'; st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)'; document.getElementById('tradeSeller').style.display='none'; document.getElementById('tradeBuyer').style.display='none'; }
-    else if (isSwBuyer && p.trade_status === 'awaiting_buyer') { st.style.display=''; st.innerHTML='<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 5l5-3 5 3v6l-5 3-5-3z"/><path d="M3 5l5 3m0-3v8"/></svg> 卖家已确认，请确认收货'; st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(96,184,142,.12),rgba(96,184,142,.05));color:#4e9e80;border:1px solid rgba(96,184,142,.15)'; document.getElementById('tradeBuyer').style.display=''; document.getElementById('tradeBuyerBtn').textContent='✅ 确认收货'; document.getElementById('tradeBuyerBtn').onclick=buyerConfirmTrade; document.getElementById('tradeSeller').style.display='none'; }
-    else { st.style.display='none'; document.getElementById('tradeSeller').style.display='none'; document.getElementById('tradeBuyer').style.display='none'; }
-  }).catch(function(){});
+  pid=parseInt(pid);if(!pid||pid==chatProductId)return;
+  chatProductId=pid;
+  var cp=window._tradeCache?window._tradeCache[pid]:null;
+  if(cp){updateTradeCard(cp);return;}
+  fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2)updateTradeCard(cp2);}).catch(function(){});
 }
-function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
+function updateTradeCard(p){
+  document.getElementById('tradeProductCard').innerHTML='<span style="font-weight:600;color:#4e9e80">'+esc(p.title||'')+'</span> <span style="color:#34d399;font-weight:600">\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0)+'</span>'+(p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929')+'</span>':'');
+  var st=document.getElementById('tradeStatus');
+  var iO=currentUser&&p.owner_student_id===currentUser.student_id;
+  var iB=currentUser&&p.trade_buyer_id===currentUser.student_id;
+  document.getElementById('tradeSeller').style.display='none';
+  document.getElementById('tradeBuyer').style.display='none';
+  if(iO&&p.trade_status==='trading'){st.style.display='';st.innerHTML='\u23f3 \u4e70\u5bb6\u4e0b\u5355';st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';document.getElementById('tradeSeller').style.display='flex';}
+  else if(iB&&p.trade_status==='trading'){st.style.display='';st.innerHTML='\u7b49\u5f85\u5356\u5bb6\u786e\u8ba4';st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';}
+  else if(iB&&p.trade_status==='awaiting_buyer'){st.style.display='';st.innerHTML='\u5356\u5bb6\u5df2\u786e\u8ba4\uff0c\u8bf7\u786e\u8ba4\u6536\u8d27';st.style.cssText='text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(96,184,142,.12),rgba(96,184,142,.05));color:#4e9e80;border:1px solid rgba(96,184,142,.15)';document.getElementById('tradeBuyer').style.display='';document.getElementById('tradeBuyerBtn').textContent='\u2705 \u786e\u8ba4\u6536\u8d27';document.getElementById('tradeBuyerBtn').onclick=buyerConfirmTrade;}
+  else{st.style.display='none';}
+}function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
 function closeRejectTrade() { document.getElementById('rejectTradeModal').classList.remove('show'); }
 function confirmRejectTrade() {
   var reason = document.getElementById('rejectTradeReason').value;
