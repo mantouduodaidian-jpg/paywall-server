@@ -449,7 +449,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <div class="chat-msgs" id="chatMsgs"></div>
       <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(0,0,0,.04)">
         <div id="tradeDropdown" style="display:none;margin-bottom:6px"><select id="tradeSelect" onchange="switchTradeProd(this.value)" style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:11px;outline:none;font-family:inherit"></select></div>
-        <div id="tradeProductCard" style="display:none;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(96,184,142,.06);border:1px solid rgba(96,184,142,.1);font-size:11px;color:rgba(0,0,0,.45);line-height:1.5"></div>
+        <div id="tradeProductCard" style="display:none;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(96,184,142,.06);border:1px solid rgba(96,184,142,.1);font-size:11px;color:rgba(0,0,0,.45);line-height:1.5"><span id="tcTitle" style="font-weight:600;color:#4e9e80"></span> <span id="tcPrice" style="color:#34d399;font-weight:600"></span><span id="tcPeriod" style="color:#bbb;font-size:11px"></span></div>
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button id="tradeBuyerBtn" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)"><svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="11" rx="1.5"/><path d="M6 5V3a3 3 0 0 1 6 0v2"/></svg> 我想交易</button></div>
         <div id="tradeSeller" style="display:none">
@@ -1558,10 +1558,9 @@ function switchTradeProd(pid) {
   fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(cp2){if(cp2){window._tradeCache[pid]=cp2;updateTradeCard(cp2);}}).catch(function(){});
 }
 function updateTradeCard(p){
-  var c=document.getElementById('tradeProductCard');
-  c.style.opacity='0';
-  c.innerHTML='<span style="font-weight:600;color:#4e9e80">'+esc(p.title||'')+'</span> <span style="color:#34d399;font-weight:600">\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0)+'</span>'+(p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929')+'</span>':'');
-  setTimeout(function(){c.style.opacity='1';},10);
+  document.getElementById('tcTitle').textContent = p.title||'';
+  document.getElementById('tcPrice').textContent = '\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0);
+  document.getElementById('tcPeriod').textContent = p.item_type==='rent'?'/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929'):'';
   var st=document.getElementById('tradeStatus');
   var iO=currentUser&&p.owner_student_id===currentUser.student_id;
   var iB=currentUser&&p.trade_buyer_id===currentUser.student_id;
