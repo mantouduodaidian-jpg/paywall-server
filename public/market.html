@@ -572,7 +572,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <input type="text" id="vNickname" placeholder="匿名昵称 *（如：椰子学长）" style="margin-bottom:10px">
     <input type="text" id="vStudentId" placeholder="学号 *">
     <input type="text" id="vPhone" placeholder="手机号 *">
-    <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="">性别</option><option value="male">男</option><option value="female">女</option></select>
+    <select id="vGender" style="margin-bottom:10px;padding:10px 14px;border-radius:10px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:#c8e6c9;font-size:14px;outline:none;font-family:inherit;width:100%"><option value="" disabled selected>性别</option><option value="male">男</option><option value="female">女</option></select>
     <div style="margin-bottom:10px">
       <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 上传学生证照片
         <input type="file" id="vStudentCard" accept="image/*" style="display:none" onchange="previewStudentCard(this)">
@@ -1091,6 +1091,7 @@ function hideVerify(){document.getElementById('verifyOverlay').classList.remove(
 async function applyVerify(){
   const n=document.getElementById('vName').value.trim(),s=document.getElementById('vStudentId').value.trim(),p=document.getElementById('vPhone').value.trim();
   if(!n||!s||!p){notify('请填写完整信息', '⚠️');return}
+  if(!document.getElementById('vGender').value){notify('请选择性别', '⚠️');return}
   var schoolId = document.getElementById('vSchool').value;
   var school = SCHOOLS.find(function(s){return s.id===schoolId;});
   var expectedLen = school ? school.sidLen : 13;
