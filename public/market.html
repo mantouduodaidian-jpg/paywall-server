@@ -172,6 +172,8 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 .chat-input-row input{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#f7f3ea;color:#555;font-size:12px;outline:0}
 .chat-input-row input:focus{border-color:rgba(52,211,153,.3)}
 #tradeSeller{display:flex;gap:6px}
+.st-yellow{text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)}
+.st-green{text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(96,184,142,.12),rgba(96,184,142,.05));color:#4e9e80;border:1px solid rgba(96,184,142,.15)}
 .chat-convs{padding:8px;flex:1;overflow-y:auto;min-height:0}
 .chat-conv-item{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;transition:all.1s;color:rgba(0,0,0,.5)}
 .chat-conv-item:hover{background:rgba(96,184,142,.06)}
@@ -201,28 +203,39 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   .sidebar .cats{display:flex;gap:6px;overflow-x:auto}
   .sidebar .cats .cat{white-space:nowrap;flex-shrink:0;font-size:12px;padding:6px 10px}
   .sidebar .stats{display:none}
+  .sidebar #visitorSchoolRow select{font-size:13px!important;padding:10px!important}
+  .sidebar .search input{font-size:16px!important}
   .grid{grid-template-columns:repeat(2,1fr);gap:8px}
   .card .info{padding:6px 8px}
   .card .info .title{font-size:12px}
   .card .info .price{font-size:15px}
-  .pub-box{padding:20px;margin:10px auto}
+  .pub-box{padding:16px;margin:8px;max-width:100%;border-radius:12px}
   .pub-box .row{flex-wrap:wrap}
   .pub-box .row input,.pub-box .row select{min-width:100%}
-  .modal-box{margin:10px;max-width:100%}
-  .chat-panel{left:0;right:0;bottom:0;width:100%;border-radius:16px 16px 0 0;max-height:92vh;touch-action:auto;display:none;flex-direction:column}
+  .pub-overlay{padding:10px}
+  .modal-box{margin:8px;max-width:100%;border-radius:12px}
+  .chat-panel{left:0!important;right:0!important;bottom:0!important;width:100%!important;height:85vh!important;border-radius:16px 16px 0 0!important;max-height:85vh!important;touch-action:auto;display:none;flex-direction:column}
   .chat-panel.show{display:flex}
   .chat-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
   .chat-msgs{flex:1;min-height:0;overflow-y:auto}
   .contact-sidebar{max-height:100vh;touch-action:auto;z-index:201}
   .chat-btn{bottom:16px;left:16px;width:50px;height:50px}
-  .chat-input-row input{font-size:16px}
+  .chat-input-row input{font-size:16px!important}
   .chat-input-row button{padding:10px 18px;font-size:14px}
+  .notif-panel{left:8px!important;right:8px!important;width:auto!important}
   #pageNav{margin-top:8px!important;padding:8px 0!important}
-  .header{padding:12px 16px}
-  .header .logo{font-size:17px}
-  .header .sub{font-size:10px}
-  .header .actions a{padding:6px 14px;font-size:12px}
+  .header{padding:10px 12px;gap:8px}
+  .header .logo{font-size:16px;gap:6px}
+  .header .sub{display:none}
+  .header .actions{flex-wrap:wrap;gap:4px}
+  .header .actions a{padding:6px 12px;font-size:12px}
+  .header .actions .pub{font-size:12px;padding:6px 12px}
   .chat-panel .chat-panel-header span[onclick*="toggleChat"]{font-size:18px!important;padding:8px}
+  .login-overlay .btn{padding:10px 28px;font-size:14px}
+  .pub-box .btns button{padding:10px;font-size:14px}
+  .verify-overlay .pub-box{padding:16px;margin:8px}
+  .detail-img{max-height:200px!important}
+  .img-big{max-height:220px!important}
 }
 </style>
 </head>
