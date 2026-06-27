@@ -1284,6 +1284,7 @@ async function showPaymentQR(id) {
 var _previewImages = [];
 var _previewIdx = 0;
 var _prodImgArr = [];
+var _lastProdLoad = 0;
 const ADMIN_PAGE_SIZE = 30;
 var adminPage = {};
 function renderPageNav(containerId, page, total, loadFn) {
@@ -1778,6 +1779,8 @@ function connectAdminWS() {
           loadVers(); toast('🔔 有新认证申请，已刷新');
         }
         if (d.type === 'admin_product_update') {
+          if (Date.now() - (_lastProdLoad||0) < 2000) return;
+          _lastProdLoad = Date.now();
           var _au = document.querySelector('.tab.active');
           if (_au) { var _an = _au.dataset.tab; if (_an==='products')loadProds(); else if(_an==='rentals')loadRentals(); else if(_an==='verifications')loadVers(); else if(_an==='sellers')loadSellers(); }
         }
