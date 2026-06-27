@@ -903,7 +903,7 @@ let _pubType = 'sell';
 function setItemType(type) {
   _pubType = type;
   document.getElementById('typeSell').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='sell'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='sell'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='sell'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06)');
-  document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06');
+  document.getElementById('typeRent').style.cssText = 'flex:1;padding:8px;border-radius:8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;background:' + (type==='rent'?'rgba(52,211,153,.12)':'rgba(0,0,0,.04)') + ';color:' + (type==='rent'?'#34d399':'rgba(0,0,0,.25)') + ';border:1px solid ' + (type==='rent'?'rgba(52,211,153,.2)':'rgba(0,0,0,.06)');
   document.getElementById('rentFields').style.display = type==='rent' ? '' : 'none';
   document.getElementById('priceWrap').style.display = type==='rent' ? 'none' : '';
 }

@@ -292,7 +292,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadRentals()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>学校</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -369,7 +369,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -388,7 +388,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadVers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学校</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
       </div>
     </div>
   </div>
@@ -1032,7 +1032,7 @@ async function loadProds() {
     if (cf) f = f.filter(p => p.category === cf);
       f = f.filter(p => p.item_type !== 'rent');
     const tbody = document.getElementById('prodTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty">无匹配</div></td></tr>'; return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">无匹配</div></td></tr>'; return; }
     tbody.innerHTML = f.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var prodImgs = p.images && p.images.length ? p.images : [];
@@ -1043,6 +1043,7 @@ async function loadProds() {
         '<td>'+prodImg+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
         '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
         '<td>'+ (p.sold?'<span class="badge badge-red">已售</span>':'<span class="badge badge-gray">在售</span>') +'</td>'+
@@ -1058,7 +1059,7 @@ async function loadProds() {
           '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</span></td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="12"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 async function approveProd(id) {
@@ -1139,7 +1140,7 @@ async function loadRentals() {
     if (search) f = f.filter(function(p) { return (p.title||'').toLowerCase().includes(search); });
     if (sf) f = f.filter(function(p) { return p.status === sf; });
     const tbody = document.getElementById('rentTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="12"><div class="empty">暂无租借商品</div></td></tr>'; return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">暂无租借商品</div></td></tr>'; return; }
     tbody.innerHTML = f.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var periodMap = {day:'/天',week:'/周',month:'/月'};
@@ -1153,6 +1154,7 @@ async function loadRentals() {
         '<td style="color:#bbb;font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
         '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(0)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
         '<td style="color:#bbb;font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+esc(p.owner_name||'')+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
@@ -1162,7 +1164,7 @@ async function loadRentals() {
           (p.pinned?'<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>':'<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+'<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="12"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 // ====== VERIFICATIONS ======
@@ -1669,6 +1671,7 @@ async function loadLogs() {
 function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
 function fmtDate(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
 function fmtDateTime(t) { if (!t) return '-'; const d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function schoolName(code) { if (!code) return '-'; var s = SCHOOL_LIST.find(function(x){return x.code===code;}); return s ? s.name : code; }
 function toggleChart(headerEl) {
   var body = document.getElementById('chartBody');
   var arrow = document.getElementById('chartArrow');
