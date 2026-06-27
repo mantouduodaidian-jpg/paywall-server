@@ -1758,6 +1758,8 @@ function appendMsg(m, isHistory) {
   if (!el) return;
   // Dedup by checking if message already exists
   if (m.id && el.querySelector('[data-msgid="'+m.id+'"]')) return;
+  // Skip system notifications in chat
+  if ((m.from_name||'') === '系统通知') return;
   var mine = currentUser && m.from_student_id === currentUser.student_id;
   var d = new Date(m.created_at);
   var timeStr = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
