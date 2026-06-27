@@ -1622,7 +1622,7 @@ function startUnreadPoll() {
           if (t > latest) latest = t;
           if (m.to_student_id === currentUser.student_id && !m.read) {
             unread++;
-            if ((m.from_student_id||'').indexOf('kefu_') === 0 && !window._dismissedNotifs.includes(m.id)) notifUnread++;
+            if ((m.from_name||'') === '系统通知' && !window._dismissedNotifs.includes(m.id)) notifUnread++;
           }
         });
         if (latest > lastCheck) { lastCheck = latest; }
@@ -1648,7 +1648,7 @@ function openNotifChat() {
     .then(function(r){return r.json();})
     .then(function(data){
       var arr = Array.isArray(data)?data:[];
-      var notifs = arr.filter(function(m){ return (m.from_student_id||'').indexOf('kefu_') === 0 && m.to_student_id === currentUser.student_id && !window._dismissedNotifs.includes(m.id); });
+      var notifs = arr.filter(function(m){ return (m.from_name||'') === '系统通知' && m.to_student_id === currentUser.student_id && !window._dismissedNotifs.includes(m.id); });
       notifs.reverse();
       panel.innerHTML = '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);font-size:13px;font-weight:600;color:#60b88e;display:flex;justify-content:space-between;align-items:center"><span>📢 系统通知</span><span onclick="document.getElementById(\'notifPanel\').classList.remove(\'show\');document.getElementById(\'notifBackdrop\').classList.remove(\'show\')" style="cursor:pointer;color:rgba(0,0,0,.2);font-size:16px;padding:0 4px">✕</span></div>'+
         (!notifs.length ? '<div style="padding:20px;text-align:center;color:rgba(0,0,0,.15);font-size:12px">暂无通知</div>' :
