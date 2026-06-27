@@ -1366,7 +1366,13 @@ function loadConvs() {
       el.innerHTML = arr.map(function(c) {
         var sid = c.student_id;
         var unBadge = (c.unread && c.unread > 0) ? '<span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:4px">'+c.unread+'</span>' : '';
-        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>';
+        var hasMulti = c.products && c.products.length > 1;
+        var subItems = hasMulti ? c.products.map(function(pid){
+          if (pid == c.product_id) return '';
+          return '<div class="chat-conv-item" style="padding-left:28px;font-size:11px" onclick="openChat('+pid+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">📦 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">商品 #'+pid+'</span></div>';
+        }).join('') : '';
+        var toggleIcon = hasMulti ? '<span style="cursor:pointer;margin-right:4px;font-size:10px;color:rgba(0,0,0,.15)" onclick="event.stopPropagation();var n=this.nextElementSibling;n.style.display=n.style.display===\"none\"?\"\":\"none\"">▶</span>' : '';
+        return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">'+toggleIcon+'💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>'+(hasMulti?'<div style="display:none">'+subItems+'</div>':'');
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
       badge.textContent = totalUnread > 0 ? totalUnread : '0';

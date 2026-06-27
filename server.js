@@ -1473,15 +1473,14 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
       if (!otherId) return;
       if (!seen[otherId]) {
-        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
+        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content, products: [] };
       }
-      // Track latest message time
+      if (m.product_id && !seen[otherId].products.includes(m.product_id)) seen[otherId].products.push(m.product_id);
       if (new Date(m.created_at) > new Date(seen[otherId].last_time)) {
         seen[otherId].last_time = m.created_at;
         seen[otherId].last_message = m.content;
         seen[otherId].product_id = m.product_id;
       }
-      // Count unread
       if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
       // Try to improve name from any message (skip for kefu)
       if (!isKefu(otherId)) {
@@ -1492,7 +1491,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       }
     });
     contacts = Object.keys(seen).map(function(k) {
-      return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
+      return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id, products: seen[k].products };
     });
     if (isKefu(student_id)) {
       contacts = contacts.filter(function(c) { return !isKefu(c.student_id); });
