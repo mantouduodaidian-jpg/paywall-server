@@ -642,7 +642,7 @@ let cats = [];
 
 function toast(msg, dur) {
   const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
+  el.innerHTML = msg; el.classList.add('show');
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), dur||2000);
 }
 function apiFetch(url, opts) {
