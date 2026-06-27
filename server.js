@@ -810,6 +810,14 @@ app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
   try {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_buyer' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res) => {
+  try {
+    const { product_id } = req.body;
+    if (!product_id) return res.status(400).json({ error: 'product_id required' });
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
