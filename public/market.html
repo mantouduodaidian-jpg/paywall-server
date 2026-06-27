@@ -1771,8 +1771,8 @@ function delMyProduct(id, title) {
     .catch(function(){notify('删除失败','❌');});
 }
 
-let _nickCache = null;
-let _nickCacheTime = 0;
+var _nickCache = null;
+var _nickCacheTime = 0;
 const NICK_TTL = 300000;
 function getNick(studentId) {
   if (_nickCache && Date.now() - _nickCacheTime < NICK_TTL) return Promise.resolve(_nickCache);
