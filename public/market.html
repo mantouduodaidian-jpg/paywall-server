@@ -910,9 +910,11 @@ function hideDetail(){document.getElementById('detailModal').classList.remove('s
 function ownerDisplayName(p) {
   if (currentUser && p.owner_student_id === currentUser.student_id) return p.owner_name||'卖家';
   var nickname = _nickCache ? (_nickCache[p.owner_student_id] || '') : '';
-  var realName = p.owner_name||'卖家';
-  if (nickname) return nickname + ' (' + realName + ')';
-  return realName;
+  // Seller confirmed (awaiting_buyer or completed) → show real name
+  if (p.trade_status && p.trade_status !== 'trading' && currentUser && (p.trade_buyer_id === currentUser.student_id || p.owner_student_id === currentUser.student_id)) {
+    return (nickname||'匿名') + ' (' + (p.owner_name||'卖家') + ')';
+  }
+  return nickname || (p.owner_name||'卖家');
 }
 
 function prevImg() {
