@@ -615,6 +615,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <script>
 if(navigator.serviceWorker)navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister();});});
 let selCat = '';
+var _favs = JSON.parse(localStorage.getItem('myFavs')||'{}');
 let itemTypeFilter = 'sell';
 const SCHOOLS = [
   { id: 'gxny', name: '广西农业职业技术大学', sidLen: [12,13], sidHint: '12-13位' },
@@ -681,13 +682,21 @@ function toggleSound() {
   notify(_soundEnabled ? '提示音已开启' : '提示音已关闭', '🔔');
 }
 
+
+// ====== Favorites ======
+function toggleFav(id, btn) {
+  if (!currentUser) { notify('请先登录', '🔑'); return; }
+  if (_favs[id]) { delete _favs[id]; if(btn)btn.querySelector('svg').setAttribute('fill','none'); }
+  else { _favs[id] = true; if(btn)btn.querySelector('svg').setAttribute('fill','#60b88e'); }
+  localStorage.setItem('myFavs', JSON.stringify(_favs));
+}
 // ====== Categories ======
 async function loadCats() {
   try {
     const r = await fetch('/api/marketplace/categories');
     const cats = await r.json();
     const arr = Array.isArray(cats) ? cats : [];
-    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="#60b88e" stroke="#bce0cc" stroke-width=".9" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="#60b88e" stroke="#bce0cc" stroke-width=".9"/></svg> 我的</div>' : '';
+    var mineCat = currentUser ? '<div class="cat" onclick="setCat(\'__mine__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="#60b88e" stroke="#bce0cc" stroke-width=".9" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="#60b88e" stroke="#bce0cc" stroke-width=".9"/></svg> 我的</div><div class="cat" onclick="setCat(\'__fav__\')"><svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:middle;margin-right:4px"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#4e9e80" stroke="#bce0cc" stroke-width=".8"/></svg> 收藏</div>' : '';
     const catHtml = '<div class="cat active" onclick="setCat(\'\')">'+getCatIcon('全部')+' 全部</div>' + mineCat +
       arr.map(c => '<div class="cat" onclick="setCat(\''+esc(c.name)+'\')">'+(getCatIcon(c.name))+' '+esc(c.name)+'</div>').join('');
     document.getElementById('catList').innerHTML = catHtml;
@@ -812,6 +821,7 @@ async function load(reset) {
   if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
+  else if (selCat === '__fav__') { if (currentUser) url += '&owner='+currentUser.student_id+'&limit=200'; }
   else if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
   var _sort = document.getElementById('sortSelect').value;
@@ -825,8 +835,8 @@ async function load(reset) {
     const data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
     // Mine filter + sort by status
     var mfBar = document.getElementById('mineFilterBar');
-    if (selCat === '__mine__') {
-      mfBar.style.display = 'inline';
+    if (selCat === '__mine__' || selCat === '__fav__') {
+      mfBar.style.display = selCat === '__mine__' ? 'inline' : 'none';
       var filtered = (_mineFilter ? data.filter(function(p){
         if (_mineFilter === 'approved') return p.status==='approved' && p.listed!==false && !p.sold;
         if (_mineFilter === 'pending') return p.status==='pending';
@@ -841,6 +851,10 @@ async function load(reset) {
         return pa - pb;
       });
       data.length = 0; data.push.apply(data, filtered);
+    } else if (selCat === '__fav__') {
+      mfBar.style.display = 'none';
+      var favIds = Object.keys(_favs).filter(function(k){ return _favs[k]; });
+      data = data.filter(function(p){ return favIds.includes(String(p.id)); });
     } else {
       mfBar.style.display = 'none';
     }
