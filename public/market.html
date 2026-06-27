@@ -1305,6 +1305,9 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   chatOtherName = sellerName;
   if ((sellerStudentId||'').indexOf('kefu_') === 0) {
     document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerName || '客服');
+    document.getElementById('tradeActions').style.display = 'none';
+    document.getElementById('tradeProductCard').style.display = 'none';
+    document.getElementById('tradeDropdown').style.display = 'none';
   } else if (productId) {
     fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
       if (p && (p.trade_status === 'completed' || p.trade_status === 'awaiting_buyer')) {
