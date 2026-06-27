@@ -816,7 +816,10 @@ app.post('/api/marketplace/trade/request', express.json(), async (req, res) => {
   try {
     const { product_id, buyer_id, buyer_name } = req.body;
     if (!product_id || !buyer_id) return res.status(400).json({ error: 'missing fields' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: buyer_name||'' }) });
+    // Get real name from verifications
+    var realName = buyer_name||'';
+    try { var nr = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(buyer_id)+"&select=name"), { headers: SB_HEADERS }); var nd = await nr.json(); if(Array.isArray(nd)&&nd[0]&&nd[0].name) realName = nd[0].name; } catch(e){}
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: realName }) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
