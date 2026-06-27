@@ -524,16 +524,32 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <!-- Login Modal -->
 <div class="pub-overlay" id="loginOverlay" onclick="if(event.target===this)hideLogin()">
   <div class="pub-box" style="max-width:400px;text-align:center">
-    <div style="font-size:48px;margin-bottom:8px">👋</div>
-    <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">二豆集市</h2>
-    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:12px">输入手机号即可浏览商品</p>
-    <input type="tel" id="phoneLoginInput" placeholder="手机号" style="margin-bottom:8px">
-    <div class="btns" style="margin-bottom:12px">
-      <button class="submit" onclick="doPhoneLogin()" style="padding:12px">📱 浏览集市</button>
+    <!-- Guest Login -->
+    <div id="guestLoginDiv">
+      <div style="font-size:48px;margin-bottom:8px">👋</div>
+      <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">二豆集市</h2>
+      <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:12px">输入手机号即可浏览商品</p>
+      <input type="tel" id="phoneLoginInput" placeholder="手机号" style="margin-bottom:8px">
+      <div class="btns" style="margin-bottom:12px">
+        <button class="submit" onclick="doPhoneLogin()" style="padding:12px">📱 浏览集市</button>
+      </div>
+      <div style="border-top:1px solid rgba(0,0,0,.04);padding-top:12px">
+        <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:8px">想发布闲置或联系卖家？</p>
+        <button onclick="hideLogin();showVerify();return false" style="padding:10px 20px;border-radius:10px;border:1px solid rgba(96,184,142,.2);background:rgba(96,184,142,.06);color:#4e9e80;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎓 学生认证</button>
+      </div>
+      <div style="margin-top:10px"><a href="#" onclick="showStudentLogin();return false" style="font-size:12px;color:#34d399;text-decoration:none">已有认证？学生登录 →</a></div>
     </div>
-    <div style="border-top:1px solid rgba(0,0,0,.04);padding-top:12px">
-      <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:8px">想发布闲置或联系卖家？</p>
-      <button onclick="hideLogin();showVerify();return false" style="padding:10px 20px;border-radius:10px;border:1px solid rgba(96,184,142,.2);background:rgba(96,184,142,.06);color:#4e9e80;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🎓 学生认证</button>
+    <!-- Student Login -->
+    <div id="studentLoginDiv" style="display:none">
+      <div style="font-size:48px;margin-bottom:8px">🔑</div>
+      <h2 style="font-size:18px;color:rgba(0,0,0,.6);margin-bottom:4px">学生登录</h2>
+      <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:16px">已认证用户请用学号登录</p>
+      <input type="text" id="loginId" placeholder="学号" style="margin-bottom:8px">
+      <input type="tel" id="loginPhone" placeholder="注册时手机号" style="margin-bottom:8px">
+      <div class="btns" style="margin-bottom:10px">
+        <button class="submit" onclick="doLogin()" style="padding:12px">登录</button>
+      </div>
+      <div style="margin-top:10px"><a href="#" onclick="showGuestLogin();return false" style="font-size:12px;color:rgba(0,0,0,.2);text-decoration:none">← 返回浏览模式</a></div>
     </div>
     <div style="margin-top:10px"><a href="#" onclick="hideLogin();return false" style="font-size:12px;color:rgba(0,0,0,.15);text-decoration:none">稍后再说</a></div>
   </div>
@@ -998,8 +1014,10 @@ function renderLoggedOut() {
   document.getElementById('chatPanel').classList.remove('show');
 }
 
-function showLogin(){document.getElementById('loginOverlay').classList.add('show')}
+function showLogin(){document.getElementById('loginOverlay').classList.add('show');showGuestLogin();}
 function hideLogin(){document.getElementById('loginOverlay').classList.remove('show')}
+function showStudentLogin(){document.getElementById('guestLoginDiv').style.display='none';document.getElementById('studentLoginDiv').style.display='';}
+function showGuestLogin(){document.getElementById('guestLoginDiv').style.display='';document.getElementById('studentLoginDiv').style.display='none';}
 async function doPhoneLogin(){
   var phone = document.getElementById('phoneLoginInput').value.trim();
   if (!phone || phone.length !== 11) { notify('请输入11位手机号', '⚠️'); return; }
