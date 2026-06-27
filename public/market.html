@@ -1782,18 +1782,6 @@ if (schoolSel && SCHOOLS) {
     schoolSel.appendChild(opt);
   });
 }
-// Populate visitor school selector
-let visSel = document.getElementById('visitorSchool');
-if (visSel && SCHOOLS) {
-  SCHOOLS.forEach(function(s) {
-    var opt = document.createElement('option');
-    opt.value = s.id; opt.textContent = s.name;
-    visSel.appendChild(opt);
-  });
-  // Restore saved selection
-  var savedSchool = localStorage.getItem('visitorSchool');
-  if (savedSchool) visSel.value = savedSchool;
-}
 // Account check - verify current user still exists
 if (currentUser) {
   fetch('/api/marketplace/check-account?student_id='+currentUser.student_id)
@@ -1803,11 +1791,6 @@ if (currentUser) {
     }).catch(function(){});
 }
 
-// School selection changes
-document.getElementById('visitorSchool').onchange = function() {
-  localStorage.setItem('visitorSchool', this.value);
-  load();
-};
 loadCats();
 load(false);
 loadAnn();
