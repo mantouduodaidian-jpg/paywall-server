@@ -898,7 +898,7 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span>'+(p.negotiable?'<span style="background:rgba(251,191,36,.1);color:#d4a030;padding:3px 10px;border-radius:6px;font-size:12px">💰 可议价</span>':'')+'</div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')">💬 联系卖家</button>' : '')+'<button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'📅 我想租借':'🤝 我想购买')+'</button>'
+      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')">💬 联系卖家</button><button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'📅 我想租借':'🤝 我想购买')+'</button>' : '')+
       '<button class="close" onclick="hideDetail()">关闭</button>'+
       (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444">📌 下架</button>' : '')+
       (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(ownerDisplayName(p))+'\');return false" style="font-size:12px;color:rgba(52,211,153,.5);text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#34d399" stroke-width="1.5"/></svg> 查看 '+esc(ownerDisplayName(p))+' 的其他商品</a></div>' : '')+
@@ -1331,6 +1331,8 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
       var msgs = document.getElementById('chatMsgs');
       msgs.scrollTop = msgs.scrollHeight;
       fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_student_id:sellerStudentId,student_id:currentUser.student_id})});
+      // Update trade buttons in chat panel
+      if (chatProductId) fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
     }).catch(function(){});
 }
 
