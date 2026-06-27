@@ -1487,8 +1487,8 @@ function requestTrade() {
     .then(function(d){
       if(d.ok){
         notify('已发送购买请求', '🤝');
-          load();
-          if (chatProductId == pid) fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(pp){updateTradeButtons(pp);}).catch(function(){});
+        load();
+        fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
         // Send chat message
         fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'→ 想购买此商品'})
