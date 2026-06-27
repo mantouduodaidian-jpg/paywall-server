@@ -1371,7 +1371,7 @@ function loadConvs() {
           if (pid == c.product_id) return '';
           return '<div class="chat-conv-item" style="padding-left:28px;font-size:11px" onclick="openChat('+pid+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">📦 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">商品 #'+pid+'</span></div>';
         }).join('') : '';
-        var toggleIcon = hasMulti ? '<span style="cursor:pointer;margin-right:4px;font-size:10px;color:rgba(0,0,0,.15)" onclick="event.stopPropagation();var n=this.nextElementSibling;n.style.display=n.style.display===\"none\"?\"\":\"none\"">▶</span>' : '';
+        var toggleIcon = hasMulti ? '<span style="cursor:pointer;margin-right:4px;font-size:10px;color:rgba(0,0,0,.15)" onclick="event.stopPropagation();var n=this.parentNode.nextElementSibling;if(n)n.style.display=n.style.display===\"none\"?\"\":\"none\"">▶</span>' : '';
         return '<div class="chat-conv-item" onclick="openChat('+c.product_id+',\''+sid+'\',\''+esc(c.name)+'\',\'\')">'+toggleIcon+'💬 <span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(c.name)+'</span>'+unBadge+'</div>'+(hasMulti?'<div style="display:none">'+subItems+'</div>':'');
       }).join('');
       var totalUnread = arr.reduce(function(sum, c) { return sum + (c.unread || 0); }, 0);
