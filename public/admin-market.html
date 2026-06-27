@@ -1745,6 +1745,12 @@ function init() {
     SCHOOL_LIST.forEach(function(s) { annSel.innerHTML += '<option value="'+s.code+'">'+s.name+'</option>'; });
   }
   if (annSel && role === 'school_admin') annSel.style.display = 'none';
+  // Populate bw school selector
+  var bwSel = document.getElementById('bwSchool');
+  if (bwSel && SCHOOL_LIST.length) {
+    SCHOOL_LIST.forEach(function(s) { bwSel.innerHTML += '<option value="'+s.code+'">'+s.name+'</option>'; });
+  }
+  if (bwSel && role === 'school_admin') { bwSel.value = localStorage.getItem('adminSchool')||''; bwSel.style.display = 'none'; }
 }
 
 // WebSocket for instant updates
