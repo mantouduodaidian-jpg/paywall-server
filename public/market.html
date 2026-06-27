@@ -1375,6 +1375,13 @@ function closeConv(key) {
 }
 
 let _lastChatTime = 0;
+function updateChatHeader() {
+  if (!chatProductId || !chatOtherStudent) return;
+  fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){
+    if (!p) return;
+    document.getElementById('chatConvLabel').textContent = '\u{1f4ac} ' + ownerDisplayName(p);
+  }).catch(function(){});
+}
 function updateTradeButtons(p) {
   var actions = document.getElementById('tradeActions');
   var status = document.getElementById('tradeStatus');
@@ -1413,6 +1420,7 @@ function updateTradeButtons(p) {
   } else if (isOwner && !p.trade_status) {
     actions.style.display = 'none';
   }
+  updateChatHeader();
 }
 
 function requestTrade() {
