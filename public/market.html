@@ -909,11 +909,11 @@ async function showDetail(id) {
 function hideDetail(){document.getElementById('detailModal').classList.remove('show')}
 function ownerDisplayName(p) {
   if (currentUser && p.owner_student_id === currentUser.student_id) return p.owner_name||'卖家';
-  // Trade completed → show real name
+  var nickname = _nickCache ? (_nickCache[p.owner_student_id] || '') : '';
+  // Trade completed → show nickname (realname)
   if (p.trade_status === 'completed' && currentUser && (p.trade_buyer_id === currentUser.student_id || p.owner_student_id === currentUser.student_id)) {
-    return p.owner_name||'卖家';
+    return (nickname||'匿名') + ' (' + (p.owner_name||'卖家') + ')';
   }
-  var nickname = _nickCache ? _nickCache[p.owner_student_id] : '';
   return nickname || '匿名卖家';
 }
 
