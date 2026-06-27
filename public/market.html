@@ -266,6 +266,11 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <div class="main">
   <!-- Sidebar -->
   <div class="sidebar">
+    <div id="visitorSchoolRow" style="margin-bottom:8px">
+      <select id="visitorSchool" onchange="switchVisitorSchool(this.value)" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fff;color:#555;font-size:12px;outline:none;font-family:inherit">
+        <option value="">🏫 选择学校浏览</option>
+      </select>
+    </div>
     <div class="search">
       <input id="searchInput" type="text" autocomplete="off" placeholder="搜索物品..." onkeydown="if(event.key==='Enter')load()">
     </div>
@@ -759,7 +764,14 @@ const PAGE_SIZE = 10;
 async function load(reset) {
   // Pre-fetch nicknames for anonymous display
   if (currentUser) getNick();
-  var userSchool = currentUser ? currentUser.school : '';
+  var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
+  if (!currentUser && !userSchool) {
+    document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.15)"><div style="font-size:64px;margin-bottom:16px">🏫</div><div style="font-size:16px;margin-bottom:8px">选择学校浏览商品</div><div style="font-size:12px">在左侧选择你所在的学校<br>即可查看该校的闲置物品</div></div>';
+    document.getElementById('statCount').textContent = '0';
+    document.getElementById('resultLabel').textContent = '';
+    document.getElementById('pageNavContainer').innerHTML = '';
+    return;
+  }
 
   if (reset !== false) { pageOffset = 0; document.getElementById('productList').innerHTML =
     '<div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-info"><div class="skeleton-line"></div><div class="skeleton-line"></div></div></div>'.repeat(4); }
@@ -1050,6 +1062,11 @@ function logout(){
 function hideLogoutModal(){document.getElementById('logoutModal').classList.remove('show');}
 function confirmLogout(){hideLogoutModal();renderLoggedOut();setTimeout(function(){location.reload();},100);}
 
+function switchVisitorSchool(val) {
+  if (val) localStorage.setItem('visitorSchool', val);
+  else localStorage.removeItem('visitorSchool');
+  load();
+}
 function requireAuth(msg) {
   if (!currentUser) { notify(msg || '请先登录', '🔑'); showLogin(); return false; }
   if (currentUser.muted) { notify('账号已禁言', '🔇'); return false; }
@@ -1752,6 +1769,19 @@ if (schoolSel && SCHOOLS) {
     opt.value = s.id; opt.textContent = s.name;
     schoolSel.appendChild(opt);
   });
+}
+// Populate visitor school selector
+var visSel = document.getElementById('visitorSchool');
+var visRow = document.getElementById('visitorSchoolRow');
+if (currentUser && visRow) { visRow.style.display = 'none'; }
+if (visSel && SCHOOLS) {
+  SCHOOLS.forEach(function(s) {
+    var opt = document.createElement('option');
+    opt.value = s.id; opt.textContent = s.name;
+    visSel.appendChild(opt);
+  });
+  var savedSchool = localStorage.getItem('visitorSchool');
+  if (savedSchool) visSel.value = savedSchool;
 }
 // Account check - verify current user still exists
 if (currentUser) {
