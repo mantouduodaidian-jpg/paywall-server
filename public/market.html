@@ -448,6 +448,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </div>
       <div class="chat-msgs" id="chatMsgs"></div>
       <div id="tradeActions" style="display:none;padding:10px 12px 6px;border-top:1px solid rgba(0,0,0,.04)">
+        <div id="tradeProductCard" style="display:none;padding:8px 10px;margin-bottom:6px;border-radius:8px;background:rgba(96,184,142,.06);border:1px solid rgba(96,184,142,.1);font-size:11px;color:rgba(0,0,0,.45);line-height:1.5"></div>
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button id="tradeBuyerBtn" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
         <div id="tradeSeller" style="display:none">
@@ -1392,11 +1393,15 @@ function updateTradeButtons(p) {
   var buyerBtn = document.getElementById('tradeBuyer');
   var buyerBtnInner = document.getElementById('tradeBuyerBtn');
   var sellerBtns = document.getElementById('tradeSeller');
-  actions.style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
+  actions.style.display = 'none'; document.getElementById('tradeProductCard').style.display = 'none'; buyerBtn.style.display = 'none'; sellerBtns.style.display = 'none'; status.style.display = 'none';
   if (!p || p.sold) return;
   var isOwner = currentUser && p.owner_student_id === currentUser.student_id;
   var isBuyer = currentUser && p.trade_buyer_id === currentUser.student_id;
 
+  // Show product card
+  var card = document.getElementById('tradeProductCard');
+  card.style.display = 'block';
+  card.innerHTML = '<span style="font-weight:600;color:#4e9e80">' + esc(p.title||'') + '</span> <span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price||p.rent_price||0).toFixed(0) + '</span>' + (p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span>':'');
   actions.style.display = 'flex';
 
   if (isOwner && p.trade_status === 'trading') {
@@ -1597,6 +1602,8 @@ function startChatPoll() {
         arr.forEach(function(m) {
           if (m.id > lastId) { lastId = m.id; appendMsg(m, true); }
         });
+        // Refresh trade buttons on new messages
+        if (arr.length && chatProductId) fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
       }).catch(function(){});
   }, 2000);
 }
