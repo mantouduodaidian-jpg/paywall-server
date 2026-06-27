@@ -1769,13 +1769,17 @@ function connectAdminWS() {
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
-      if (d.type === 'admin_new_verification' || d.type === 'admin_new_product') {
+      if (d.type === 'admin_new_verification' || d.type === 'admin_new_product' || d.type === 'admin_product_update') {
         loadOverview();
         if (d.type === 'admin_new_product') {
           if (d.data && d.data.item_type === 'rent') { loadRentals(); toast('🔔 有新租借商品，已刷新'); }
           else { loadProds(); toast('🔔 有新商品，已刷新'); }
-        } else {
+        } else if (d.type === 'admin_new_verification') {
           loadVers(); toast('🔔 有新认证申请，已刷新');
+        }
+        if (d.type === 'admin_product_update') {
+          var _au = document.querySelector('.tab.active');
+          if (_au) { var _an = _au.dataset.tab; if (_an==='products')loadProds(); else if(_an==='rentals')loadRentals(); else if(_an==='verifications')loadVers(); else if(_an==='sellers')loadSellers(); }
         }
         loadReports();
       }
