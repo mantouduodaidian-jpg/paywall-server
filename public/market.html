@@ -452,8 +452,8 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
         <div id="tradeStatus" style="display:none;text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px"></div>
         <div id="tradeBuyer" style="display:none"><button id="tradeBuyerBtn" style="width:100%;padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,#059669,#34d399);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;box-shadow:0 2px 10px rgba(52,211,153,.2)">🤝 我想交易</button></div>
         <div id="tradeSeller" style="display:none">
-          <button onclick="confirmTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(52,211,153,.12);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(52,211,153,.15)">✅ 确认成交</button>
-          <button onclick="cancelTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(239,68,68,.12)">✕ 取消交易</button>
+          <button onclick="confirmTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(52,211,153,.12);color:#34d399;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(52,211,153,.15)"><span style="background:#34d399;color:#fff;border-radius:3px;padding:0 4px;font-size:10px">✓</span> 确认成交</button>
+          <button onclick="cancelTrade()" style="flex:1;padding:10px;border:none;border-radius:10px;background:rgba(239,68,68,.08);color:#ef4444;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.5px;transition:transform .15s;border:1px solid rgba(239,68,68,.12)"><span style="background:rgba(239,68,68,.3);color:#ef4444;border-radius:3px;padding:0 4px;font-size:10px">✕</span> 取消</button>
         </div>
       </div>
       <div id="chatImgPreview" style="display:none;padding:4px 12px 2px;border-top:1px solid rgba(0,0,0,.04)"><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:rgba(96,184,142,.08);font-size:10px;color:#60b88e;max-width:100%"><img id="chatImgThumb" style="width:24px;height:24px;border-radius:4px;object-fit:cover"><span id="chatImgName" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span><span onclick="clearChatImg()" style="cursor:pointer;color:rgba(0,0,0,.2);margin-left:2px">✕</span></span></div>
@@ -899,7 +899,7 @@ async function showDetail(id) {
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span>'+(p.negotiable?'<span style="background:rgba(251,191,36,.1);color:#d4a030;padding:3px 10px;border-radius:6px;font-size:12px">💰 可议价</span>':'')+'</div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
-      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')">💬 联系卖家</button><button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'📅 我想租借':'🤝 我想购买')+'</button>' : '')+
+      (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 10a2 2 0 0 1-2 2H5l-3 2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/></svg> 联系卖家</button><button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')">'+(p.item_type==='rent'?'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="1"/><path d="M2 7h12"/><path d="M5 1v4M11 1v4"/></svg> 我想租借':'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买')+'</button>' : '')+
       '<button class="close" onclick="hideDetail()">关闭</button>'+
       (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444">📌 下架</button>' : '')+
       (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(ownerDisplayName(p))+'\');return false" style="font-size:12px;color:rgba(52,211,153,.5);text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#34d399" stroke-width="1.5"/></svg> 查看 '+esc(ownerDisplayName(p))+' 的其他商品</a></div>' : '')+
@@ -1021,7 +1021,7 @@ function renderLoggedIn() {
   document.getElementById('loginBtn').style.display = 'none';
   document.getElementById('userInfo').style.display = 'flex';
   var schoolName = getSchoolName(currentUser?.school);
-  document.getElementById('userName').innerHTML = '👤 ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '');
+  document.getElementById('userName').innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> ' + (currentUser?.name || '用户') + (schoolName ? ' · ' + schoolName : '');
 }
 function renderLoggedOut() {
   document.getElementById('loginBtn').style.display = '';
@@ -1405,17 +1405,17 @@ function updateTradeButtons(p) {
   actions.style.display = 'flex';
 
   if (isOwner && p.trade_status === 'trading') {
-    status.style.display = ''; status.innerHTML = '👤 ' + esc(p.trade_buyer_name||'买家') + ' 想购买';
+    status.style.display = ''; status.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M11 12a3 3 0 0 0-6 0"/><circle cx="8" cy="6" r="2.5"/></svg> ' + esc(p.trade_buyer_name||'买家') + ' 想购买';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
     sellerBtns.style.display = 'flex';
   } else if (isBuyer && p.trade_status === 'trading') {
-    status.style.display = ''; status.innerHTML = '⏳ 等待卖家确认';
+    status.style.display = ''; status.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M8 4v4l3 2"/></svg> 等待卖家确认';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(251,191,36,.12),rgba(251,191,36,.05));color:#fbbf24;border:1px solid rgba(251,191,36,.1)';
   } else if (isOwner && p.trade_status === 'awaiting_buyer') {
-    status.style.display = ''; status.innerHTML = '💰 已确认交易，等待买家确认收货';
+    status.style.display = ''; status.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="8" cy="8" r="6"/><path d="M5 10l3-4 3 4"/></svg> 已确认交易，等待买家确认收货';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(96,184,142,.12),rgba(96,184,142,.05));color:#4e9e80;border:1px solid rgba(96,184,142,.15)';
   } else if (isBuyer && p.trade_status === 'awaiting_buyer') {
-    status.style.display = ''; status.innerHTML = '📦 卖家已确认，请确认收货';
+    status.style.display = ''; status.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 5l5-3 5 3v6l-5 3-5-3z"/><path d="M3 5l5 3m0-3v8"/></svg> 卖家已确认，请确认收货';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(96,184,142,.12),rgba(96,184,142,.05));color:#4e9e80;border:1px solid rgba(96,184,142,.15)';
     buyerBtn.style.display = ''; buyerBtnInner.textContent = '✅ 确认收货'; buyerBtnInner.onclick = buyerConfirmTrade;
   } else if (isOwner && p.trade_status === 'completed') {
@@ -1425,7 +1425,7 @@ function updateTradeButtons(p) {
     status.style.display = ''; status.innerHTML = '✅ 已收货 🎉';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
   } else if (!isOwner && !p.trade_status) {
-    buyerBtn.style.display = ''; buyerBtnInner.textContent = '🤝 我想购买'; buyerBtnInner.onclick = requestTrade;
+    buyerBtn.style.display = ''; buyerBtnInner.textContent = '<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买'; buyerBtnInner.onclick = requestTrade;
   } else if (isOwner && !p.trade_status) {
     actions.style.display = 'none';
   }
@@ -1443,7 +1443,7 @@ function quickRequest(pid) {
         if(d.ok){
           notify('已发送购买请求', '🤝');
           fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'🤝 我想购买此商品'})
+            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买此商品'})
           }).catch(function(){});
         } else notify('操作失败','❌');
       }).catch(function(){notify('操作失败','❌');});
@@ -1458,7 +1458,7 @@ function requestTrade() {
         notify('已发送购买请求', '🤝');
         // Send chat message
         fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'🤝 我想购买此商品'})
+          body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'<svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8l4-4m0 0l4 4M6 4v8"/></svg> 我想购买此商品'})
         }).catch(function(){});
         // Reload product to update buttons
         fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});

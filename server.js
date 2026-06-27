@@ -1107,7 +1107,8 @@ app.get('/api/marketplace/logs', schoolScope, async (req, res) => {
 // ====== Blocked Words API ======
 app.get('/api/marketplace/blocked-words', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('blocked_words?select=*'), { headers: SB_HEADERS });
+    var sf = req.adminSchool ? '&school=eq.'+req.adminSchool : '';
+    const r = await fetch(SB('blocked_words?select=*'+sf), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1116,12 +1117,13 @@ app.post('/api/marketplace/blocked-words', schoolScope, express.json(), async (r
   try {
     const { word } = req.body;
     if (!word) return res.status(400).json({ error: 'word required' });
+    var school = req.adminSchool || '';
     const r = await fetch(SB('blocked_words'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ word })
+      body: JSON.stringify({ word, school })
     });
     const t = await r.json();
-    addLog('blocked_word_add', 'blocked_word', t.id, word);
+    addLog('blocked_word_add', 'blocked_word', t.id, word+(school?' ['+school+']':''));
     res.json(t);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
