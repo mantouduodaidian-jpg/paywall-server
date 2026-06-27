@@ -1537,6 +1537,12 @@ function cancelTrade() {
     }).catch(function(){notify('操作失败','❌');});
 }
 
+function switchTradeProd(pid) {
+  if (!pid || pid == chatProductId) return;
+  var sid = chatOtherStudent;
+  var nm = chatOtherName;
+  openChat(parseInt(pid), sid, nm, '');
+}
 function showRejectTrade() { document.getElementById('rejectTradeModal').classList.add('show'); }
 function closeRejectTrade() { document.getElementById('rejectTradeModal').classList.remove('show'); }
 function confirmRejectTrade() {
