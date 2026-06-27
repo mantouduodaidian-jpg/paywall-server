@@ -1425,7 +1425,6 @@ function updateTradeButtons(p) {
         sel.innerHTML = trades.map(function(x){ return '<option value="'+x.id+'"'+(x.id===chatProductId?' selected':'')+'>'+esc(x.title)+' — '+(x.trade_status==='trading'?'⏳ 等待':x.trade_status==='awaiting_buyer'?'📦 确认':x.trade_status==='completed'?'✅ 完成':'')+'</option>'; }).join('');
       }
     }).catch(function(){});
-  }    }).catch(function(){});
   }
 
   if (isOwner && p.trade_status === 'trading') {
