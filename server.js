@@ -837,6 +837,16 @@ app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
+    // Notify both parties
+    try {
+      const r = await fetch(SB('products?id=eq.'+product_id+'&select=title,owner_student_id,owner_name,trade_buyer_id,trade_buyer_name,school'), { headers: SB_HEADERS });
+      const d = await r.json();
+      const p = Array.isArray(d) ? d[0] : null;
+      if (p) {
+        sendNotify(p.owner_student_id, p.owner_name, p.school, '💰 你的商品「'+p.title+'」买家已确认收货，交易完成 🎉');
+        sendNotify(p.trade_buyer_id, p.trade_buyer_name, p.school, '✅ 你购买的「'+p.title+'」已确认收货，交易完成 🎉');
+      }
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
