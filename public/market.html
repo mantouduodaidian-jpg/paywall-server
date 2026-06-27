@@ -1443,6 +1443,8 @@ function quickRequest(pid) {
       .then(function(d){
         if(d.ok){
           notify('已发送购买请求', '🤝');
+          load();
+          if (chatProductId == pid) fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(pp){updateTradeButtons(pp);}).catch(function(){});
           fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'→ 想购买「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(0)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
           }).catch(function(){});
@@ -1458,6 +1460,8 @@ function requestTrade() {
     .then(function(d){
       if(d.ok){
         notify('已发送购买请求', '🤝');
+          load();
+          if (chatProductId == pid) fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(pp){updateTradeButtons(pp);}).catch(function(){});
         // Send chat message
         fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({product_id:chatProductId,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:chatOtherStudent||'',to_name:chatOtherName||'',content:'→ 想购买此商品'})
