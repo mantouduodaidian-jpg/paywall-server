@@ -1708,6 +1708,18 @@ app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async
     if (!id) return res.status(400).json({ error: 'id required' });
     await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ payment_status: status || 'paid' }) });
     addLog('transaction_pay', 'product', id, status||'paid');
+    // Notify seller of payment
+    try {
+      var pr = await fetch(SB('products?id=eq.'+id+'&select=id,title,owner_student_id'), { headers: SB_HEADERS });
+      var pd = await pr.json();
+      var prod = Array.isArray(pd) ? pd[0] : null;
+      if (prod && prod.owner_student_id) {
+        await fetch(SB('messages'), {
+          method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ product_id: id, from_student_id: 'system', from_name: '系统通知', to_student_id: prod.owner_student_id, content: '💰 您售出的商品「'+prod.title+'」的款项已到账，请查看账户余额。', created_at: new Date().toISOString(), read: false })
+        });
+      }
+    } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
