@@ -1381,6 +1381,15 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
     if (price_max) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v <= parseFloat(price_max); });
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
+    // Enrich with nicknames
+    if (Array.isArray(data) && data.length) {
+      try {
+        var nr = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+        var nd = await nr.json();
+        var nmap = {}; (Array.isArray(nd) ? nd : []).forEach(function(v){ if(v.student_id && v.nickname) nmap[v.student_id] = v.nickname; });
+        data.forEach(function(p){ if(p.owner_student_id && nmap[p.owner_student_id]) p.owner_nickname = nmap[p.owner_student_id]; });
+      } catch(e) {}
+    }
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

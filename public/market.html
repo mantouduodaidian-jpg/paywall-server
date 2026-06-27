@@ -909,7 +909,7 @@ async function showDetail(id) {
 function hideDetail(){document.getElementById('detailModal').classList.remove('show')}
 function ownerDisplayName(p) {
   if (currentUser && p.owner_student_id === currentUser.student_id) return p.owner_name||'卖家';
-  var nickname = _nickCache ? (_nickCache[p.owner_student_id] || '') : '';
+  var nickname = p.owner_nickname || (_nickCache ? (_nickCache[p.owner_student_id] || '') : '');
   // Seller confirmed (awaiting_buyer or completed) → show real name
   if (p.trade_status && p.trade_status !== 'trading' && currentUser && (p.trade_buyer_id === currentUser.student_id || p.owner_student_id === currentUser.student_id)) {
     return (nickname||'匿名') + ' (' + (p.owner_name||'卖家') + ')';
@@ -1299,16 +1299,15 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
     document.getElementById('chatConvLabel').textContent = '💬 ' + (sellerName || '客服');
   } else if (productId) {
     fetch('/api/marketplace/products/'+productId).then(function(r){return r.json();}).then(function(p){
-      fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
-        var arr = Array.isArray(vers)?vers:[];
-        var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
-        var nick = (seller && seller.nickname) ? seller.nickname : sellerName;
-        if (p && (p.trade_status === 'completed' || p.trade_status === 'awaiting_buyer')) {
-          document.getElementById('chatConvLabel').textContent = '💬 ' + nick + (sellerName && nick !== sellerName ? '('+sellerName+')' : '');
-        } else {
-          document.getElementById('chatConvLabel').textContent = '💬 ' + (nick || '买家');
-        }
-      }).catch(function(){});
+      if (p && (p.trade_status === 'completed' || p.trade_status === 'awaiting_buyer')) {
+        document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
+      } else {
+        fetch('/api/verify/list').then(function(r2){return r2.json();}).then(function(vers){
+          var arr = Array.isArray(vers)?vers:[];
+          var seller = arr.find(function(v){ return v.student_id === sellerStudentId; });
+          document.getElementById('chatConvLabel').textContent = '💬 ' + ((seller&&seller.nickname)||sellerName||'买家');
+        }).catch(function(){});
+      }
     }).catch(function(){});
   } else {
     document.getElementById('chatConvLabel').textContent = '💬 ' + sellerName;
