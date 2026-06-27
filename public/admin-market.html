@@ -292,7 +292,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadRentals()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>学校</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>学校</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table><div id="rentPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -305,7 +305,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadSellers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>卖家</th><th>总商品</th><th>已上架</th><th>在售</th><th style="text-align:center">操作</th></tr></thead><tbody id="sellerTbody"></tbody></table>
+        <table><thead><tr><th>卖家</th><th>总商品</th><th>已上架</th><th>在售</th><th style="text-align:center">操作</th></tr></thead><tbody id="sellerTbody"></tbody></table><div id="sellerPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -369,7 +369,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table><div id="prodPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -388,7 +388,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadVers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学校</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学校</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table><div id="verPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -406,7 +406,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-primary" onclick="addCat()">+ 添加</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'catCb')"></th><th>ID</th><th>图标</th><th>名称</th><th>排序</th><th style="text-align:center">操作</th></tr></thead><tbody id="catTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'catCb')"></th><th>ID</th><th>图标</th><th>名称</th><th>排序</th><th style="text-align:center">操作</th></tr></thead><tbody id="catTbody"></tbody></table><div id="catPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -427,7 +427,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadReports()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'reportCb')"></th><th>ID</th><th>商品</th><th>原因</th><th>详情</th><th>举报人</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="reportTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'reportCb')"></th><th>ID</th><th>商品</th><th>原因</th><th>详情</th><th>举报人</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="reportTbody"></tbody></table><div id="reportPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -446,7 +446,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-primary" onclick="addAnn()">+ 发布</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'annCb')"></th><th>ID</th><th>标题</th><th>内容</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="annTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'annCb')"></th><th>ID</th><th>标题</th><th>内容</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="annTbody"></tbody></table><div id="annPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -463,7 +463,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-primary" onclick="addBw()">+ 添加</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'bwCb')"></th><th>ID</th><th>敏感词</th><th>添加时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="bwTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'bwCb')"></th><th>ID</th><th>敏感词</th><th>添加时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="bwTbody"></tbody></table><div id="bwPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -481,7 +481,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadTransactions()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'txCb')"></th><th>ID</th><th>商品</th><th>金额</th><th>卖家</th><th>买家</th><th>成交时间</th><th>转账状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="txTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'txCb')"></th><th>ID</th><th>商品</th><th>金额</th><th>卖家</th><th>买家</th><th>成交时间</th><th>转账状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="txTbody"></tbody></table><div id="txPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -523,7 +523,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-primary" onclick="addPromo()">+ 添加</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'promoCb')"></th><th>ID</th><th>标题</th><th>描述</th><th>联系方式</th><th>排序</th><th>状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="promoTbody"></tbody></table>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'promoCb')"></th><th>ID</th><th>标题</th><th>描述</th><th>联系方式</th><th>排序</th><th>状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="promoTbody"></tbody></table><div id="promoPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -531,7 +531,7 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabLogs" style="display:none">
     <div class="section">
       <div class="table-wrap">
-        <table><thead><tr><th>时间</th><th>操作</th><th>类型</th><th>目标</th><th>详情</th></tr></thead><tbody id="logTbody"></tbody></table>
+        <table><thead><tr><th>时间</th><th>操作</th><th>类型</th><th>目标</th><th>详情</th></tr></thead><tbody id="logTbody"></tbody></table><div id="logPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1032,8 +1032,11 @@ async function loadProds() {
     if (cf) f = f.filter(p => p.category === cf);
       f = f.filter(p => p.item_type !== 'rent');
     const tbody = document.getElementById('prodTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">无匹配</div></td></tr>'; return; }
-    tbody.innerHTML = f.map(p => {
+    var _page = adminPage.prodPagination || 0;
+    var _total = f.length;
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">无匹配</div></td></tr>'; renderPageNav('prodPagination',_page,_total,'loadProds'); return; }
+    var _pd = f.slice(_page * ADMIN_PAGE_SIZE, (_page + 1) * ADMIN_PAGE_SIZE);
+    tbody.innerHTML = _pd.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var prodImgs = p.images && p.images.length ? p.images : [];
       var imgIdx = _prodImgArr.push(prodImgs) - 1;
@@ -1059,6 +1062,7 @@ async function loadProds() {
           '<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</span></td></tr>';
     }).join('');
+    renderPageNav('prodPagination',_page,_total,'loadProds');
   } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
 }
 
@@ -1140,8 +1144,11 @@ async function loadRentals() {
     if (search) f = f.filter(function(p) { return (p.title||'').toLowerCase().includes(search); });
     if (sf) f = f.filter(function(p) { return p.status === sf; });
     const tbody = document.getElementById('rentTbody');
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">暂无租借商品</div></td></tr>'; return; }
-    tbody.innerHTML = f.map(function(p) {
+    var _page = adminPage.rentPagination || 0;
+    var _total = f.length;
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">暂无租借商品</div></td></tr>'; renderPageNav('rentPagination',_page,_total,'loadRentals'); return; }
+    var _pd = f.slice(_page * ADMIN_PAGE_SIZE, (_page + 1) * ADMIN_PAGE_SIZE);
+    tbody.innerHTML = _pd.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var periodMap = {day:'/天',week:'/周',month:'/月'};
       var rentImgs = p.images && p.images.length ? p.images : [];
@@ -1164,6 +1171,7 @@ async function loadRentals() {
           (p.pinned?'<button class="btn btn-yellow btn-sm" onclick="togglePin('+p.id+',false)">📌 取消置顶</button>':'<button class="btn btn-ghost btn-sm" onclick="togglePin('+p.id+',true)">📌 置顶</button>')+'<button class="btn btn-red btn-sm" onclick="delProd('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg></button>'+
         '</td></tr>';
     }).join('');
+    renderPageNav('rentPagination',_page,_total,'loadRentals');
   } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
 }
 
@@ -1175,8 +1183,10 @@ async function loadVers() {
     const arr = Array.isArray(data) ? data : [];
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
-    document.getElementById('verTbody').innerHTML = !filtered.length ? '<tr><td colspan="10"><div class="empty">暂无</div></td></tr>' :
-      filtered.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
+    var _vPage = adminPage.verPagination || 0; var _vTotal = filtered.length;
+    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="10"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
+    var _vd = filtered.slice(_vPage * ADMIN_PAGE_SIZE, (_vPage + 1) * ADMIN_PAGE_SIZE);
+    document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td style="color:#ccc">'+v.id+'</td>'<td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(v.school)+'</td>'+
         '<td>'+(v.image?'<a href="#" onclick="showCard('+v.id+');return false" style="color:#4e9e80;font-size:10px">📷 学生证</a>':'<span style="color:#ccc;font-size:10px">无</span>')+' <a href="#" onclick="showPaymentQR('+v.id+');return false" style="color:#c4a84c;font-size:10px">📷 收款码</a></td>'+
         '<td><span class="badge '+(v.status==='approved'?'badge-green':v.status==='rejected'?'badge-red':'badge-yellow')+'">'+(v.status==='approved'?'已通过':v.status==='rejected'?'未通过':'待审核')+'</span></td>'+
@@ -1184,6 +1194,7 @@ async function loadVers() {
         '<td style="text-align:center">'+(v.status==='pending'
           ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="rejectVer('+v.id+')">✕ 未通过</button><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')"><svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 删除</button></span>'
           : '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')"><svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 删除</button></span>')+'</td></tr>').join('');
+    renderPageNav('verPagination',_vPage,_vTotal,'loadVers');
   } catch(e) {}
 }
 async function approveVer(id) {
@@ -1260,6 +1271,22 @@ async function showPaymentQR(id) {
 var _previewImages = [];
 var _previewIdx = 0;
 var _prodImgArr = [];
+const ADMIN_PAGE_SIZE = 30;
+var adminPage = {};
+function renderPageNav(containerId, page, total, loadFn) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var pages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  var h = '';
+  if (page > 0) h += '<a href="#" onclick="adminPage[\''+containerId+'\']='+(page-1)+';'+loadFn+'();return false" style="color:rgba(0,0,0,.3);padding:3px 8px;border:1px solid rgba(0,0,0,.06);border-radius:4px;text-decoration:none">‹</a>';
+  for (var i = Math.max(0, page-2); i <= Math.min(pages-1, page+2); i++) {
+    if (i === page) h += '<span style="background:rgba(96,184,142,.1);color:#60b88e;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600">'+(i+1)+'</span>';
+    else h += '<a href="#" onclick="adminPage[\''+containerId+'\']='+i+';'+loadFn+'();return false" style="color:rgba(0,0,0,.25);padding:3px 8px;border:1px solid rgba(0,0,0,.04);border-radius:4px;text-decoration:none">'+(i+1)+'</a>';
+  }
+  if (page < pages-1) h += '<a href="#" onclick="adminPage[\''+containerId+'\']='+(page+1)+';'+loadFn+'();return false" style="color:rgba(0,0,0,.3);padding:3px 8px;border:1px solid rgba(0,0,0,.06);border-radius:4px;text-decoration:none">›</a>';
+  el.innerHTML = h;
+}
 function showProdImg(src, all, idx) {
   if (!src) return;
   _previewImages = all && all.length ? all : [src];
@@ -1603,8 +1630,10 @@ async function loadSellers() {
     let arr = Array.isArray(data) ? data : [];
     const search = document.getElementById('sellerSearch').value.trim().toLowerCase();
     if (search) arr = arr.filter(function(s) { return (s.name||'').toLowerCase().includes(search) || (s.student_id||'').includes(search); });
-    document.getElementById('sellerTbody').innerHTML = !arr.length ? '<tr><td colspan="5"><div class="empty">暂无卖家</div></td></tr>' :
-      arr.map(function(s) {
+    var _sPage = adminPage.sellerPagination || 0; var _sTotal = arr.length;
+    if (!arr.length) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="5"><div class="empty">暂无卖家</div></td></tr>'; renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers'); return; }
+    var _sd = arr.slice(_sPage * ADMIN_PAGE_SIZE, (_sPage + 1) * ADMIN_PAGE_SIZE);
+    document.getElementById('sellerTbody').innerHTML = _sd.map(function(s) {
         return '<tr><td><strong style="color:#666">'+esc(s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
           '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td>'+
           '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center">'+
@@ -1614,6 +1643,7 @@ async function loadSellers() {
           '<button class="btn btn-red btn-sm" onclick="showBan(\''+s.student_id+'\',\''+esc(s.name)+'\')">🚫 封禁</button>'+(s.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 禁言</button>')+
           '</span></td></tr>';
       }).join('');
+    renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers');
   } catch(e) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="5"><div class="empty">加载失败</div></td></tr>'; }
 }
 let banningSid = null;
