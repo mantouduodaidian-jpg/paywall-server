@@ -465,9 +465,22 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
 <div class="pub-overlay" id="myOverlay" onclick="if(event.target===this)hideMyProducts()">
   <div class="pub-box" style="max-width:600px">
     <h2>📦 我的商品</h2>
+    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap" id="myFilterBar">
+      <span class="myf active" data-mf="" onclick="setMyFilter(this,'')">全部</span>
+      <span class="myf" data-mf="approved" onclick="setMyFilter(this,'approved')">✅ 已上架</span>
+      <span class="myf" data-mf="pending" onclick="setMyFilter(this,'pending')">⏳ 待审核</span>
+      <span class="myf" data-mf="rejected" onclick="setMyFilter(this,'rejected')">✕ 未通过</span>
+      <span class="myf" data-mf="sold" onclick="setMyFilter(this,'sold')">✅ 已售罄</span>
+      <span class="myf" data-mf="unlisted" onclick="setMyFilter(this,'unlisted')">📌 已下架</span>
+    </div>
     <div id="myProductList"><div class="empty" style="padding:30px">加载中...</div></div>
   </div>
 </div>
+<style>
+.myf{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:rgba(0,0,0,.03);color:rgba(0,0,0,.3);transition:all.1s}
+.myf.active{background:rgba(96,184,142,.1);color:#60b88e}
+.myf:hover{background:rgba(96,184,142,.06)}
+</style>
 
 
 <!-- Full Image Modal -->
@@ -1637,7 +1650,15 @@ function startProductPoll() {
 
 function showFullImage(src){document.getElementById("fullImgContent").src=src;document.getElementById("fullImgModal").classList.add("show");}
 function hideFullImage(){document.getElementById("fullImgModal").classList.remove("show");}
+var _myFilter = '';
+function setMyFilter(el, f) {
+  _myFilter = f;
+  document.querySelectorAll('#myFilterBar .myf').forEach(function(x){ x.classList.toggle('active', x.dataset.mf === f); });
+  loadMyProducts();
+}
 function showMyProducts() {
+  _myFilter = '';
+  document.querySelectorAll('#myFilterBar .myf').forEach(function(x){ x.classList.toggle('active', x.dataset.mf === ''); });
   document.getElementById('myOverlay').classList.add('show');
   loadMyProducts();
 }
@@ -1648,6 +1669,17 @@ function loadMyProducts() {
     .then(function(r){return r.json();})
     .then(function(json){
       var data = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+      // Apply filter
+      if (_myFilter) {
+        data = data.filter(function(p){
+          if (_myFilter === 'sold') return p.sold;
+          if (_myFilter === 'approved') return p.status==='approved' && p.listed!==false && !p.sold;
+          if (_myFilter === 'pending') return p.status==='pending';
+          if (_myFilter === 'rejected') return p.status==='rejected';
+          if (_myFilter === 'unlisted') return p.listed===false || (p.status==='approved' && p.listed===false);
+          return true;
+        });
+      }
       var el = document.getElementById('myProductList');
       if (!data.length) { el.innerHTML = '<div class="empty" style="padding:30px">还没有发布过商品</div>'; return; }
       el.innerHTML = '<div style="display:grid;gap:8px">' + data.map(function(p){
