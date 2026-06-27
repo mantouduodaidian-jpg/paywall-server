@@ -1666,7 +1666,7 @@ async function confirmBan() {
   var detail = document.getElementById('banDetail').value.trim();
   var fullReason = reason + (detail ? ' - '+detail : '');
   if (!await showConfirm('确认封禁此账号？该用户所有商品将下架。')) return;
-  await fetch('/api/marketplace/sellers/ban', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:banningSid,reason:fullReason})});
+  await apiFetch('/api/marketplace/sellers/ban', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:banningSid,reason:fullReason})});
   toast('🚫 已封禁'); closeBan(); loadSellers();
 }
 
@@ -1695,7 +1695,7 @@ function filterSeller(sid, name) {
 }
 async function toggleAllSeller(sid, listed, name) {
   if (!await showConfirm((listed?'上架':'下架')+'「'+name+'」所有已通过商品？')) return;
-  const r = await fetch('/api/marketplace/sellers/toggle-all', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,listed})});
+  const r = await apiFetch('/api/marketplace/sellers/toggle-all', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,listed})});
   const d = await r.json();
   toast((listed?'已上架':'已下架')+' '+d.count+' 件商品'); loadSellers();
 }
