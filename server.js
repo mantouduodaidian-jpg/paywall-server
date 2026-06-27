@@ -1398,7 +1398,16 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
   try {
     const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
     const data = await r.json();
-    res.json(data[0] || null);
+    var p = data[0] || null;
+    if (p && p.owner_student_id) {
+      try {
+        var nr = await fetch(SB("verifications?status=eq.approved&select=student_id,nickname&student_id=eq."+encodeURIComponent(p.owner_student_id)), { headers: SB_HEADERS });
+        var nd = await nr.json();
+        var nv = Array.isArray(nd) ? nd[0] : null;
+        if (nv && nv.nickname) p.owner_nickname = nv.nickname;
+      } catch(e) {}
+    }
+    res.json(p);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
