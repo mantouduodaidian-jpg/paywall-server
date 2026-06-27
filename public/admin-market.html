@@ -388,7 +388,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadVers()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>学号</th><th>手机</th><th>学校</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table><div id="verPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'verCb')"></th><th>ID</th><th>姓名</th><th>昵称</th><th>学号</th><th>手机</th><th>学校</th><th>学生证</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="verTbody"></tbody></table><div id="verPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1184,7 +1184,7 @@ async function loadVers() {
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
     var _vPage = adminPage.verPagination || 0; var _vTotal = filtered.length;
-    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="10"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
+    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="11"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
     var _vd = filtered.slice(_vPage * ADMIN_PAGE_SIZE, (_vPage + 1) * ADMIN_PAGE_SIZE);
     document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(v.school)+'</td>'+
