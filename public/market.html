@@ -773,7 +773,7 @@ const PAGE_SIZE = 10;
 
 async function load(reset) {
   // Pre-fetch nicknames for display
-  getNick();
+  getNick().then(function(){if(currentUser)renderLoggedIn();});
   var userSchool = currentUser ? currentUser.school : localStorage.getItem('visitorSchool');
   if (!currentUser && !userSchool) {
     document.getElementById('productList').innerHTML = '<div style="text-align:center;padding:80px 20px;color:rgba(0,0,0,.15)"><div style="font-size:64px;margin-bottom:16px">🏫</div><div style="font-size:16px;margin-bottom:8px">选择学校浏览商品</div><div style="font-size:12px">在左侧选择你所在的学校<br>即可查看该校的闲置物品</div></div>';
