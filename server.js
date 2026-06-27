@@ -653,6 +653,21 @@ app.delete('/api/marketplace/products/:id', schoolScope, async (req, res) => {
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Owner self-delist
+app.patch('/api/marketplace/products/:id/owner-delist', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id } = req.body;
+    if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const p = Array.isArray(d) ? d[0] : null;
+    if (!p) return res.status(404).json({ error: '商品不存在' });
+    if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: false }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // Owner self-delete product (sold/listed/rejected/pending only)
 app.delete('/api/marketplace/products/:id/owner-delete', express.json(), async (req, res) => {
   try {

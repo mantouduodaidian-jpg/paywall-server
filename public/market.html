@@ -754,9 +754,10 @@ function viewSellerProducts(studentId, name) {
   load();
 }
 function myListToggle(id) {
-  fetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:false})})
+  if (!currentUser) return;
+  fetch('/api/marketplace/products/'+id+'/owner-delist', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})})
     .then(function(r){return r.json();})
-    .then(function(d){if(d.ok){notify('已下架','📌');load();}}).catch(function(){});
+    .then(function(d){if(d.ok){notify('已下架','📌');hideDetail();load();}}).catch(function(){});
 }
 var _mineFilter = '';
 function setMineFilter(el, f) {
