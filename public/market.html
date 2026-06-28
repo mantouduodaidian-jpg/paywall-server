@@ -1053,7 +1053,7 @@ async function publish(){
   try{
     var r,d,ok;
     if (_editingProductId) {
-      r=await fetch('/api/marketplace/products/'+_editingProductId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:data.title,price:data.price,category:data.category,quality:data.quality,desc:data.desc,gender_pref:data.gender_pref,negotiable:data.negotiable,images:data.images,rent_price:data.rent_price,rent_period:data.rent_period,deposit:data.deposit})});
+      r=await fetch('/api/marketplace/products/'+_editingProductId+'/owner-edit', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id,title:data.title,price:data.price,category:data.category,quality:data.quality,desc:data.desc,gender_pref:data.gender_pref,negotiable:data.negotiable,images:data.images,rent_price:data.rent_price,rent_period:data.rent_period,deposit:data.deposit})});
       d=await r.json();
       ok=d.ok;
     } else {

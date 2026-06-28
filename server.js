@@ -685,6 +685,34 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Owner edit product (no admin required)
+app.patch('/api/marketplace/products/:id/owner-edit', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id, title, price, category, quality, desc, gender_pref, negotiable, images, rent_price, rent_period, deposit } = req.body;
+    if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const p = Array.isArray(d) ? d[0] : null;
+    if (!p) return res.status(404).json({ error: '商品不存在' });
+    if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
+    var fields = {};
+    if (title !== undefined) fields.title = title;
+    if (price !== undefined) fields.price = parseFloat(price);
+    if (category !== undefined) fields.category = category;
+    if (quality !== undefined) fields.quality = quality;
+    if (desc !== undefined) fields.desc = desc;
+    if (gender_pref !== undefined) fields.gender_pref = gender_pref;
+    if (negotiable !== undefined) fields.negotiable = negotiable;
+    if (images !== undefined) fields.images = images;
+    if (rent_price !== undefined) fields.rent_price = parseFloat(rent_price);
+    if (rent_period !== undefined) fields.rent_period = rent_period;
+    if (deposit !== undefined) fields.deposit = parseFloat(deposit);
+    if (!Object.keys(fields).length) return res.status(400).json({ error: '没有要修改的字段' });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // Owner resubmit for review (delisted/rejected → pending)
 app.post('/api/marketplace/products/:id/resubmit', express.json(), async (req, res) => {
   try {

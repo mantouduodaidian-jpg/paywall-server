@@ -120,7 +120,7 @@ th,td{padding:6px 4px;font-size:9px}
 .badge{font-size:9px;padding:2px 6px}
 .empty{padding:20px;font-size:11px}
 .toast{font-size:11px;padding:8px 16px 8px 12px;white-space:normal;max-width:90vw}
-#kefuContactList{width:120px;font-size:10px}
+#kefuContactList{width:100%;max-width:100%;border-right:none!important}
 #kefuMsgs{font-size:10px;padding:6px 8px}
 #kefuInput{font-size:11px}
 #chartBody > div > div{min-width:100%!important;margin-bottom:10px}
@@ -229,16 +229,16 @@ tr:hover td{background:#f8fcf9}
 #kefuContactList{border-right-color:#eee!important}
 
 @media(max-width:700px){
-  .app{padding:14px
-  #kefuContactList{width:120px}
-  #kefuContactList.has-chat{display:none}
-  #kefuBackBtn{display:inline-block!important}
-  .tab-kefu-section{min-height:200px!important}}
+  .app{padding:14px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .tabs{overflow-x:auto;flex-wrap:nowrap}
   .header{flex-direction:column;align-items:flex-start}
 }
-</style>
+
+/* Kefu toggle - contact list or chat, not both */
+#kefuContactList.has-chat{display:none}
+#kefuBackBtn{display:inline-block!important}
+.tab-kefu-section{min-height:200px}</style>
 </head>
 <body>
 
@@ -497,7 +497,7 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabKefu" style="display:none">
     <div class="section tab-kefu-section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:250px">
       <div style="display:flex;flex:1;overflow:hidden">
-        <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(0,0,0,.04);overflow-y:auto;flex-shrink:0">
+        <div id="kefuContactList" style="width:100%;overflow-y:auto">
           <div style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)">
             <input type="text" id="kefuSearch" placeholder="搜索用户..." onkeyup="renderKefuContacts()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#4a4a4a;font-size:11px;outline:none;font-family:inherit">
           </div>
