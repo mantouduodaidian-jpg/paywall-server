@@ -4,6 +4,7 @@ import cors from 'cors';
 import { randomBytes, createHmac } from 'crypto';
 import http from 'http';
 import { WebSocketServer } from 'ws';
+import sharp from 'sharp';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -1550,6 +1551,11 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
     if (!match) return res.redirect(img);
     var buf = Buffer.from(match[2], 'base64');
     var ext = match[1];
+    // Resize to max 800px width using sharp
+    try {
+      buf = await sharp(buf).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
+      ext = 'jpeg';
+    } catch(e) {}
     // Write file cache
     try { require('fs').writeFileSync(cacheFile, buf); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
     res.setHeader('Content-Type', 'image/' + ext);
