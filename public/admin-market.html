@@ -1238,7 +1238,7 @@ async function loadVers() {
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
     var _vPage = adminPage.verPagination || 0; var _vTotal = filtered.length;
-    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="12"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
+    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="13"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
     var _vd = filtered.slice(_vPage * ADMIN_PAGE_SIZE, (_vPage + 1) * ADMIN_PAGE_SIZE);
     document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td><input type="checkbox" class="verCb" value="'+v.id+'"></td><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#bbb;font-size:10px">'+esc(v.nickname||'-')+'</td><td style="color:#bbb;font-size:10px">'+({male:'♂️ 男',female:'♀️ 女',男:'♂️',女:'♀️'}[v.gender]||v.gender||'-')+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(v.school)+'</td>'+
