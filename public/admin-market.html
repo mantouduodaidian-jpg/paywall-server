@@ -229,7 +229,11 @@ tr:hover td{background:#f8fcf9}
 #kefuContactList{border-right-color:#eee!important}
 
 @media(max-width:700px){
-  .app{padding:14px}
+  .app{padding:14px
+  #kefuContactList{width:120px}
+  #kefuContactList.has-chat{display:none}
+  #kefuBackBtn{display:inline-block!important}
+  .tab-kefu-section{min-height:200px!important}}
   .stats{grid-template-columns:repeat(2,1fr)}
   .tabs{overflow-x:auto;flex-wrap:nowrap}
   .header{flex-direction:column;align-items:flex-start}
@@ -1808,7 +1812,4 @@ function connectAdminWS() {
 </svg>
 </body>
 </html>
-  #kefuContactList{width:120px}
-  #kefuContactList.has-chat{display:none}
-  #kefuBackBtn{display:inline-block!important}
-  .tab-kefu-section{min-height:200px!important}
+
