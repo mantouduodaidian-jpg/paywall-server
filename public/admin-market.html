@@ -236,6 +236,9 @@ tr:hover td{background:#f8fcf9}
 }
 
 /* Kefu toggle - contact list or chat, not both */
+/* Hide chat area initially, show when contact selected */
+#kefuContactList + div{display:none}
+#kefuContactList.has-chat + div{display:flex}
 #kefuContactList.has-chat{display:none}
 #kefuBackBtn{display:inline-block!important}
 .tab-kefu-section{min-height:200px}</style>
