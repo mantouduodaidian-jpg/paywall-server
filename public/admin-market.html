@@ -839,6 +839,7 @@ function switchTab(name) {
   else if (name === 'categories') loadCats();
   else if (name === 'announcements') loadAnns();
   else if (name === 'blocked') loadBws();
+  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); loadKefuContacts(); }
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
   else if (name === 'logs') loadLogs();
