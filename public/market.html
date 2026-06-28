@@ -1745,7 +1745,7 @@ function startChatPoll() {
         // Refresh trade buttons on new messages
         if (arr.length && chatProductId) fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
       }).catch(function(){});
-  }, 2000);
+  }, 1000);
 }
 function stopChatPoll() {
   if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
@@ -1803,14 +1803,15 @@ function startUnreadPoll() {
         });
         if (latest > lastCheck) { lastCheck = latest; }
         var badge = document.getElementById('chatBadge');
-        if (unread > 0) { badge.textContent = unread; if (unread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = unread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
+        var chatUnread = Math.max(0, unread - notifUnread);
+        if (chatUnread > 0) { badge.textContent = chatUnread; if (chatUnread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = chatUnread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
         // System notification bell badge
         var nb = document.getElementById('bellBadge');
         if (nb) { nb.textContent = notifUnread > 0 ? notifUnread : '0'; }
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
       }).catch(function(){});
-  }, 5000);
+  }, 3000);
 }
 function openNotifChat() {
   var panel = document.getElementById('notifPanel');

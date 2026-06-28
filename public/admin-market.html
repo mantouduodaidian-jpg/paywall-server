@@ -1511,7 +1511,7 @@ async function openKefuChat(studentId, name) {
   if (kefuPollTimer) clearInterval(kefuPollTimer);
   document.getElementById('kefuMsgs').innerHTML = '';
   await loadKefuMsgs();
-  kefuPollTimer = setInterval(loadKefuMsgs, 3000);
+  kefuPollTimer = setInterval(loadKefuMsgs, 1500);
   loadKefuContacts();
   // Populate ann school selector
   var annSel = document.getElementById('annSchool');
