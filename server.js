@@ -1526,13 +1526,22 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     res.json(p);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// Serve product images as binary with file cache
+// Serve product images as binary with in-memory + file cache
 var IMG_CACHE_DIR = './cache/img/';
+var imgMemCache = new Map();
 try { require('fs').mkdirSync(IMG_CACHE_DIR, { recursive: true }); } catch(e) {}
 app.get('/api/product-image/:id/:idx', async (req, res) => {
   try {
     const id = parseInt(req.params.id), idx = parseInt(req.params.idx);
-    var cacheFile = IMG_CACHE_DIR + id + '-' + idx + '.img';
+    var cacheKey = id + '-' + idx;
+    // Try in-memory cache (fastest, survives within session)
+    if (imgMemCache.has(cacheKey)) {
+      var entry = imgMemCache.get(cacheKey);
+      res.setHeader('Content-Type', entry.type);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(entry.buf);
+    }
+    var cacheFile = IMG_CACHE_DIR + cacheKey + '.img';
     // Try file cache
     try {
       var buf = require('fs').readFileSync(cacheFile);
@@ -1556,7 +1565,8 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
       buf = await sharp(buf).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
       ext = 'jpeg';
     } catch(e) {}
-    // Write file cache
+    // Write caches
+    imgMemCache.set(cacheKey, { buf, type: 'image/' + ext });
     try { require('fs').writeFileSync(cacheFile, buf); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
     res.setHeader('Content-Type', 'image/' + ext);
     res.setHeader('Cache-Control', 'public, max-age=604800');
