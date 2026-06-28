@@ -1558,19 +1558,21 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
     var img = p.images[idx];
     var match = img.match(/^data:image\/(\w+);base64,(.+)$/);
     if (!match) return res.redirect(img);
-    var buf = Buffer.from(match[2], 'base64');
+    var raw = Buffer.from(match[2], 'base64');
     var ext = match[1];
-    // Resize to max 800px width using sharp
-    try {
-      buf = await sharp(buf).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer();
-      ext = 'jpeg';
-    } catch(e) {}
-    // Write caches
-    imgMemCache.set(cacheKey, { buf, type: 'image/' + ext });
-    try { require('fs').writeFileSync(cacheFile, buf); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
+    // Serve raw decoded image immediately (fast), compress in background
+    imgMemCache.set(cacheKey, { buf: raw, type: 'image/' + ext });
+    try { require('fs').writeFileSync(cacheFile, raw); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
     res.setHeader('Content-Type', 'image/' + ext);
     res.setHeader('Cache-Control', 'public, max-age=604800');
-    res.send(buf);
+    res.send(raw);
+    // Background compress for next visit (fire-and-forget)
+    sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+      .then(function(c) {
+        imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' });
+        try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {}
+      })
+      .catch(function(){});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
