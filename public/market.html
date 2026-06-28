@@ -946,7 +946,7 @@ async function load(reset) {
       var div = document.createElement('div');
       div.className = 'card' + (p.pinned ? ' pinned' : '');
       div.onclick = function() { showDetail(p.id); };
-      var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(0)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(0)+'</div>';
+      var priceHtml = p.item_type === 'rent' ? '<div class="price">¥'+parseFloat(p.rent_price).toFixed(2)+'<span style="font-size:11px;color:rgba(0,0,0,.2);font-weight:400">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span></div>' : '<div class="price">¥'+parseFloat(p.price).toFixed(2)+'</div>';
       var typeTag = '';
       if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
       if (p.negotiable) typeTag += '<span class="tag" style="background:rgba(251,191,36,.1);color:#d4a030">💰 可议价</span>';
@@ -1001,7 +1001,7 @@ async function showDetail(id) {
     document.getElementById('detailBox').innerHTML =
       '<div class="img-big">'+(p.images && p.images.length > 0 ? '<div id="detailImgs">'+p.images.map(function(src,i){ return '<div style="background:rgba(0,0,0,.03);border-radius:8px;min-height:100px;display:flex;align-items:center;justify-content:center;'+(i>0?'display:none':'')+'" class="detail-img-wrap"><img src="'+src+'" style="max-width:100%;max-height:300px;border-radius:8px;display:block" class="detail-img" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'📦\'" loading="lazy"></div>'; }).join('')+'<div style="text-align:center;margin-top:6px;font-size:11px;color:rgba(0,0,0,.2)">'+(p.images.length>1?'<span onclick="prevImg()" style="cursor:pointer;padding:4px 10px">‹</span> <span id="imgIdx">1/'+p.images.length+'</span> <span onclick="nextImg()" style="cursor:pointer;padding:4px 10px">›</span>':'')+'</div></div>' : '<span style="font-size:80px">📦</span>')+'</div><div class="body">'+
       '<div class="title">'+esc(p.title)+(p.sold?' <span style="color:#ef4444;font-size:14px">[已售罄]</span>':'')+'</div>'+
-      '<div class="price">'+(p.item_type==='rent'?'¥'+parseFloat(p.rent_price).toFixed(2)+'/'+({hour:'小时',day:'天',week:'周',month:'月'}[p.rent_period]||'天')+(p.deposit>0?' · 押金¥'+parseFloat(p.deposit).toFixed(0):''):'¥'+parseFloat(p.price).toFixed(2))+'</div>'+
+      '<div class="price">'+(p.item_type==='rent'?'¥'+parseFloat(p.rent_price).toFixed(2)+'/'+({hour:'小时',day:'天',week:'周',month:'月'}[p.rent_period]||'天')+(p.deposit>0?' · 押金¥'+parseFloat(p.deposit).toFixed(2):''):'¥'+parseFloat(p.price).toFixed(2))+'</div>'+
       '<div class="tags"><span>'+esc(p.quality)+'</span><span>'+esc(p.category)+'</span><span>'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':'♂️♀️ 男女均可')+'</span>'+(p.negotiable?'<span style="background:rgba(251,191,36,.1);color:#d4a030;padding:3px 10px;border-radius:6px;font-size:12px">💰 可议价</span>':'')+'</div>'+
       (p.desc?'<div class="desc">'+esc(p.desc)+'</div>':'')+
       '<div class="btns">'+
@@ -1556,7 +1556,7 @@ function updateTradeButtons(p) {
   // Show product card
   var card = document.getElementById('tradeProductCard');
   card.style.display = 'block';
-  card.innerHTML = '<span style="font-weight:600;color:#4e9e80">' + esc(p.title||'') + '</span> <span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price||p.rent_price||0).toFixed(0) + '</span>' + (p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span>':'');
+  card.innerHTML = '<span style="font-weight:600;color:#4e9e80">' + esc(p.title||'') + '</span> <span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price||p.rent_price||0).toFixed(2) + '</span>' + (p.item_type==='rent'?' <span style="color:#bbb">/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天')+'</span>':'');
   actions.style.display = 'flex';
   // Multi-trade dropdown
   if (currentUser && p.owner_student_id) {
@@ -1618,7 +1618,7 @@ function quickRequest(pid) {
           load();
           if (chatProductId == pid) fetch('/api/marketplace/products/'+pid).then(function(r){return r.json();}).then(function(pp){updateTradeButtons(pp);}).catch(function(){});
           fetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'📦 购买：「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(0)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
+            body:JSON.stringify({product_id:pid,from_student_id:currentUser.student_id,from_name:currentUser.name,to_student_id:p.owner_student_id||'',to_name:p.owner_name||'',content:'📦 购买：「'+esc(p.title)+'」 ¥'+parseFloat(p.price||p.rent_price||0).toFixed(2)+(p.item_type==='rent'?'/'+({day:'天',week:'周',month:'月'}[p.rent_period]||'天'):'')})
           }).catch(function(){});
         } else notify('操作失败','❌');
       }).catch(function(){notify('操作失败','❌');});
@@ -1701,7 +1701,7 @@ function switchTradeProd(pid) {
 }
 function updateTradeCard(p){
   document.getElementById('tcTitle').textContent = p.title||'';
-  document.getElementById('tcPrice').textContent = '\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(0);
+  document.getElementById('tcPrice').textContent = '\u00a5'+parseFloat(p.price||p.rent_price||0).toFixed(2);
   document.getElementById('tcPeriod').textContent = p.item_type==='rent'?'/'+({day:'\u5929',week:'\u5468',month:'\u6708'}[p.rent_period]||'\u5929'):'';
   var st=document.getElementById('tradeStatus');
   var iO=currentUser&&p.owner_student_id===currentUser.student_id;
@@ -1969,7 +1969,7 @@ function loadMyProducts() {
         if (p.sold) sc += 'sold'; else if (p.status==='pending') sc += 'pending'; else if (p.status==='approved') sc += 'approved'; else if (p.status==='rejected') sc += 'rejected';
         var sl = p.sold ? '✅ 已售罄' : p.status==='pending' ? '⏳ 待审核' : p.status==='approved'&&p.listed===false ? '📌 已下架' : p.status==='approved' ? '✅ 已上架' : p.status==='rejected' ? '<svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg> 未通过' : p.status||'未知';
         var canDel = p.sold || p.listed===false || p.status==='rejected' || p.status==='pending';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 8px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="'+sc+'">'+sl+'</span>'+(canDel?'<button class="btn btn-red btn-sm" style="margin-left:6px" onclick="delMyProduct('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M3 6h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button>':'')+(p.reject_reason==='owner_delisted'?'<button class="btn btn-green btn-sm" style="margin-left:4px" onclick="ownerRelist('+p.id+')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg> 上架</button>':'')+'</div>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 8px">¥'+parseFloat(p.price).toFixed(2)+'</span><span class="'+sc+'">'+sl+'</span>'+(canDel?'<button class="btn btn-red btn-sm" style="margin-left:6px" onclick="delMyProduct('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M3 6h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button>':'')+(p.reject_reason==='owner_delisted'?'<button class="btn btn-green btn-sm" style="margin-left:4px" onclick="ownerRelist('+p.id+')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg> 上架</button>':'')+'</div>';
       }).join('') + '</div>';
     }).catch(function(){document.getElementById('myProductList').innerHTML='<div class="empty">加载失败</div>';});
 }
