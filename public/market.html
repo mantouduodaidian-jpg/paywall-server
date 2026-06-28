@@ -327,7 +327,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-size:13px;color:rgba(0,0,0,.2)" id="resultLabel">全部商品</span>
       <span id="sellerClear" style="display:none"><a href="#" onclick="setCat('');return false" style="font-size:11px;color:rgba(52,211,153,.4);text-decoration:none">← 返回全部</a></span>
-      <span id="mineFilterBar" style="display:none;margin-left:8px"><span class="minef active" data-mf="" onclick="setMineFilter(this,'')">全部</span><span class="minef" data-mf="approved" onclick="setMineFilter(this,'approved')">✅ 已上架</span><span class="minef" data-mf="pending" onclick="setMineFilter(this,'pending')">⏳ 待审核</span><span class="minef" data-mf="rejected" onclick="setMineFilter(this,'rejected')">✕ 未通过</span></span>
+      <span id="mineFilterBar" style="display:none;margin-left:8px"><span class="minef active" data-mf="" onclick="setMineFilter(this,'')">全部</span><span class="minef" data-mf="approved" onclick="setMineFilter(this,'approved')">✅ 已上架</span><span class="minef" data-mf="pending" onclick="setMineFilter(this,'pending')">⏳ 待审核</span><span class="minef" data-mf="rejected" onclick="setMineFilter(this,'rejected')"><svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg> 未通过</span></span>
     </div>
     <div style="display:flex;flex-direction:column;min-height:520px">
       <div class="grid" id="productList"><div class="empty">加载中...</div></div>
@@ -384,9 +384,9 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <div id="fImageThumbs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
     <div class="btns">
-      <button class="submit" onclick="publish()">✅ 确认发布</button>
+      <button class="submit" onclick="publish()"><svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布</button>
       <button class="cancel" onclick="hidePub()">取消</button>
-      <button id="submitReviewBtn" style="display:none;flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff" onclick="submitForReview()">📋 提交审核</button>
+      <button id="submitReviewBtn" style="display:none;flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff" onclick="submitForReview()"><svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h4l1 2H5z"/><rect x="3" y="4" width="10" height="10" rx="1"/><path d="M6 9l2 2 3-4"/></svg> 提交</button>
     </div>
   </div>
 </div>
@@ -495,7 +495,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       <span class="myf active" data-mf="" onclick="setMyFilter(this,'')">全部</span>
       <span class="myf" data-mf="approved" onclick="setMyFilter(this,'approved')">✅ 已上架</span>
       <span class="myf" data-mf="pending" onclick="setMyFilter(this,'pending')">⏳ 待审核</span>
-      <span class="myf" data-mf="rejected" onclick="setMyFilter(this,'rejected')">✕ 未通过</span>
+      <span class="myf" data-mf="rejected" onclick="setMyFilter(this,'rejected')"><svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg> 未通过</span>
       <span class="myf" data-mf="sold" onclick="setMyFilter(this,'sold')">✅ 已售罄</span>
       <span class="myf" data-mf="unlisted" onclick="setMyFilter(this,'unlisted')">📌 已下架</span>
     </div>
@@ -906,8 +906,8 @@ async function load(reset) {
       div.style.opacity = unlisted ? '.5' : '';
       var statusBadge = '';
       if (isMine && p.sold) statusBadge = '<div class="sold-badge">✅ 已售罄</div>';
-      else if (isMine && p.status === 'pending') statusBadge = '<div class="pending-badge">📋 待审核</div>';
-      else if (isMine && p.status === 'rejected') statusBadge = '<div class="rejected-badge">✕ 未通过</div>';
+      else if (isMine && p.status === 'pending') statusBadge = '<div class="pending-badge"><svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M5 2h4l1 2H4z"/><rect x="2.5" y="4" width="9" height="8" rx=".8"/><path d="M5.5 7.5l1.5 1.5 2.5-3"/></svg> 待审核</div>';
+      else if (isMine && p.status === 'rejected') statusBadge = '<div class="rejected-badge"><svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg> 未通过</div>';
       else if (unlisted && p.reject_reason==='owner_delisted') statusBadge = '<div class="unlisted-badge" style="cursor:pointer" onclick="event.stopPropagation();ownerRelist('+p.id+')"><svg viewBox="0 0 16 16" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg> 已下架·点我上架</div>'; else if (unlisted && p.status!=='rejected') statusBadge = '<div class="rejected-badge"><svg viewBox="0 0 16 16" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg> 被下架</div>';
       else if (currentUser && p.trade_buyer_id === currentUser.student_id && p.trade_status === 'trading') statusBadge = '<div class="sold-badge" style="background:#fbbf24">⏳ 等待卖家确认</div>';
       else if (currentUser && p.trade_buyer_id === currentUser.student_id && p.trade_status === 'awaiting_buyer') statusBadge = '<div class="sold-badge" style="background:#60b88e">📦 请确认收货</div>';
@@ -1008,7 +1008,7 @@ function showPub(){document.getElementById('pubOverlay').classList.add('show');d
 function hidePub(){_editingProductId=0;document.getElementById('pubOverlay').classList.remove('show');document.getElementById('submitReviewBtn').style.display='none'}
 function editMyProduct(id) {
   _editingProductId = id;
-  document.querySelector('.pub-box .submit').textContent = '💾 保存修改';
+  document.querySelector('.pub-box .submit').textContent = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
   document.querySelector('.pub-box h2').textContent = '✏️ 编辑商品';
   showPub();
   document.getElementById('submitReviewBtn').style.display = '';
@@ -1021,7 +1021,7 @@ function editMyProduct(id) {
     document.getElementById('fDesc').value = p.desc||'';
     if(p.item_type==='rent'){setItemType('rent');document.getElementById('fRentPrice').value = p.rent_price||'';document.getElementById('fRentPeriod').value = p.rent_period||'day';document.getElementById('fDeposit').value = p.deposit||'';}
     else setItemType('sell');
-    document.querySelector('.pub-box .submit').textContent = '💾 保存修改';
+    document.querySelector('.pub-box .submit').textContent = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
   }).catch(function(){notify('加载失败','❌');hidePub();});
 }
 
@@ -1061,10 +1061,10 @@ async function publish(){
       d=await r.json();
       ok = d?.id || d?.[0]?.id || d?.ok;
     }
-    btn.textContent=_editingProductId?'💾 已保存':'✅ 确认发布'; btn.disabled=false;
+    btn.textContent=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 已保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false;
     if(ok){document.getElementById('submitReviewBtn').style.display='none';hidePub();_editingProductId=0;document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';document.getElementById('fImageLabel').textContent='';_uploadedImages=[];document.querySelector('.pub-box h2').textContent='📝 发布闲置';notify('已保存','💾');load();}
     else notify(d.error || '发布失败', '❌');
-  }catch(e){btn.textContent=_editingProductId?'💾 保存修改':'✅ 确认发布'; btn.disabled=false; document.getElementById('submitReviewBtn').style.display='none'; notify('发布失败', '❌');}
+  }catch(e){btn.textContent=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false; document.getElementById('submitReviewBtn').style.display='none'; notify('发布失败', '❌');}
 }
 
 // ====== Report ======
@@ -1895,7 +1895,7 @@ function loadMyProducts() {
       el.innerHTML = '<div style="display:grid;gap:8px">' + data.map(function(p){
         var sc = 'status-badge ';
         if (p.sold) sc += 'sold'; else if (p.status==='pending') sc += 'pending'; else if (p.status==='approved') sc += 'approved'; else if (p.status==='rejected') sc += 'rejected';
-        var sl = p.sold ? '✅ 已售罄' : p.status==='pending' ? '⏳ 待审核' : p.status==='approved'&&p.listed===false ? '📌 已下架' : p.status==='approved' ? '✅ 已上架' : p.status==='rejected' ? '✕ 未通过' : p.status||'未知';
+        var sl = p.sold ? '✅ 已售罄' : p.status==='pending' ? '⏳ 待审核' : p.status==='approved'&&p.listed===false ? '📌 已下架' : p.status==='approved' ? '✅ 已上架' : p.status==='rejected' ? '<svg viewBox="0 0 14 14" width="12" height="12" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M5 5l4 4M9 5l-4 4"/></svg> 未通过' : p.status||'未知';
         var canDel = p.sold || p.listed===false || p.status==='rejected' || p.status==='pending';
         return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,.02);border:1px solid rgba(0,0,0,.04);border-radius:10px;font-size:12px"><span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</span><span style="color:#34d399;font-weight:600;margin:0 8px">¥'+parseFloat(p.price).toFixed(0)+'</span><span class="'+sc+'">'+sl+'</span>'+(canDel?'<button class="btn btn-red btn-sm" style="margin-left:6px" onclick="delMyProduct('+p.id+',\''+esc(p.title)+'\')"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M3 6h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></button>':'')+(p.reject_reason==='owner_delisted'?'<button class="btn btn-green btn-sm" style="margin-left:4px" onclick="ownerRelist('+p.id+')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg> 上架</button>':'')+'</div>';
       }).join('') + '</div>';
