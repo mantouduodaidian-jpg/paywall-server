@@ -1510,7 +1510,7 @@ function renderKefuContacts() {
 async function showKefuContacts() {
   document.getElementById('kefuContactList').classList.remove('has-chat');
 }
-function openKefuChat(studentId, name) {
+async function openKefuChat(studentId, name) {
   kefuContactId = studentId; kefuLastId = 0;
   document.getElementById('kefuChatTitle').textContent = '\u{1f4ac} ' + name;
   document.getElementById('kefuInputArea').style.display = 'flex';
