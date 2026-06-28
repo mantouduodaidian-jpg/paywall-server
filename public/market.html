@@ -1021,7 +1021,7 @@ function editMyProduct(id) {
     document.getElementById('fDesc').value = p.desc||'';
     if(p.item_type==='rent'){setItemType('rent');document.getElementById('fRentPrice').value = p.rent_price||'';document.getElementById('fRentPeriod').value = p.rent_period||'day';document.getElementById('fDeposit').value = p.deposit||'';}
     else setItemType('sell');
-    document.querySelector('.pub-box .submit').textContent = '✅ 保存并提交审核';
+    document.querySelector('.pub-box .submit').textContent = '💾 保存修改';
   }).catch(function(){notify('加载失败','❌');hidePub();});
 }
 
