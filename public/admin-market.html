@@ -264,6 +264,7 @@ tr:hover td{background:#f8fcf9}
     <div class="actions">
       <a href="/market.html" class="btn-outline" target="_blank">🏪 前台</a>
       <select id="schoolSelector" onchange="switchSchool(this.value)" style="display:none;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#555;font-size:11px;outline:none;font-family:inherit"></select>
+      <span id="adminSoundToggle" onclick="toggleAdminSound()" style="cursor:pointer;font-size:14px;color:#ccc" title="消息提示音">🔇</span>
       <button class="btn-outline" onclick="refreshAll()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 刷新</button>
       <button class="btn-danger" onclick="logout()">退出</button>
     </div>
@@ -280,7 +281,7 @@ tr:hover td{background:#f8fcf9}
     <div class="tab" data-tab="announcements" onclick="switchTab('announcements')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M13.73 21a2 2 0 0 1-3.46 0" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M16 12l-6 3v-6z" fill="url(#g2)" stroke="#a7f3d0" stroke-width=".8"/></svg> 公告</div>
     <div class="tab" data-tab="blocked" onclick="switchTab('blocked')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="9" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#a7f3d0" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="8" x2="8" y2="16" stroke="#a7f3d0" stroke-width="1.8" stroke-linecap="round"/></svg> 敏感词</div>
     <div class="tab" data-tab="logs" onclick="switchTab('logs')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M14 2v6h6" fill="none" stroke="#a7f3d0" stroke-width="1"/><line x1="8" y1="12" x2="16" y2="12" stroke="#a7f3d0" stroke-width="1.2"/><line x1="8" y1="16" x2="14" y2="16" stroke="#a7f3d0" stroke-width="1.2"/></svg> 日志</div>
-    <div class="tab" data-tab="kefu" onclick="switchTab('kefu')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1.1" stroke-linejoin="round"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="13" x2="13" y2="13" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/></svg> 消息</div>
+    <div class="tab" data-tab="kefu" onclick="switchTab('kefu')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1.1" stroke-linejoin="round"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="13" x2="13" y2="13" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/></svg> 消息 <span id="kefuBadge" class="badge" style="display:none">0</span></div>
     <div class="tab" data-tab="promotions" onclick="switchTab('promotions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="8" width="20" height="12" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><polyline points="12 4 16 8 8 8" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="6" y1="13" x2="10" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/><line x1="14" y1="13" x2="18" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 周边有礼</div>
     <div class="tab" data-tab="transactions" onclick="switchTab('transactions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="4" width="20" height="16" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="2" y1="9" x2="22" y2="9" stroke="#a7f3d0" stroke-width="1.2"/><circle cx="7" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><circle cx="17" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><line x1="10" y1="13" x2="14" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 交易</div>
   </div>
@@ -648,7 +649,14 @@ let role = localStorage.getItem('marketAdminRole');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
 
+var _adminSoundEnabled = localStorage.getItem('adminSound') !== 'off';
+function toggleAdminSound() {
+  _adminSoundEnabled = !_adminSoundEnabled;
+  localStorage.setItem('adminSound', _adminSoundEnabled ? 'on' : 'off');
+  document.getElementById('adminSoundToggle').textContent = _adminSoundEnabled ? '🔊' : '🔇';
+}
 function playAdminSound() {
+  if (!_adminSoundEnabled) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();
@@ -843,7 +851,7 @@ function switchTab(name) {
   else if (name === 'categories') loadCats();
   else if (name === 'announcements') loadAnns();
   else if (name === 'blocked') loadBws();
-  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); loadKefuContacts(); }
+  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent='0';_kb.style.display='none';} loadKefuContacts(); }
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
   else if (name === 'logs') loadLogs();
@@ -1780,6 +1788,7 @@ function toggleChart(headerEl) {
 
 function init() {
   loadAdminNickCache();
+  var _ast = document.getElementById('adminSoundToggle'); if(_ast) _ast.textContent = localStorage.getItem('adminSound')==='off' ? '🔇' : '🔊';
   loadOverview();
   loadCats();
   connectAdminWS();
@@ -1811,7 +1820,7 @@ function connectAdminWS() {
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
-      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { playAdminSound(); loadKefuMsgs(); } }
+      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { playAdminSound(); loadKefuMsgs(); } else { var _kb = document.getElementById('kefuBadge'); if(_kb){var _kc=parseInt(_kb.textContent)||0;_kb.textContent=_kc+1;_kb.style.display='';} } }
       if (d.type === 'admin_new_verification' || d.type === 'admin_new_product' || d.type === 'admin_product_update') {
         loadOverview();
         if (d.type === 'admin_new_product') {
