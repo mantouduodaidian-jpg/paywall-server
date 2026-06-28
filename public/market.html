@@ -1431,7 +1431,10 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
       arr.forEach(function(m) { appendMsg(m, true); });
       var msgs = document.getElementById('chatMsgs');
       msgs.scrollTop = msgs.scrollHeight;
-      window._pendingRead = sellerStudentId;
+      if (window._pendingRead && window._pendingRead !== sellerStudentId) {
+    fetch('/api/marketplace/messages/read', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_student_id:window._pendingRead,student_id:currentUser.student_id})});
+  }
+  window._pendingRead = sellerStudentId;
       // Update trade buttons in chat panel
       if (chatProductId) fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
     }).catch(function(){});
