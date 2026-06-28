@@ -664,7 +664,7 @@ app.patch('/api/marketplace/products/:id/owner-delist', express.json(), async (r
     const p = Array.isArray(d) ? d[0] : null;
     if (!p) return res.status(404).json({ error: '商品不存在' });
     if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
-    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: false, owner_delisted: true }) });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: false, reject_reason: 'owner_delisted' }) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -674,14 +674,14 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
     const id = parseInt(req.params.id);
     const { student_id } = req.body;
     if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
-    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,owner_delisted,status'), { headers: SB_HEADERS });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,reject_reason,status'), { headers: SB_HEADERS });
     const d = await r.json();
     const p = Array.isArray(d) ? d[0] : null;
     if (!p) return res.status(404).json({ error: '商品不存在' });
     if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
-    if (!p.owner_delisted) return res.status(400).json({ error: '此商品不可自行上架' });
+    if (p.reject_reason !== 'owner_delisted') return res.status(400).json({ error: '此商品不可自行上架' });
     if (p.status !== 'approved') return res.status(400).json({ error: '仅已通过商品可上架' });
-    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: true, owner_delisted: false }) });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: true, reject_reason: '' }) });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
