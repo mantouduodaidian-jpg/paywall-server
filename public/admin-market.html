@@ -1529,7 +1529,7 @@ function renderKefuContacts() {
     var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
     var dName = _adminNickCache[c.student_id] ? esc(_adminNickCache[c.student_id])+' <span style="color:#aaa;font-size:9px">('+esc(c.name)+')</span>' : esc(c.name);
     var unBadge = c.unread > 0 ? '<span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto;flex-shrink:0">'+(c.unread>99?'99+':c.unread)+'</span>' : '';
-    return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\'+c.student_id+\',\'+esc(c.name)+\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02);display:flex;align-items:center;flex-wrap:wrap">'+
+    return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02);display:flex;align-items:center;flex-wrap:wrap">'+
       '<span style="flex:1;min-width:0">'+dName+(c.school?' <span style="color:#ddd;font-size:9px">'+schoolName(c.school)+'</span>':'')+'</span>'+unBadge+'<span style="color:#ccc;font-size:9px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
   }).join('');
 }
