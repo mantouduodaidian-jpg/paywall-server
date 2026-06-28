@@ -386,6 +386,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     <div class="btns">
       <button class="submit" onclick="publish()">✅ 确认发布</button>
       <button class="cancel" onclick="hidePub()">取消</button>
+      <button id="submitReviewBtn" style="display:none;flex:1;padding:12px;border-radius:12px;border:none;font-size:15px;cursor:pointer;font-weight:600;font-family:inherit;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff" onclick="submitForReview()">📋 提交审核</button>
     </div>
   </div>
 </div>
@@ -793,6 +794,15 @@ function resubmitProduct(id) {
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok){notify('已提交审核','📋');load();} else notify(d.error||'提交失败','❌');}).catch(function(){});
 }
+function submitForReview() {
+  if (!_editingProductId || !currentUser) return;
+  fetch('/api/marketplace/products/'+_editingProductId+'/resubmit', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){notify('已提交审核，请等待管理员审核','📋');document.getElementById('submitReviewBtn').style.display='none';hidePub();_editingProductId=0;document.querySelector('.pub-box h2').textContent='📝 发布闲置';load();}
+      else notify(d.error||'提交失败','❌');
+    }).catch(function(){notify('提交失败','❌');});
+}
 function ownerRelist(id) {
   if (!currentUser) return;
   fetch('/api/marketplace/products/'+id+'/owner-relist', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})})
@@ -994,11 +1004,12 @@ function setNego(v) {
   document.getElementById('negoOff').style.cssText = 'padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;background:' + (!v?'rgba(96,184,142,.1)':'rgba(0,0,0,.04)') + ';color:' + (!v?'#60b88e':'rgba(0,0,0,.25)');
 }
 var _editingProductId = 0;
-function showPub(){document.getElementById('pubOverlay').classList.add('show')}
-function hidePub(){_editingProductId=0;document.getElementById('pubOverlay').classList.remove('show')}
+function showPub(){document.getElementById('pubOverlay').classList.add('show');document.getElementById('submitReviewBtn').style.display='none'}
+function hidePub(){_editingProductId=0;document.getElementById('pubOverlay').classList.remove('show');document.getElementById('submitReviewBtn').style.display='none'}
 function editMyProduct(id) {
   _editingProductId = id;
-  document.querySelector('.pub-box .submit').textContent = '⏳ 加载中...';
+  document.querySelector('.pub-box .submit').textContent = '💾 保存修改';
+  document.getElementById('submitReviewBtn').style.display = '';
   document.querySelector('.pub-box h2').textContent = '✏️ 编辑商品';
   showPub();
   fetch('/api/marketplace/products/'+id).then(function(r){return r.json();}).then(function(p){
@@ -1044,17 +1055,16 @@ async function publish(){
     if (_editingProductId) {
       r=await fetch('/api/marketplace/products/'+_editingProductId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:data.title,price:data.price,category:data.category,quality:data.quality,desc:data.desc,gender_pref:data.gender_pref,negotiable:data.negotiable,images:data.images,rent_price:data.rent_price,rent_period:data.rent_period,deposit:data.deposit})});
       d=await r.json();
-      if(d.ok) await fetch('/api/marketplace/products/'+_editingProductId+'/resubmit', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})});
-      ok=true;
+      ok=d.ok;
     } else {
       r=await fetch('/api/marketplace/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
       d=await r.json();
       ok = d?.id || d?.[0]?.id || d?.ok;
     }
-    btn.textContent=_editingProductId?'✅ 已提交审核':'✅ 确认发布'; btn.disabled=false;
-    if(ok){hidePub();_editingProductId=0;document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';document.getElementById('fImageLabel').textContent='';_uploadedImages=[];document.querySelector('.pub-box h2').textContent='📝 发布闲置';load();}
+    btn.textContent=_editingProductId?'💾 已保存':'✅ 确认发布'; btn.disabled=false;
+    if(ok){document.getElementById('submitReviewBtn').style.display='none';hidePub();_editingProductId=0;document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';document.getElementById('fImageLabel').textContent='';_uploadedImages=[];document.querySelector('.pub-box h2').textContent='📝 发布闲置';notify('已保存','💾');load();}
     else notify(d.error || '发布失败', '❌');
-  }catch(e){btn.textContent=_editingProductId?'✅ 保存并提交审核':'✅ 确认发布'; btn.disabled=false; notify('发布失败', '❌');}
+  }catch(e){btn.textContent=_editingProductId?'💾 保存修改':'✅ 确认发布'; btn.disabled=false; document.getElementById('submitReviewBtn').style.display='none'; notify('发布失败', '❌');}
 }
 
 // ====== Report ======
