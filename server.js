@@ -895,7 +895,7 @@ app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
   try {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_buyer' }) });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_buyer', payment_status: 'pending' }) });
     try {
       const rr = await fetch(SB('products?id=eq.'+product_id+'&select=title,trade_buyer_id,trade_buyer_name,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
       const rd = await rr.json(); const rp = Array.isArray(rd) ? rd[0] : null;
@@ -908,7 +908,7 @@ app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res
   try {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false, payment_status: 'pending' }) });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
     // Notify both parties
     try {
       const r = await fetch(SB('products?id=eq.'+product_id+'&select=title,owner_student_id,owner_name,trade_buyer_id,trade_buyer_name,school'), { headers: SB_HEADERS });
