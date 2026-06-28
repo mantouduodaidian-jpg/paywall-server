@@ -2013,9 +2013,9 @@ function appendMsg(m, isHistory) {
     if (nk) showName = nk;
   }
   if (m.content && m.content.indexOf('[img]') >= 0) {
-    var imgSrc = m.content.substring(m.content.indexOf('[img]')+5);
-    var txtBefore = m.content.substring(0, m.content.indexOf('[img]'));
-    div.innerHTML = '<div class="sender">'+esc(showName)+'</div><div class="bubble">'+(txtBefore?esc(txtBefore)+'<br>':'')+'<img src="'+imgSrc+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block;cursor:pointer" onclick="showFullImage(this.src)"></div><span class="time">'+timeStr+'</span>';
+    var parts2 = m.content.split('[img]');
+    var bubbleHtml = parts2.map(function(part, i){ if(i===0) return esc(part); return '<img src="'+part+'" style="max-width:100%;max-height:200px;border-radius:8px;display:block;cursor:pointer;margin-top:4px" onclick="showFullImage(this.src)">'; }).join('');
+    div.innerHTML = '<div class="sender">'+esc(showName)+'</div><div class="bubble">'+bubbleHtml+'</div><span class="time">'+timeStr+'</span>';
   } else {
     div.innerHTML = '<div class="sender">'+esc(showName)+'</div><div class="bubble">'+esc(m.content)+'</div><span class="time">'+timeStr+'</span>';
   }
