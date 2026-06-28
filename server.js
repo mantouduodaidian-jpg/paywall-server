@@ -1525,19 +1525,36 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     res.json(p);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-// Serve product images as binary (decode base64 from DB)
+// Serve product images as binary with file cache
+var IMG_CACHE_DIR = './cache/img/';
+try { require('fs').mkdirSync(IMG_CACHE_DIR, { recursive: true }); } catch(e) {}
 app.get('/api/product-image/:id/:idx', async (req, res) => {
   try {
-    const r = await fetch(SB('products?id=eq.'+parseInt(req.params.id)+'&select=images'), { headers: SB_HEADERS });
+    const id = parseInt(req.params.id), idx = parseInt(req.params.idx);
+    var cacheFile = IMG_CACHE_DIR + id + '-' + idx + '.img';
+    // Try file cache
+    try {
+      var buf = require('fs').readFileSync(cacheFile);
+      var ext = require('fs').readFileSync(cacheFile + '.type', 'utf8');
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(buf);
+    } catch(e) {}
+    // Fetch from DB
+    const r = await fetch(SB('products?id=eq.'+id+'&select=images'), { headers: SB_HEADERS });
     const data = await r.json();
     const p = Array.isArray(data) ? data[0] : null;
-    if (!p || !Array.isArray(p.images) || !p.images[parseInt(req.params.idx)]) return res.status(404).end();
-    var img = p.images[parseInt(req.params.idx)];
+    if (!p || !Array.isArray(p.images) || !p.images[idx]) return res.status(404).end();
+    var img = p.images[idx];
     var match = img.match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!match) return res.redirect(img); // Already a URL
-    res.setHeader('Content-Type', 'image/' + match[1]);
+    if (!match) return res.redirect(img);
+    var buf = Buffer.from(match[2], 'base64');
+    var ext = match[1];
+    // Write file cache
+    try { require('fs').writeFileSync(cacheFile, buf); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
+    res.setHeader('Content-Type', 'image/' + ext);
     res.setHeader('Cache-Control', 'public, max-age=604800');
-    res.send(Buffer.from(match[2], 'base64'));
+    res.send(buf);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
