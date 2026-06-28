@@ -135,6 +135,44 @@ cat -A file.html | grep -n "div"    # 查缩进 / 缺 </div>
 3. 小程序不支持 WXML 内联 SVG，图标用 emoji 或 PNG
 4. 图片上传建议用微信云存储，接口已支持 base64
 
+## 工作模式（AI 必读）
+
+### 改前流程
+1. **先出方案** — 用户说需求，AI 给方案。用户说「开搞」才写代码
+2. **改前检查** — 三项必做：
+   ```bash
+   node --check server.js                   # 后端语法
+   grep -o '{' file.html | wc -l           # { } 必须相等
+   grep -o '(' file.js | wc -l             # ( ) 必须相等
+   ```
+3. **分批隔离** — 工作 vs 不工作部分找分界线，定位 DOM 炸点
+4. **`cat -A` 查缩进** — 真实空格数，缺 `</div>` 一眼看出来
+5. **不用 CSS 字符串判断状态** — 用 JS 变量（如 `_pubType`）
+6. **前端送数归一化** — `parseFloat(x) || 0`
+7. **前后端校验一致** — 出租判 `rent_price`，不出售判 `price`
+
+### 推前检查
+```bash
+git add .
+git commit -m "类型: 描述"     # 类型: fix/feat/perf/style/docs
+git push origin master         # Render 自动部署
+```
+
+### 沟通风格（用户是超管）
+- 用户主动提需求，AI 给方案
+- 用户说「开搞」才写代码
+- 出错先看 console 报错
+- 括号不平衡、node --check 不通过 = 不能推
+- 用户是超级管理员，密码在 Render 环境变量里
+- 用户喜欢「分批隔离法」排查问题
+
+### 小程序开发特别规则
+- 微信开发者工具必须勾选「不校验合法域名」
+- 不要在 WXML 里内联 SVG（不支持）
+- 图标用 emoji 或 PNG 图片
+- `bindtap` 事件需配合 `value="{{var}}"` 双向绑定
+- `wx:key` 建议用 `wx:for-index="idx" wx:key="idx"`
+
 ## 当前问题
 1. 小程序登录页没有快捷测试账号（不知道手机号）
 2. 小程序请求因 Render 冷启动易超时

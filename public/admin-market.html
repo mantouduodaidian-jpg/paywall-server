@@ -502,7 +502,7 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabKefu" style="display:none">
     <div class="section tab-kefu-section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:250px">
       <div style="display:flex;flex:1;overflow:hidden">
-        <div id="kefuContactList" style="width:200px;max-width:100%;overflow-y:auto">
+        <div id="kefuContactList" style="width:220px;max-width:100%;overflow-y:auto">
           <div style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)">
             <input type="text" id="kefuSearch" placeholder="搜索用户..." onkeyup="renderKefuContacts()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#4a4a4a;font-size:11px;outline:none;font-family:inherit">
           </div>
@@ -1529,8 +1529,8 @@ function renderKefuContacts() {
     var act = c.student_id === kefuContactId ? ' style="background:rgba(52,211,153,.08)"' : '';
     var dName = _adminNickCache[c.student_id] ? esc(_adminNickCache[c.student_id])+' <span style="color:#aaa;font-size:9px">('+esc(c.name)+')</span>' : esc(c.name);
     var unBadge = c.unread > 0 ? '<span style="background:#e74c3c;color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px;margin-left:6px;flex-shrink:0">'+(c.unread>99?'99+':c.unread)+'</span>' : '';
-    return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:8px 10px;cursor:pointer;font-size:11px;border-bottom:1px solid rgba(0,0,0,.02);display:flex;align-items:flex-start;gap:4px;flex-wrap:wrap;min-width:0">'+
-      '<span style="flex:1;min-width:0">'+dName+(c.school?' <span style="color:#ddd;font-size:9px">'+schoolName(c.school)+'</span>':'')+'</span>'+unBadge+'<span style="color:#ccc;font-size:9px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">'+(c.last_message||'')+'</span></div>';
+    return '<div'+act+' class="kefu-contact" onclick="openKefuChat(\''+c.student_id+'\',\''+esc(c.name)+'\')" style="padding:12px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap">'+
+      '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+dName+(c.school?' <span style="color:#ddd;font-size:9px">'+schoolName(c.school)+'</span>':'')+'</span>'+unBadge+'<span style="color:#ccc;font-size:9px;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px">'+(c.last_message||'')+'</span></div>';
   }).join('');
 }
 async function showKefuContacts() {
