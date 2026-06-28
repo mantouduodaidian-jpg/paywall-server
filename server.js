@@ -1499,6 +1499,8 @@ app.get('/api/marketplace/products', async (req, res) => {
         data.forEach(function(p){ if(p.owner_student_id && nmap[p.owner_student_id]) p.owner_nickname = nmap[p.owner_student_id]; });
       } catch(e) {}
     }
+    // Strip images from list (performance — base64 too large), keep first as proxy URL for thumb
+    if (Array.isArray(data)) data.forEach(function(p){ if(p.images && p.images.length) p.images = ['/api/product-image/'+p.id+'/0']; else delete p.images; });
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1516,7 +1518,26 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
         if (nv && nv.nickname) p.owner_nickname = nv.nickname;
       } catch(e) {}
     }
+    // Convert base64 images to proxy URLs for performance
+    if (p && Array.isArray(p.images)) {
+      p.images = p.images.map(function(img, idx) { return '/api/product-image/' + p.id + '/' + idx; });
+    }
     res.json(p);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Serve product images as binary (decode base64 from DB)
+app.get('/api/product-image/:id/:idx', async (req, res) => {
+  try {
+    const r = await fetch(SB('products?id=eq.'+parseInt(req.params.id)+'&select=images'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const p = Array.isArray(data) ? data[0] : null;
+    if (!p || !Array.isArray(p.images) || !p.images[parseInt(req.params.idx)]) return res.status(404).end();
+    var img = p.images[parseInt(req.params.idx)];
+    var match = img.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!match) return res.redirect(img); // Already a URL
+    res.setHeader('Content-Type', 'image/' + match[1]);
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+    res.send(Buffer.from(match[2], 'base64'));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 

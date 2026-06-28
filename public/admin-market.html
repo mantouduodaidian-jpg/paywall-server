@@ -1129,20 +1129,20 @@ async function confirmReject() {
 async function toggleListed(id, currently) {
   toast(currently?'已下架':'已上架');
   await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({listed:!currently})});
-  loadProds(); loadOverview();
+
 }
 async function togglePin(id, pin) {
   await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({pinned:pin})});
-  toast(pin?'✅ 已置顶':'已取消置顶'); loadProds();
+  toast(pin?'✅ 已置顶':'已取消置顶');
 }
 async function markSold(id) {
   if (!await showConfirm('确认标记为已售出？')) return;
   await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:true,listed:false})});
-  toast('✅ 已标记售出'); loadProds(); loadOverview();
+  toast('✅ 已标记售出');
 }
 async function markUnsold(id) {
   await apiFetch('/api/marketplace/products/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({sold:false,listed:true})});
-  toast('已恢复在售'); loadProds(); loadOverview();
+  toast('已恢复在售');
 }
 function editProd(id) {
   editingProdId = id;
