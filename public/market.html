@@ -1789,7 +1789,8 @@ function loadContacts() {
 }
 function closeContacts() { var _ov=document.getElementById('contactsOverlay');document.getElementById('contactSidebar').classList.remove('show');if(_ov)_ov.classList.remove('show'); }
 
-var _lastUnreadCount = 0;
+var _lastUnreadCount = parseInt(localStorage.getItem('lastUnread')||'0');
+var cb = document.getElementById('chatBadge'); if(cb && _lastUnreadCount > 0) cb.textContent = _lastUnreadCount;
 var _unreadTimer = null;
 var _lastNotifId = 0;
 window._dismissedNotifs = JSON.parse(localStorage.getItem('dismissedNotifs')||'[]');
@@ -1818,6 +1819,7 @@ function startUnreadPoll() {
         var badge = document.getElementById('chatBadge');
         var chatUnread = Math.max(0, unread - notifUnread);
         if (chatUnread > 0) { badge.textContent = chatUnread; if (chatUnread > _lastUnreadCount) playMsgSound(); _lastUnreadCount = chatUnread; } else { badge.textContent = '0'; _lastUnreadCount = 0; }
+        localStorage.setItem('lastUnread', String(chatUnread));
         // System notification bell badge
         var nb = document.getElementById('bellBadge');
         if (nb) { nb.textContent = notifUnread > 0 ? notifUnread : '0'; }
