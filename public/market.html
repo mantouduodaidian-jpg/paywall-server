@@ -1019,7 +1019,7 @@ function hideDetail(){document.getElementById('detailModal').classList.remove('s
 function ownerDisplayName(p) {
   if (currentUser && p.owner_student_id === currentUser.student_id) return (p.owner_nickname || p.owner_name || '卖家');
   var nickname = p.owner_nickname || (_nickCache ? (_nickCache[p.owner_student_id] || '') : '');
-  return nickname || (p.owner_name||'匿名卖家');
+  return nickname || '匿名卖家';
 }
 
 function prevImg() {
@@ -1462,7 +1462,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').classList.add('show');
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
-  document.getElementById('chatConvLabel').textContent = '💬 ' + ((sellerStudentId||'').indexOf('kefu_') === 0 ? (sellerName||'客服') : sellerName);
+  var _dispName = _nickCache && sellerStudentId && sellerStudentId.indexOf("kefu_") !== 0 && _nickCache[sellerStudentId] ? _nickCache[sellerStudentId] : "匿名卖家"; document.getElementById("chatConvLabel").textContent = "💬 " + ((sellerStudentId||"").indexOf("kefu_") === 0 ? (sellerName||"客服") : _dispName);
   // Show nickname (realname) in header if cache available
   if (_nickCache && sellerStudentId && sellerStudentId.indexOf("kefu_") !== 0) { var _nk = _nickCache[sellerStudentId]; if (_nk) document.getElementById("chatConvLabel").textContent = "💬 " + _nk; }
   startChatPoll();
