@@ -1594,7 +1594,20 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         var uData = await uR.json();
         var uSchool = (Array.isArray(uData) && uData[0]) ? uData[0].school : (school || '');
         if (uSchool) { var kName = uSchool; SCHOOL_ADMINS.forEach(function(sa) { if (sa.code === uSchool) kName = sa.name; });
-          contacts.unshift({ student_id: kefuId(uSchool), name: kName + '二豆客服', unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+          var ku = kefuId(uSchool);
+          var kn = kName + '二豆客服';
+          var kunread = 0, kmsg = '你好，有什么可以帮你的？';
+          try {
+            var kr = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.desc&limit=1"), { headers: SB_HEADERS });
+            var kd = await kr.json();
+            if (Array.isArray(kd) && kd.length) { kmsg = kd[0].content||kmsg; }
+          } catch(e) {}
+          try {
+            var kr2 = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&read=eq.false&select=id"), { headers: SB_HEADERS });
+            var kd2 = await kr2.json();
+            kunread = Array.isArray(kd2) ? kd2.length : 0;
+          } catch(e) {}
+          contacts.unshift({ student_id: ku, name: kn, unread: kunread, last_message: kmsg, last_time: null, product_id: 0 });
         }
       } catch(e) {}
     }
@@ -1628,6 +1641,15 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
       body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', to_name: to_name||'', content, read: false })
     });
     const t = await r.json();
+    // Broadcast via WebSocket for instant delivery
+    try {
+      var msgData = JSON.stringify({ type: 'chat', data: { id: t.id, product_id, from_student_id: from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', content: content, created_at: t.created_at||new Date().toISOString() } });
+      wss.clients.forEach(function(ws) {
+        if (ws.readyState === 1) {
+          try { ws.send(msgData); } catch(e) {}
+        }
+      });
+    } catch(e) {}
     res.json(t);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
