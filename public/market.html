@@ -1017,9 +1017,13 @@ async function showDetail(id) {
 }
 function hideDetail(){document.getElementById('detailModal').classList.remove('show')}
 function ownerDisplayName(p) {
-  if (currentUser && p.owner_student_id === currentUser.student_id) return (p.owner_nickname || p.owner_name || '卖家');
-  var nickname = p.owner_nickname || (_nickCache ? (_nickCache[p.owner_student_id] || '') : '');
-  return nickname || '匿名卖家';
+  if (currentUser && p.owner_student_id === currentUser.student_id) return (p.owner_nickname || p.owner_name || "卖家");
+  var nickname = p.owner_nickname || (_nickCache ? (_nickCache[p.owner_student_id] || "") : "");
+  var gender = p.owner_gender ? ({male:"♂️",female:"♀️",男:"♂️",女:"♀️"}[p.owner_gender]||"") : "";
+  if (gender && p.trade_status && p.trade_status !== "trading" && currentUser && (p.trade_buyer_id === currentUser.student_id || p.owner_student_id === currentUser.student_id)) {
+    return (nickname||"匿名卖家") + " " + gender;
+  }
+  return nickname || "匿名卖家";
 }
 
 function prevImg() {

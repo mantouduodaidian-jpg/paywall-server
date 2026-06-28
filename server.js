@@ -1491,13 +1491,14 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
     if (price_max) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v <= parseFloat(price_max); });
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
-    // Enrich with nicknames
+    // Enrich with nicknames & gender
     if (Array.isArray(data) && data.length) {
       try {
-        var nr = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+        var nr = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname,gender'), { headers: SB_HEADERS });
         var nd = await nr.json();
-        var nmap = {}; (Array.isArray(nd) ? nd : []).forEach(function(v){ if(v.student_id && v.nickname) nmap[v.student_id] = v.nickname; });
-        data.forEach(function(p){ if(p.owner_student_id && nmap[p.owner_student_id]) p.owner_nickname = nmap[p.owner_student_id]; });
+        var nmap = {}; var gmap = {};
+        (Array.isArray(nd) ? nd : []).forEach(function(v){ if(v.student_id) { if(v.nickname) nmap[v.student_id] = v.nickname; if(v.gender) gmap[v.student_id] = v.gender; } });
+        data.forEach(function(p){ if(p.owner_student_id) { if(nmap[p.owner_student_id]) p.owner_nickname = nmap[p.owner_student_id]; if(gmap[p.owner_student_id]) p.owner_gender = gmap[p.owner_student_id]; } });
       } catch(e) {}
     }
     // Strip images from list (performance — base64 too large), keep first as proxy URL for thumb
@@ -1518,10 +1519,10 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     var p = data[0] || null;
     if (p && p.owner_student_id) {
       try {
-        var nr = await fetch(SB("verifications?status=eq.approved&select=student_id,nickname&student_id=eq."+encodeURIComponent(p.owner_student_id)), { headers: SB_HEADERS });
+        var nr = await fetch(SB("verifications?status=eq.approved&select=student_id,nickname,gender&student_id=eq."+encodeURIComponent(p.owner_student_id)), { headers: SB_HEADERS });
         var nd = await nr.json();
         var nv = Array.isArray(nd) ? nd[0] : null;
-        if (nv && nv.nickname) p.owner_nickname = nv.nickname;
+        if (nv) { if (nv.nickname) p.owner_nickname = nv.nickname; if (nv.gender) p.owner_gender = nv.gender; }
       } catch(e) {}
     }
     // Convert base64 images to proxy URLs for performance
