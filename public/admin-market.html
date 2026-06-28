@@ -896,8 +896,6 @@ async function loadOverview() {
     if (d.reportsPending > 0) { rb.textContent = d.reportsPending; rb.style.display = 'inline'; } else rb.style.display = 'none';
     const vb = document.getElementById('verBadge');
     if (d.verPending > 0) { vb.textContent = d.verPending; vb.style.display = 'inline'; } else vb.style.display = 'none';
-    // Update kefu unread badge
-    try { fetch('/api/marketplace/contacts?student_id='+kefuId()+'&school='+(localStorage.getItem('adminSchool')||'')).then(function(r){return r.json();}).then(function(arr){var _ku=0;(Array.isArray(arr)?arr:[]).forEach(function(c){_ku+=(c.unread||0);});var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent=_ku||'0';_kb.style.display=_ku>0?'':'none';}}).catch(function(){}); } catch(e){}
   } catch(e) {}
   // Charts
   try {
