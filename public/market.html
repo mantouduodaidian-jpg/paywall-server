@@ -1009,9 +1009,9 @@ function hidePub(){_editingProductId=0;document.getElementById('pubOverlay').cla
 function editMyProduct(id) {
   _editingProductId = id;
   document.querySelector('.pub-box .submit').textContent = '💾 保存修改';
-  document.getElementById('submitReviewBtn').style.display = '';
   document.querySelector('.pub-box h2').textContent = '✏️ 编辑商品';
   showPub();
+  document.getElementById('submitReviewBtn').style.display = '';
   fetch('/api/marketplace/products/'+id).then(function(r){return r.json();}).then(function(p){
     if(!p)return;
     document.getElementById('fTitle').value = p.title||'';
