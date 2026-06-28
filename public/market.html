@@ -821,7 +821,7 @@ async function load(reset) {
   if (userSchool) url += '&school='+userSchool;
   if (sellerFilter) url += '&owner='+sellerFilter;
   else if (selCat === '__mine__') url += '&owner='+(currentUser?currentUser.student_id:'');
-  else if (selCat === '__fav__') { if (currentUser) url += '&owner='+currentUser.student_id+'&limit=200'; }
+  else if (selCat === '__fav__') { url += '&limit=200'; }
   else if (selCat) url += '&category='+selCat;
   if (search) url += '&search='+encodeURIComponent(search);
   var _sort = document.getElementById('sortSelect').value;
