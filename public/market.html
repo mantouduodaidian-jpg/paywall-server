@@ -659,6 +659,7 @@ function playMsgSound() {
   if (!_soundEnabled) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
     var now = ctx.currentTime;
     [523, 659].forEach(function(freq, i) {
       var o = ctx.createOscillator();
@@ -1372,6 +1373,7 @@ function connectWS() {
       }
       if (d.type === 'chat' && d.data) {
         if (currentUser && d.data.from_student_id !== currentUser.student_id) {
+          playMsgSound();
           var badge = document.getElementById('chatBadge');
           var c = parseInt(badge.textContent) || 0;
           badge.textContent = c + 1;
@@ -1795,7 +1797,7 @@ function startUnreadPoll() {
   if (_unreadTimer) clearInterval(_unreadTimer);
   if (!currentUser) return;
   var lastCheck = 0;
-  _unreadTimer = setInterval(function() {
+  var pollFn = function() {
     if (!currentUser) { clearInterval(_unreadTimer); _unreadTimer = null; return; }
     fetch('/api/marketplace/messages?student_id='+currentUser.student_id)
       .then(function(r){return r.json();})
@@ -1822,7 +1824,9 @@ function startUnreadPoll() {
         // Also update conv list if open
         if (document.getElementById('chatPanel').classList.contains('show')) loadConvs();
       }).catch(function(){});
-  }, 3000);
+  };
+  pollFn();
+  _unreadTimer = setInterval(pollFn, 3000);
 }
 function openNotifChat() {
   var panel = document.getElementById('notifPanel');
