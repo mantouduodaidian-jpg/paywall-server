@@ -491,7 +491,7 @@ tr:hover td{background:#f8fcf9}
 
   <!-- ===== KEFU CHAT ===== -->
   <div class="tab-content" id="tabKefu" style="display:none">
-    <div class="section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px">
+    <div class="section tab-kefu-section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:250px">
       <div style="display:flex;flex:1;overflow:hidden">
         <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(0,0,0,.04);overflow-y:auto;flex-shrink:0">
           <div style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)">
@@ -500,7 +500,7 @@ tr:hover td{background:#f8fcf9}
           <div id="kefuContacts"></div>
         </div>
         <div style="flex:1;display:flex;flex-direction:column">
-          <div id="kefuChatHeader" style="padding:10px 14px;font-size:12px;color:#999;border-bottom:1px solid rgba(0,0,0,.04)">选择联系人</div>
+          <div id="kefuChatHeader" style="padding:10px 14px;font-size:12px;color:#999;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:center;gap:6px"><span id="kefuBackBtn" onclick="showKefuContacts()" style="display:none;cursor:pointer;font-size:14px;color:#60b88e">‹ 返回</span><span id="kefuChatTitle">选择联系人</span></div>
           <div id="kefuMsgs" style="flex:1;overflow-y:auto;padding:10px 14px"></div>
           <div id="kefuInputArea" style="display:none;padding:8px 14px;border-top:1px solid rgba(0,0,0,.04);gap:6px">
             <input type="text" id="kefuInput" placeholder="输入回复..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:rgba(0,0,0,.2);color:#4a4a4a;font-size:12px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')sendKefuMsg()">
@@ -818,6 +818,7 @@ function switchTab(name) {
   else if (name === 'categories') loadCats();
   else if (name === 'announcements') loadAnns();
   else if (name === 'blocked') loadBws();
+  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); loadKefuContacts(); }
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
   else if (name === 'logs') loadLogs();
@@ -1491,9 +1492,13 @@ function renderKefuContacts() {
       dName+(c.school?' <span style="color:#ddd;font-size:9px">'+schoolName(c.school)+'</span>':'')+'<span style="color:#ccc;font-size:9px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(c.last_message||'')+'</span></div>';
   }).join('');
 }
-async function openKefuChat(studentId, name) {
+async function showKefuContacts() {
+  document.getElementById('kefuContactList').classList.remove('has-chat');
+}
+function openKefuChat(studentId, name) {
   kefuContactId = studentId; kefuLastId = 0;
-  document.getElementById('kefuChatHeader').textContent = '\u{1f4ac} ' + name;
+  document.getElementById('kefuChatTitle').textContent = '\u{1f4ac} ' + name;
+  document.getElementById('kefuContactList').classList.add('has-chat');
   document.getElementById('kefuInputArea').style.display = 'flex';
   if (kefuPollTimer) clearInterval(kefuPollTimer);
   document.getElementById('kefuMsgs').innerHTML = '';
@@ -1803,3 +1808,7 @@ function connectAdminWS() {
 </svg>
 </body>
 </html>
+  #kefuContactList{width:120px}
+  #kefuContactList.has-chat{display:none}
+  #kefuBackBtn{display:inline-block!important}
+  .tab-kefu-section{min-height:200px!important}

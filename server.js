@@ -685,6 +685,22 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+// Owner resubmit for review (delisted/rejected → pending)
+app.post('/api/marketplace/products/:id/resubmit', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id } = req.body;
+    if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,status'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const p = Array.isArray(d) ? d[0] : null;
+    if (!p) return res.status(404).json({ error: '商品不存在' });
+    if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
+    if (p.status === 'pending') return res.status(400).json({ error: '已处于审核中' });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', reject_reason: '' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // Owner self-delete product (sold/listed/rejected/pending only)
 app.delete('/api/marketplace/products/:id/owner-delete', express.json(), async (req, res) => {
   try {
