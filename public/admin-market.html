@@ -1497,6 +1497,9 @@ async function loadKefuContacts() {
     const r = await apiFetch('/api/marketplace/contacts?student_id='+kefuId()+'&school='+(localStorage.getItem('adminSchool')||''));
     const data = await r.json();
     _kefuAllContacts = Array.isArray(data) ? data : [];
+    var _ku = 0; _kefuAllContacts.forEach(function(c){ _ku += (c.unread || 0); });
+    var _kb = document.getElementById('kefuBadge');
+    if (_kb) { _kb.textContent = _ku || '0'; _kb.style.display = _ku > 0 ? '' : 'none'; }
     // Also load all verified users from this school
     try {
       const vR = await apiFetch(getSchoolParam('/api/verify/list'));
