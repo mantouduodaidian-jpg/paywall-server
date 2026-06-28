@@ -1501,7 +1501,12 @@ app.get('/api/marketplace/products', async (req, res) => {
       } catch(e) {}
     }
     // Strip images from list (performance — base64 too large), keep first as proxy URL for thumb
-    if (Array.isArray(data)) data.forEach(function(p){ if(p.images && p.images.length) p.images = ['/api/product-image/'+p.id+'/0']; else delete p.images; });
+    if (Array.isArray(data)) data.forEach(function(p){
+      if (p.images && p.images.length) {
+        if (req.query.admin) p.images = p.images.map(function(img, idx){ return '/api/product-image/'+p.id+'/'+idx; });
+        else p.images = ['/api/product-image/'+p.id+'/0'];
+      } else delete p.images;
+    });
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
