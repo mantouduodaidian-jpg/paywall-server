@@ -581,14 +581,14 @@ tr:hover td{background:#f8fcf9}
 
 <!-- Image Preview Modal -->
 <div class="modal-overlay" id="imgPreviewModal" onclick="if(event.target===this)closeImgPreview()">
-  <div class="modal" style="max-width:500px;text-align:center">
-    <img id="imgPreviewContent" style="max-width:100%;max-height:70vh;border-radius:8px">
-    <div id="imgPreviewNav" style="display:none;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:rgba(0,0,0,.3)">
-      <span onclick="prevPreviewImg()" style="cursor:pointer;padding:4px 10px;border:1px solid rgba(0,0,0,.06);border-radius:6px">‹</span>
-      <span id="imgPreviewIdx"></span>
-      <span onclick="nextPreviewImg()" style="cursor:pointer;padding:4px 10px;border:1px solid rgba(0,0,0,.06);border-radius:6px">›</span>
+  <div style="max-width:600px;margin:40px auto;position:relative;display:flex;align-items:center;justify-content:center">
+    <span onclick="prevPreviewImg()" id="imgPrevBtn" style="display:none;position:absolute;left:-20px;font-size:32px;color:rgba(255,255,255,.6);cursor:pointer;z-index:10;padding:20px 10px;user-select:none">‹</span>
+    <div style="background:#fff;border-radius:12px;padding:8px;text-align:center">
+      <img id="imgPreviewContent" style="max-width:100%;max-height:70vh;border-radius:8px;display:block">
+      <div id="imgPreviewNav" style="display:none;margin-top:6px;font-size:11px;color:rgba(0,0,0,.2)"><span id="imgPreviewIdx"></span></div>
+      <div class="btns" style="margin-top:8px"><button class="btn-ghost" onclick="closeImgPreview()">关闭</button></div>
     </div>
-    <div class="btns" style="margin-top:12px"><button class="btn-ghost" onclick="closeImgPreview()">关闭</button></div>
+    <span onclick="nextPreviewImg()" id="imgNextBtn" style="display:none;position:absolute;right:-20px;font-size:32px;color:rgba(255,255,255,.6);cursor:pointer;z-index:10;padding:20px 10px;user-select:none">›</span>
   </div>
 </div>
 
@@ -1349,8 +1349,12 @@ function showProdImg(src, all, idx) {
   _previewIdx = idx || 0;
   document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx];
   var nav = document.getElementById('imgPreviewNav');
-  if (_previewImages.length > 1) { nav.style.display = 'flex'; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
-  else nav.style.display = 'none';
+  var prevBtn = document.getElementById('imgPrevBtn');
+  var nextBtn = document.getElementById('imgNextBtn');
+  if (_previewImages.length > 1) {
+    nav.style.display = 'block'; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length;
+    prevBtn.style.display = 'block'; nextBtn.style.display = 'block';
+  } else { nav.style.display = 'none'; prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; }
   document.getElementById('imgPreviewModal').classList.add('show');
 }
 function showProdImgFromArr(idx) {
