@@ -1094,7 +1094,7 @@ async function loadProds() {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
       var prodImgs = p.images && p.images.length ? p.images : [];
       var imgIdx = _prodImgArr.push(prodImgs) - 1;
-      var prodImg = prodImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(prodImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImgFromArr('+imgIdx+')">'+(prodImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+prodImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
+      var prodImg = prodImgs.length ? prodImgs.map(function(img,i){ return '<img src="'+esc(img)+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;margin:1px" onclick="showProdImgFromArr('+imgIdx+','+i+')">'; }).join('') : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td>'+prodImg+'</td>'+
@@ -1208,7 +1208,7 @@ async function loadRentals() {
       var periodMap = {day:'/天',week:'/周',month:'/月'};
       var rentImgs = p.images && p.images.length ? p.images : [];
       var rImgIdx = _prodImgArr.push(rentImgs) - 1;
-      var rentImg = rentImgs[0] ? '<div style="position:relative;display:inline-block"><img src="'+esc(rentImgs[0])+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer" onclick="showProdImgFromArr('+rImgIdx+')">'+(rentImgs.length>1?'<span style="position:absolute;bottom:-2px;right:-2px;background:rgba(0,0,0,.5);color:#fff;font-size:8px;padding:1px 4px;border-radius:3px">'+rentImgs.length+'</span>':'')+'</div>' : '<span style="color:#ccc;font-size:10px">-</span>';
+      var rentImg = rentImgs.length ? rentImgs.map(function(img,i){ return '<img src="'+esc(img)+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;margin:1px" onclick="showProdImgFromArr('+rImgIdx+','+i+')">'; }).join('') : '<span style="color:#ccc;font-size:10px">-</span>';
       return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
         '<td>'+rentImg+'</td>'+
@@ -1357,10 +1357,10 @@ function showProdImg(src, all, idx) {
   } else { nav.style.display = 'none'; prevBtn.style.display = 'none'; nextBtn.style.display = 'none'; }
   document.getElementById('imgPreviewModal').classList.add('show');
 }
-function showProdImgFromArr(idx) {
+function showProdImgFromArr(idx, imgIdx) {
   var arr = _prodImgArr[idx] || [];
   if (!arr.length) return;
-  showProdImg(arr[0], arr, 0);
+  showProdImg(arr[imgIdx||0], arr, imgIdx||0);
 }
 function prevPreviewImg() {
   if (_previewIdx > 0) { _previewIdx--; document.getElementById('imgPreviewContent').src = _previewImages[_previewIdx]; document.getElementById('imgPreviewIdx').textContent = (_previewIdx+1)+'/'+_previewImages.length; }
