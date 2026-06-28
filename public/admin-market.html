@@ -747,13 +747,17 @@ async function batchDelete(cls, apiUrl, label) {
   if (active) switchTab(active.dataset.tab);
 }
 
+var _loginGateShown = false;
 function showLoginGate() {
+  if (_loginGateShown) return;
+  _loginGateShown = true;
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
   document.getElementById('loginPwd').value = '';
 }
 
 function login() {
+  _loginGateShown = false;
   var pwd = document.getElementById('loginPwd').value;
   fetch('/api/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
     .then(function(r) { return r.json(); })
