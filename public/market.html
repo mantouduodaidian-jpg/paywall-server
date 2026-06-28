@@ -1365,9 +1365,11 @@ function connectWS() {
         return;
       }
       if (d.type === 'chat' && d.data) {
-        var badge = document.getElementById('chatBadge');
-        var c = parseInt(badge.textContent) || 0;
-        badge.textContent = c + 1;
+        if (currentUser && d.data.from_student_id !== currentUser.student_id) {
+          var badge = document.getElementById('chatBadge');
+          var c = parseInt(badge.textContent) || 0;
+          badge.textContent = c + 1;
+        }
         if (chatProductId && chatProductId == d.data.product_id) {
           appendMsg(d.data, false);
         }

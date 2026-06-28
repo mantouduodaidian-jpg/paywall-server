@@ -1794,6 +1794,7 @@ function connectAdminWS() {
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
+      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { loadKefuMsgs(); } }
       if (d.type === 'admin_new_verification' || d.type === 'admin_new_product' || d.type === 'admin_product_update') {
         loadOverview();
         if (d.type === 'admin_new_product') {
