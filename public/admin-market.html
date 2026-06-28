@@ -1063,7 +1063,10 @@ function renderTxChart(transactions) {
 }
 
 // ====== PRODUCTS ======
+var _lastProdsLoad = 0;
 async function loadProds() {
+  if (Date.now() - _lastProdsLoad < 3000) return;
+  _lastProdsLoad = Date.now();
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=200'));
     let data = await r.json();
