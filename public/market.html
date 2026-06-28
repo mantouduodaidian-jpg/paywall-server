@@ -787,6 +787,12 @@ function myListToggle(id) {
     .then(function(r){return r.json();})
     .then(function(d){if(d.ok){notify('已下架','📌');hideDetail();load();}}).catch(function(){});
 }
+function ownerRelist(id) {
+  if (!currentUser) return;
+  fetch('/api/marketplace/products/'+id+'/owner-relist', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:currentUser.student_id})})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok){notify('已上架','📌');hideDetail();load();} else notify(d.error||'上架失败','❌');}).catch(function(){});
+}
 var _mineFilter = '';
 function setMineFilter(el, f) {
   _mineFilter = f;
@@ -886,7 +892,7 @@ async function load(reset) {
       if (isMine && p.sold) statusBadge = '<div class="sold-badge">✅ 已售罄</div>';
       else if (isMine && p.status === 'pending') statusBadge = '<div class="pending-badge">📋 待审核</div>';
       else if (isMine && p.status === 'rejected') statusBadge = '<div class="rejected-badge">✕ 未通过</div>';
-      else if (unlisted) statusBadge = '<div class="unlisted-badge">📌 已下架</div>';
+      else if (unlisted && p.owner_delisted) statusBadge = '<div class="unlisted-badge" style="cursor:pointer" onclick="event.stopPropagation();ownerRelist('+p.id+')">📌 已下架·点我上架</div>'; else if (unlisted) statusBadge = '<div class="unlisted-badge">📌 已下架</div>';
       else if (currentUser && p.trade_buyer_id === currentUser.student_id && p.trade_status === 'trading') statusBadge = '<div class="sold-badge" style="background:#fbbf24">⏳ 等待卖家确认</div>';
       else if (currentUser && p.trade_buyer_id === currentUser.student_id && p.trade_status === 'awaiting_buyer') statusBadge = '<div class="sold-badge" style="background:#60b88e">📦 请确认收货</div>';
       div.innerHTML = (p.pinned?'<div class="pin-bar"></div>':'')+'<div class="img">'+imgHtml+'</div><div class="info"><div class="title">'+esc(p.title)+'</div>'+priceHtml+'<div class="meta">'+typeTag+'<span class="tag">'+esc(p.quality)+'</span><span class="tag">'+esc(p.category)+'</span></div></div>'+
@@ -935,7 +941,7 @@ async function showDetail(id) {
       '<div class="btns">'+
       (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 10a2 2 0 0 1-2 2H5l-3 2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/></svg> 联系卖家</button>'+(p.trade_buyer_id===currentUser.student_id?'<button class="contact" style="background:rgba(0,0,0,.04);color:rgba(0,0,0,.25);border-color:rgba(0,0,0,.06);cursor:default">已请求</button>':'<button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')"><svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="11" rx="1.5"/><path d="M6 5V3a3 3 0 0 1 6 0v2"/></svg> 我想交易</button>') : '')+
       '<button class="close" onclick="hideDetail()">关闭</button>'+
-      (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444">📌 下架</button>' : '')+
+      (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444">📌 下架</button>' : '')+(currentUser && p.owner_student_id === currentUser.student_id && p.listed === false && p.owner_delisted ? '<button class="contact" onclick="hideDetail();ownerRelist('+p.id+')">📌 上架</button>' : '')+
       (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(ownerDisplayName(p))+'\');return false" style="font-size:12px;color:rgba(52,211,153,.5);text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#34d399" stroke-width="1.5"/></svg> 查看 '+esc(ownerDisplayName(p))+' 的其他商品</a></div>' : '')+
       '</div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';

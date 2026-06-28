@@ -13,7 +13,12 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   #kefuContactList.has-chat{display:none}
   #kefuChatArea{width:100%}
   #kefuBackBtn{display:inline-block!important}
-}
+
+  #kefuInner{flex-direction:column}
+  #kefuContactList{width:100%;max-width:100%;border-right:none!important;border-bottom:1px solid rgba(0,0,0,.04)}
+  #kefuContactList.has-chat{display:none}
+  #kefuBackBtn{display:inline-block!important}
+  .section.tab-kefu-section{height:calc(100vh - 100px)!important;min-height:200px!important}}
 .login-gate{position:fixed;inset:0;background:#f7f3ea;display:flex;align-items:center;justify-content:center;z-index:100}
 .login-box{background:#fff;border-radius:20px;padding:48px;width:380px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.04)}
 .login-box h1{font-size:24px;color:#4e9e80;margin-bottom:6px}
@@ -507,8 +512,8 @@ tr:hover td{background:#f8fcf9}
 
   <!-- ===== KEFU CHAT ===== -->
   <div class="tab-content" id="tabKefu" style="display:none">
-    <div class="section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px">
-      <div style="display:flex;flex:1;overflow:hidden">
+    <div class="section" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:300px">
+      <div id="kefuInner" style="display:flex;flex:1;overflow:hidden">
         <div id="kefuContactList" style="width:200px;border-right:1px solid rgba(0,0,0,.04);overflow-y:auto;flex-shrink:0">
           <div style="padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.04)">
             <input type="text" id="kefuSearch" placeholder="搜索用户..." onkeyup="renderKefuContacts()" style="width:100%;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#4a4a4a;font-size:11px;outline:none;font-family:inherit">
