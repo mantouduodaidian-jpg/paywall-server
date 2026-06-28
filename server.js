@@ -514,10 +514,10 @@ app.get('/api/verify/list', schoolScope, async (req, res) => {
 });
 app.get('/api/marketplace/nicknames', async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname,gender'), { headers: SB_HEADERS });
     const d = await r.json();
     var map = {};
-    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; });
+    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; if(v.student_id && v.gender) { if(!map._gender) map._gender = {}; map._gender[v.student_id] = v.gender; } });
     res.json(map);
   } catch(e) { res.json({}); }
 });
@@ -908,7 +908,7 @@ app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res
   try {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false, payment_status: 'pending' }) });
     // Notify both parties
     try {
       const r = await fetch(SB('products?id=eq.'+product_id+'&select=title,owner_student_id,owner_name,trade_buyer_id,trade_buyer_name,school'), { headers: SB_HEADERS });
@@ -1304,10 +1304,10 @@ app.get('/api/verify/list', schoolScope, async (req, res) => {
 });
 app.get('/api/marketplace/nicknames', async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname'), { headers: SB_HEADERS });
+    const r = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname,gender'), { headers: SB_HEADERS });
     const d = await r.json();
     var map = {};
-    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; });
+    (Array.isArray(d) ? d : []).forEach(function(v){ if(v.student_id && v.nickname) map[v.student_id] = v.nickname; if(v.student_id && v.gender) { if(!map._gender) map._gender = {}; map._gender[v.student_id] = v.gender; } });
     res.json(map);
   } catch(e) { res.json({}); }
 });
