@@ -1538,6 +1538,8 @@ async function showKefuContacts() {
 }
 async function openKefuChat(studentId, name) {
   kefuContactId = studentId; kefuLastId = 0;
+  fetch('/api/marketplace/messages/read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:kefuId(),from_student_id:studentId})}).catch(function(){});
+  var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent='0';_kb.style.display='none';}
   document.getElementById('kefuChatTitle').textContent = '\u{1f4ac} ' + name;
   document.getElementById('kefuContactList').classList.add('has-chat');
   document.getElementById('kefuInputArea').style.display = 'flex';
