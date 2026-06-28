@@ -265,6 +265,7 @@ tr:hover td{background:#f8fcf9}
       <a href="/market.html" class="btn-outline" target="_blank">🏪 前台</a>
       <select id="schoolSelector" onchange="switchSchool(this.value)" style="display:none;padding:5px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.06);background:#fafafa;color:#555;font-size:11px;outline:none;font-family:inherit"></select>
       <span id="adminSoundToggle" onclick="toggleAdminSound()" style="cursor:pointer;font-size:14px;color:#ccc" title="消息提示音">🔇</span>
+      <span onclick="switchTab('kefu')" style="cursor:pointer;font-size:12px;color:#888;display:flex;align-items:center;gap:3px;position:relative">💬 <span id="headerMsgBadge" style="display:none;background:#e74c3c;color:#fff;font-size:9px;padding:1px 5px;border-radius:6px;min-width:16px;text-align:center">0</span></span>
       <button class="btn-outline" onclick="refreshAll()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> 刷新</button>
       <button class="btn-danger" onclick="logout()">退出</button>
     </div>
@@ -851,7 +852,7 @@ function switchTab(name) {
   else if (name === 'categories') loadCats();
   else if (name === 'announcements') loadAnns();
   else if (name === 'blocked') loadBws();
-  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent='0';_kb.style.display='none';} loadKefuContacts(); }
+  else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent='0';_kb.style.display='none';} var _kh=document.getElementById('headerMsgBadge');if(_kh){_kh.textContent='0';_kh.style.display='none';} loadKefuContacts(); }
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
   else if (name === 'logs') loadLogs();
@@ -1500,6 +1501,8 @@ async function loadKefuContacts() {
     var _ku = 0; _kefuAllContacts.forEach(function(c){ _ku += (c.unread || 0); });
     var _kb = document.getElementById('kefuBadge');
     if (_kb) { _kb.textContent = _ku || '0'; _kb.style.display = _ku > 0 ? '' : 'none'; }
+    var _hmb = document.getElementById('headerMsgBadge');
+    if (_hmb) { _hmb.textContent = _ku || '0'; _hmb.style.display = _ku > 0 ? '' : 'none'; }
     // Also load all verified users from this school
     try {
       const vR = await apiFetch(getSchoolParam('/api/verify/list'));
@@ -1823,7 +1826,7 @@ function connectAdminWS() {
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
-      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { playAdminSound(); loadKefuMsgs(); } else { var _kb = document.getElementById('kefuBadge'); if(_kb){var _kc=parseInt(_kb.textContent)||0;_kb.textContent=_kc+1;_kb.style.display='';} } }
+      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { playAdminSound(); loadKefuMsgs(); } else { var _kb = document.getElementById('kefuBadge'); if(_kb){var _kc=parseInt(_kb.textContent)||0;_kb.textContent=_kc+1;_kb.style.display='';} var _kh = document.getElementById('headerMsgBadge'); if(_kh){var _khc=parseInt(_kh.textContent)||0;_kh.textContent=_khc+1;_kh.style.display='';} } }
       if (d.type === 'admin_new_verification' || d.type === 'admin_new_product' || d.type === 'admin_product_update') {
         loadOverview();
         if (d.type === 'admin_new_product') {
