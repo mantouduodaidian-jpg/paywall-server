@@ -648,6 +648,19 @@ let role = localStorage.getItem('marketAdminRole');
 let editingProdId = null, rejectingProdId = null;
 let cats = [];
 
+function playAdminSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 659; o.type = 'sine';
+    g.gain.setValueAtTime(0.05, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.1);
+  } catch(e) {}
+}
 function toast(msg, dur) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
@@ -1794,7 +1807,7 @@ function connectAdminWS() {
   ws.onmessage = function(e) {
     try {
       var d = JSON.parse(e.data);
-      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { loadKefuMsgs(); } }
+      if (d.type === 'chat' && d.data) { if (kefuContactId && (d.data.to_student_id === kefuId() || d.data.from_student_id === kefuId())) { playAdminSound(); loadKefuMsgs(); } }
       if (d.type === 'admin_new_verification' || d.type === 'admin_new_product' || d.type === 'admin_product_update') {
         loadOverview();
         if (d.type === 'admin_new_product') {
