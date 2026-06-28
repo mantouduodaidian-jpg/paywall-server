@@ -1008,7 +1008,7 @@ function showPub(){document.getElementById('pubOverlay').classList.add('show');d
 function hidePub(){_editingProductId=0;document.getElementById('pubOverlay').classList.remove('show');document.getElementById('submitReviewBtn').style.display='none'}
 function editMyProduct(id) {
   _editingProductId = id;
-  document.querySelector('.pub-box .submit').textContent = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
+  document.querySelector('.pub-box .submit').innerHTML = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
   document.querySelector('.pub-box h2').textContent = '✏️ 编辑商品';
   showPub();
   document.getElementById('submitReviewBtn').style.display = '';
@@ -1021,7 +1021,7 @@ function editMyProduct(id) {
     document.getElementById('fDesc').value = p.desc||'';
     if(p.item_type==='rent'){setItemType('rent');document.getElementById('fRentPrice').value = p.rent_price||'';document.getElementById('fRentPeriod').value = p.rent_period||'day';document.getElementById('fDeposit').value = p.deposit||'';}
     else setItemType('sell');
-    document.querySelector('.pub-box .submit').textContent = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
+    document.querySelector('.pub-box .submit').innerHTML = '<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存';
   }).catch(function(){notify('加载失败','❌');hidePub();});
 }
 
@@ -1034,7 +1034,7 @@ async function publish(){
   if(!isRent&&!price){notify('请填写价格', '⚠️');return}
   if(isRent&&!rentPrice){notify('请填写租金', '⚠️');return}
   const btn = document.querySelector('.pub-box .submit');
-  btn.textContent='⏳ 发布中...'; btn.disabled=true;
+  btn.innerHTML='⏳ 发布中...'; btn.disabled=true;
   const data={
     title,price:parseFloat(price)||0,category:document.getElementById('fCat').value||'其他',
     quality:document.getElementById('fQuality').value||'八成新',
@@ -1061,10 +1061,10 @@ async function publish(){
       d=await r.json();
       ok = d?.id || d?.[0]?.id || d?.ok;
     }
-    btn.textContent=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 已保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false;
+    btn.innerHTML=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 已保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false;
     if(ok){document.getElementById('submitReviewBtn').style.display='none';hidePub();_editingProductId=0;document.getElementById('fTitle').value='';document.getElementById('fPrice').value='';document.getElementById('fDesc').value='';document.getElementById('fImageName').textContent='';document.getElementById('fImagePreview').style.display='none';document.getElementById('fImage').value='';document.getElementById('fImageLabel').textContent='';_uploadedImages=[];document.querySelector('.pub-box h2').textContent='📝 发布闲置';notify('已保存','💾');load();}
     else notify(d.error || '发布失败', '❌');
-  }catch(e){btn.textContent=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false; document.getElementById('submitReviewBtn').style.display='none'; notify('发布失败', '❌');}
+  }catch(e){btn.innerHTML=_editingProductId?'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 5v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h7z"/><path d="M5 2v4h5V2"/><circle cx="8" cy="11" r="1"/></svg> 保存':'<svg viewBox="0 0 16 16" width="15" height="15" style="vertical-align:middle;margin-right:3px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.5 8.5l2 2 4-4"/></svg> 发布'; btn.disabled=false; document.getElementById('submitReviewBtn').style.display='none'; notify('发布失败', '❌');}
 }
 
 // ====== Report ======
@@ -1536,7 +1536,7 @@ function updateTradeButtons(p) {
     status.style.display = ''; status.innerHTML = '✅ 已收货 🎉';
     status.style.cssText = 'text-align:center;padding:8px;font-size:12px;border-radius:8px;margin-bottom:6px;background:linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05));color:#34d399;border:1px solid rgba(52,211,153,.1)';
   } else if (!isOwner && !p.trade_status) {
-    buyerBtn.style.display = ''; buyerBtnInner.textContent = '<svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="11" rx="1.5"/><path d="M6 5V3a3 3 0 0 1 6 0v2"/></svg> 我想交易'; buyerBtnInner.onclick = requestTrade;
+    buyerBtn.style.display = ''; buyerBtnInner.innerHTML = '<svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="11" rx="1.5"/><path d="M6 5V3a3 3 0 0 1 6 0v2"/></svg> 我想交易'; buyerBtnInner.onclick = requestTrade;
   } else if (isOwner && !p.trade_status) {
     actions.style.display = 'none';
   }
