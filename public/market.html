@@ -950,7 +950,7 @@ async function load(reset) {
       var typeTag = '';
       if (p.item_type === 'rent') typeTag += '<span class="tag" style="background:rgba(52,211,153,.08);color:#34d399">📅 可租</span>';
       if (p.negotiable) typeTag += '<span class="tag" style="background:rgba(251,191,36,.1);color:#d4a030">💰 可议价</span>';
-      var imgHtml = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'">' : '📦';
+      var imgHtml = (p.images && p.images.length > 0 && p.images[0]) ? '<img src="'+esc(p.images[0])+'" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'📦\'" loading="lazy">' : '📦';
       var isMine = currentUser && p.owner_student_id === currentUser.student_id;
       var unlisted = isMine && p.listed === false;
       div.style.opacity = unlisted ? '.5' : '';

@@ -687,7 +687,7 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // Owner edit product (no admin required)
-app.patch('/api/marketplace/products/:id/owner-edit', express.json(), async (req, res) => {
+app.patch('/api/marketplace/products/:id/owner-edit', express.json({ limit: '20mb' }), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { student_id, title, price, category, quality, desc, gender_pref, negotiable, images, rent_price, rent_period, deposit } = req.body;
@@ -1379,7 +1379,7 @@ app.get('/api/verify/payment-qr/:id', schoolScope, async (req, res) => {
 });
 
 // ====== Marketplace API ======
-app.post('/api/marketplace/products', express.json(), async (req, res) => {
+app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (req, res) => {
   try {
     const { title, price, category, desc, images, contact, quality, item_type, rent_price } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
