@@ -918,7 +918,7 @@ async function loadOverview() {
     txArr.forEach(function(t) { if ((t.payment_status||'pending') === 'pending') { pendingTotal += parseFloat(t.price||0); pendingCount++; } });
     renderTxChart(txArr);
     var sc = document.getElementById('statsContainer');
-    if (sc) sc.innerHTML += '<div class="stat-card"><div class="num blue">¥'+pendingTotal.toFixed(0)+'</div><div class="label">待转账金额 <span style="color:#ccc">('+pendingCount+'笔)</span></div></div>';
+    if (sc) sc.innerHTML += '<div class="stat-card"><div class="num blue">¥'+pendingTotal.toFixed(2)+'</div><div class="label">待转账金额 <span style="color:#ccc">('+pendingCount+'笔)</span></div></div>';
   } catch(e) {}
   // Recent
   try {
@@ -1057,7 +1057,7 @@ function renderTxChart(transactions) {
     el.innerHTML = days.map(function(d) {
       var h = Math.round((d.total / max) * 60);
       return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">'+
-        '<span style="font-size:8px;color:#5b9bd5;margin-bottom:1px">¥'+d.total.toFixed(0)+'</span>'+
+        '<span style="font-size:8px;color:#5b9bd5;margin-bottom:1px">¥'+d.total.toFixed(2)+'</span>'+
         '<div style="width:100%;max-width:30px;height:'+Math.max(2,h)+'px;background:linear-gradient(to top,#5b9bd5,#8bb8f0);border-radius:3px 3px 0 0;transition:height .4s ease;opacity:'+(0.3+0.7*(d.total/max))+'"></div>'+
         '<span style="font-size:8px;color:#ccc;margin-top:2px">'+d.label+'</span></div>';
     }).join('');
@@ -1097,7 +1097,7 @@ async function loadProds() {
       return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td>'+prodImg+'</td>'+
-        '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(0)+'</td>'+
+        '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(2)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
@@ -1211,9 +1211,9 @@ async function loadRentals() {
       return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
         '<td>'+rentImg+'</td>'+
-        '<td style="color:#fbbf24;font-weight:600">¥'+parseFloat(p.rent_price||0).toFixed(0)+'</td>'+
+        '<td style="color:#fbbf24;font-weight:600">¥'+parseFloat(p.rent_price||0).toFixed(2)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
-        '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(0)+'</td>'+
+        '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(2)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
@@ -1641,7 +1641,7 @@ async function loadTransactions() {
       var statusColor = {pending:'#5b9bd5',paid:'#4e9e80',failed:'#e74c3c'};
       return '<tr><td><input type="checkbox" class="txCb" value="'+t.id+'"></td><td style="color:#ccc">'+t.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</td>'+
-        '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(0)+'</td>'+
+        '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(2)+'</td>'+
         '<td style="color:#555">'+dispName(t.owner_student_id, t.owner_name)+'</td>'+
         '<td style="color:#555">'+esc(t.trade_buyer_name||t.trade_buyer_id||'-')+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(t.created_at)+'</td>'+
