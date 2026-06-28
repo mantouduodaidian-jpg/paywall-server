@@ -581,11 +581,11 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
 // Send notification message from system kefu to user
 async function sendNotify(ownerStudentId, ownerName, school, msg) {
   if (!ownerStudentId) return;
-  const kefuId = 'kefu_' + (school || 'admin');
+  const sysId = 'sys_' + (school || 'admin');
   try {
     await fetch(SB('messages'), {
       method: 'POST', headers: SB_HEADERS2,
-      body: JSON.stringify({ product_id: 0, from_student_id: kefuId, from_name: '系统通知', to_student_id: ownerStudentId, to_name: ownerName, content: msg, created_at: new Date().toISOString(), read: false })
+      body: JSON.stringify({ product_id: 0, from_student_id: sysId, from_name: '系统通知', to_student_id: ownerStudentId, to_name: ownerName, content: msg, created_at: new Date().toISOString(), read: false })
     });
   } catch(e) {}
 }
