@@ -899,7 +899,7 @@ async function loadOverview() {
   } catch(e) {}
   // Charts
   try {
-    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=200'));
+    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=60'));
     const d = await r.json();
     const all = Array.isArray(d) ? d : (d.data || []);
     renderBarChart(all);
@@ -1068,7 +1068,7 @@ async function loadProds() {
   if (Date.now() - _lastProdsLoad < 3000) return;
   _lastProdsLoad = Date.now();
   try {
-    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=200'));
+    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=60'));
     let data = await r.json();
     const arr = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
     _prodImgArr = [];
@@ -1183,7 +1183,7 @@ async function delProd(id, title) {
 // ====== Rentals ======
 async function loadRentals() {
   try {
-    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=200'));
+    const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=60'));
     const d = await r.json();
     const all = Array.isArray(d) ? d : (d.data || []);
     const arr = all.filter(function(p) { return p.item_type === 'rent'; });
