@@ -380,7 +380,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>偏好</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table><div id="prodPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>偏好</th><th>学校</th><th>状态</th><th>上架</th><th>信誉</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table><div id="prodPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1810,11 +1810,11 @@ async function loadSellers() {
     const search = document.getElementById('sellerSearch').value.trim().toLowerCase();
     if (search) arr = arr.filter(function(s) { return (s.name||'').toLowerCase().includes(search) || (s.student_id||'').includes(search); });
     var _sPage = adminPage.sellerPagination || 0; var _sTotal = arr.length;
-    if (!arr.length) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="5"><div class="empty">暂无卖家</div></td></tr>'; renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers'); return; }
+    if (!arr.length) { document.getElementById('sellerTbody').innerHTML = '<tr><td colspan="6"><div class="empty">暂无卖家</div></td></tr>'; renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers'); return; }
     var _sd = arr.slice(_sPage * ADMIN_PAGE_SIZE, (_sPage + 1) * ADMIN_PAGE_SIZE);
     document.getElementById('sellerTbody').innerHTML = _sd.map(function(s) {
         return '<tr><td><strong style="color:#666">'+dispName(s.student_id, s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
-          '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td>'+
+          '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td><td style="color:#bbb;font-size:11px">'+(s.rating_avg?s.rating_avg+' ⭐ ('+s.rating_total+')':'-')+'</td>'+
           '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center">'+
           '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button>'+
           (s.listed > 0 ? '<button class="btn btn-red btn-sm" onclick="toggleAllSeller('+s.student_id+',false,\''+esc(s.name)+'\')">📌 全部下架</button>' : '')+

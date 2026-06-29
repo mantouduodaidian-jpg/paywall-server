@@ -796,6 +796,42 @@ app.delete('/api/marketplace/promotions/:id', fullAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Ratings API ======
+app.post('/api/marketplace/ratings', express.json(), async (req, res) => {
+  try {
+    const { product_id, from_student_id, to_student_id, score, comment } = req.body;
+    if (!product_id || !from_student_id || !to_student_id || !score) return res.status(400).json({ error: '参数不足' });
+    if (score < 1 || score > 5) return res.status(400).json({ error: '评分需1-5' });
+    if (from_student_id === to_student_id) return res.status(400).json({ error: '不能给自己评分' });
+    // Verify trade was completed
+    const r = await fetch(SB('products?id=eq.'+product_id+'&select=trade_status,trade_buyer_id,owner_student_id'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const p = Array.isArray(d) ? d[0] : null;
+    if (!p || p.trade_status !== 'completed') return res.status(400).json({ error: '交易未完成' });
+    if (p.trade_buyer_id !== from_student_id && p.owner_student_id !== from_student_id) return res.status(403).json({ error: '不是交易参与方' });
+    // Check duplicate
+    const chk = await fetch(SB('ratings?product_id=eq.'+product_id+'&from_student_id=eq.'+encodeURIComponent(from_student_id)+'&select=id'), { headers: SB_HEADERS });
+    const chkD = await chk.json();
+    if (Array.isArray(chkD) && chkD.length) return res.status(400).json({ error: '已评价过' });
+    // Save
+    const ins = await fetch(SB('ratings'), { method: 'POST', headers: SB_HEADERS2, body: JSON.stringify({ product_id, from_student_id, to_student_id, score, comment: comment||'', created_at: new Date().toISOString() }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/ratings/stats', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    const r = await fetch(SB('ratings?to_student_id=eq.'+encodeURIComponent(student_id)+'&select=score'), { headers: SB_HEADERS });
+    const d = await r.json();
+    const arr = Array.isArray(d) ? d : [];
+    const total = arr.length;
+    const avg = total ? (arr.reduce((s, x) => s + x.score, 0) / total) : 0;
+    res.json({ total, avg: Math.round(avg * 10) / 10, scores: arr });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Campus Wall API ======
 app.post('/api/wall/posts', express.json(), async (req, res) => {
   try {
@@ -1025,6 +1061,20 @@ app.get('/api/marketplace/sellers', async (req, res) => {
       sellers[p.owner_student_id].product_ids.push(p.id);
     });
     var sellerList = Object.values(sellers);
+    // Attach rating stats
+    try {
+      var rR = await fetch(SB('ratings?select=to_student_id,score'), { headers: SB_HEADERS });
+      var rData = await rR.json();
+      if (Array.isArray(rData)) {
+        var rMap = {};
+        rData.forEach(function(r) { if (!rMap[r.to_student_id]) rMap[r.to_student_id] = []; rMap[r.to_student_id].push(r.score); });
+        sellerList.forEach(function(s) {
+          var scores = rMap[s.student_id];
+          if (scores && scores.length) { s.rating_total = scores.length; s.rating_avg = Math.round(scores.reduce(function(a,b){return a+b;},0) / scores.length * 10) / 10; }
+          else { s.rating_total = 0; s.rating_avg = 0; }
+        });
+      }
+    } catch(e) {}
     // Attach muted status from verifications
     try {
       var vR = await fetch(SB('verifications?select=student_id,status'+schoolFilter), { headers: SB_HEADERS });
