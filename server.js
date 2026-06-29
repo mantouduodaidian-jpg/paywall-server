@@ -508,7 +508,7 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -825,6 +825,36 @@ app.get('/api/marketplace/reviews', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Credit Score API ======
+app.get("/api/marketplace/credit", async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    let url = SB("verifications?select=student_id,credit_score&status=eq.approved");
+    if (student_id) url = SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=student_id,credit_score");
+    const r = await fetch(url, { headers: SB_HEADERS });
+    const d = await r.json();
+    const arr = Array.isArray(d) ? d : [];
+    var map = {};
+    arr.forEach(function(v){ if(v.student_id) map[v.student_id] = v.credit_score || 80; });
+    res.json(student_id ? (arr[0]||{credit_score:80}) : map);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, res) => {
+  try {
+    const { student_id, delta, reason } = req.body;
+    if (!student_id || !delta) return res.status(400).json({ error: "参数不足" });
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,credit_score"), { headers: SB_HEADERS });
+    const d = await r.json();
+    const v = Array.isArray(d) ? d[0] : null;
+    if (!v) return res.status(404).json({ error: "用户不存在" });
+    var newScore = Math.max(0, Math.min(100, (v.credit_score||80) + delta));
+    await fetch(SB("verifications?id=eq."+v.id), { method: "PATCH", headers: SB_HEADERS2, body: JSON.stringify({ credit_score: newScore }) });
+    addLog("credit_update", "verification", student_id, (delta>0?"+":"")+delta+" 原因:"+(reason||""));
+    res.json({ ok: true, credit_score: newScore });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Campus Wall API ======
 app.post('/api/wall/posts', express.json(), async (req, res) => {
   try {
@@ -1069,9 +1099,9 @@ app.get('/api/marketplace/sellers', async (req, res) => {
       var vR = await fetch(SB('verifications?select=student_id,status'+schoolFilter), { headers: SB_HEADERS });
       var vData = await vR.json();
       if (Array.isArray(vData)) {
-        var vMap = {};
-        vData.forEach(function(v) { vMap[v.student_id] = v.status; });
-        sellerList.forEach(function(s) { s.status = vMap[s.student_id] || 'approved'; });
+        var vMap = {}, cMap = {};
+        vData.forEach(function(v) { vMap[v.student_id] = v.status; if (v.credit_score) cMap[v.student_id] = v.credit_score; });
+        sellerList.forEach(function(s) { s.status = vMap[s.student_id] || 'approved'; s.credit_score = cMap[s.student_id] || 80; });
       }
     } catch(e) {}
     res.json(sellerList);

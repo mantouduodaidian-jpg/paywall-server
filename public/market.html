@@ -1065,7 +1065,7 @@ async function showDetail(id) {
       (!p.sold && currentUser && p.owner_student_id !== currentUser.student_id ? '<button class="contact" onclick="hideDetail();openChat('+p.id+',\''+(p.owner_student_id||'unknown')+'\',\''+esc(ownerDisplayName(p))+'\',\''+esc(p.title)+'\')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 10a2 2 0 0 1-2 2H5l-3 2V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z"/></svg> 联系卖家</button>'+(p.trade_buyer_id===currentUser.student_id?'<button class="contact" style="background:rgba(0,0,0,.04);color:rgba(0,0,0,.25);border-color:rgba(0,0,0,.06);cursor:default">已请求</button>':'<button class="contact" style="background:#fbbf24" onclick="hideDetail();quickRequest('+p.id+')"><svg viewBox="0 0 18 18" width="16" height="16" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="12" height="11" rx="1.5"/><path d="M6 5V3a3 3 0 0 1 6 0v2"/></svg> 我想交易</button>') : '')+
       '<button class="close" onclick="hideDetail()">关闭</button>'+
       (currentUser && p.owner_student_id === currentUser.student_id && p.listed !== false && !p.sold ? '<button class="close" onclick="hideDetail();myListToggle('+p.id+')" style="color:#ef4444"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 8h12"/></svg> 下架</button>' : '')+(currentUser && p.owner_student_id === currentUser.student_id && p.listed === false && p.reject_reason==='owner_delisted' ? '<button class="contact" onclick="hideDetail();ownerRelist('+p.id+')"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg> 上架</button>' : '')
-+(currentUser && p.owner_student_id === currentUser.student_id && (p.listed === false || p.status === 'rejected') ? '<button class="close" onclick="hideDetail();editMyProduct('+p.id+')" style="color:#4e9e80"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M12.5 2.5a1.5 1.5 0 0 1 2 2l-9 9L3 13l.5-2.5z"/></svg> 编辑</button>' : '')+
++(currentUser && p.owner_student_id === currentUser.student_id && p.status !== 'sold' ? '<button class="close" onclick="hideDetail();editMyProduct('+p.id+')" style="color:#4e9e80"><svg viewBox="0 0 16 16" width="14" height="14" style="vertical-align:middle;margin-right:2px" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M12.5 2.5a1.5 1.5 0 0 1 2 2l-9 9L3 13l.5-2.5z"/></svg> 编辑</button>' : '')+
       (p.owner_student_id ? '<div style="margin-top:8px"><a href="#" onclick="hideDetail();viewSellerProducts(\''+p.owner_student_id+'\',\''+esc(ownerDisplayName(p))+'\');return false" style="font-size:12px;color:rgba(52,211,153,.5);text-decoration:none"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="7" r="4" fill="none" stroke="#34d399" stroke-width="1.5"/></svg> 查看 '+esc(ownerDisplayName(p))+' 的其他商品</a></div>' : '')+
       '</div>'+
       '<div class="report-link" onclick="hideDetail();showReport('+p.id+')">🚨 举报</div></div>';
@@ -1863,7 +1863,7 @@ function startChatPoll() {
         // Refresh trade buttons on new messages
         if (arr.length && chatProductId) fetch('/api/marketplace/products/'+chatProductId).then(function(r){return r.json();}).then(function(p){updateTradeButtons(p);}).catch(function(){});
       }).catch(function(){});
-  }, 1000);
+  }, 2000);
 }
 function stopChatPoll() {
   if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
@@ -1982,7 +1982,7 @@ function startProductPoll() {
         if (lastCount > 0 && total !== lastCount) { load(); }
         lastCount = total;
       }).catch(function(){});
-  }, 10000);
+  }, 30000);
 }
 
 
