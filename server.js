@@ -2082,6 +2082,25 @@ app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async
 
 const PORT = process.env.PORT || 3456;
 
+// ====== Chat Image Proxy ======
+app.get("/api/chat-image/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).end();
+    const r = await fetch(SB("messages?id=eq."+id+"&select=content"), { headers: SB_HEADERS });
+    const d = await r.json();
+    const msg = Array.isArray(d) ? d[0] : null;
+    if (!msg || !msg.content) return res.status(404).end();
+    var parts = msg.content.split("[img]");
+    if (parts.length < 2) return res.status(404).end();
+    var b64 = parts[1];
+    if (b64.startsWith("data:image")) b64 = b64.split(",")[1] || b64;
+    var buf = Buffer.from(b64.trim(), "base64");
+    res.set({"Content-Type": "image/jpeg", "Content-Length": buf.length, "Cache-Control": "public, max-age=86400"});
+    res.end(buf);
+  } catch(e) { res.status(500).end(); }
+});
+
 // ====== WebSocket Server ======
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
