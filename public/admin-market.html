@@ -1732,6 +1732,35 @@ async function loadTransactions() {
     }).join('');
   } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
 }
+async function loadReviews() {
+  try {
+    const r = await apiFetch('/api/marketplace/reviews');
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    var el = document.getElementById('reviewList');
+    document.getElementById('reviewCount').textContent = arr.length;
+    if (!arr.length) { el.innerHTML = '<div class="empty">暂无评价</div>'; return; }
+    el.innerHTML = arr.map(function(rv){
+      var tags = rv.tags && rv.tags.length ? rv.tags.map(function(t){ return '<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:rgba(78,158,128,.08);color:#4e9e80;font-size:10px;margin:1px">'+t+'</span>'; }).join('') : '';
+      var imgs = (rv.images && rv.images.length) ? '<div style="display:flex;gap:4px;margin-top:4px">'+rv.images.map(function(img){ return '<img src="'+esc(img)+'" style="width:50px;height:50px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="document.getElementById(\'reviewImgViewer\').src=this.src;document.getElementById(\'reviewImgModal\').classList.add(\'show\')">'; }).join('')+'</div>' : '';
+      return '<div style="padding:12px;border-bottom:1px solid rgba(0,0,0,.04)">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
+        '<span style="font-size:11px;color:#999">商品 #'+rv.product_id+'</span>' +
+        '<span style="font-size:10px;color:#ccc">'+fmtDate(rv.created_at)+'</span></div>' +
+        '<div style="margin-bottom:4px">'+tags+'</div>' +
+        '<div style="font-size:12px;color:rgba(0,0,0,.45);margin-bottom:2px">买家: '+esc(rv.buyer_id)+' → 卖家: '+esc(rv.seller_id)+'</div>' +
+        '<div style="font-size:13px;color:#333">'+esc(rv.reason)+'</div>' +
+        imgs + '</div>';
+    }).join('');
+  } catch(e) { document.getElementById('reviewList').innerHTML = '<div class="empty">加载失败</div>'; }
+}
+// Add review image viewer modal
+var _rvModal = document.createElement('div');
+_rvModal.className = 'modal-overlay'; _rvModal.id = 'reviewImgModal';
+_rvModal.onclick = function(e) { if (e.target === this) this.classList.remove('show'); };
+_rvModal.innerHTML = '<div style="max-width:600px;margin:60px auto;text-align:center"><img id="reviewImgViewer" style="max-width:100%;max-height:70vh;border-radius:8px"><div class="btns" style="margin-top:8px"><button class="btn-ghost" onclick="document.getElementById(\'reviewImgModal\').classList.remove(\'show\')">关闭</button></div></div>';
+document.body.appendChild(_rvModal);
+
 async function markTx(id, status) {
   if (status === 'paid' && !confirm('确认已转账给卖家？')) return;
   if (status === 'failed' && !confirm('标记为转账失败？')) return;
