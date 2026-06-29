@@ -1708,7 +1708,7 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
 });
 
 // ====== Reviews API ======
-const REVIEW_TAGS = ['发货速度快', '商品与描述一致', '包装完好', '沟通态度好', '商品有瑕疵', '发货慢', '描述不符', '沟通不愉快'];
+const REVIEW_TAGS = ['商品与描述一致', '沟通态度好', '准时到达', '商品完好', '价格合理', '交易顺利', '与描述不符', '沟通不愉快'];
 app.post('/api/marketplace/reviews', express.json({ limit: '10mb' }), async (req, res) => {
   try {
     const { product_id, buyer_id, seller_id, tags, reason, images } = req.body;
