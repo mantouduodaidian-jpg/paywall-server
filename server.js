@@ -2015,7 +2015,7 @@ function addSchoolFilter(url, req) {
 app.get('/api/marketplace/transactions', schoolScope, async (req, res) => {
   try {
     var sf = req.adminSchool ? '&school=eq.'+req.adminSchool : '';
-    const r = await fetch(SB('products?payment_status=in.(pending,paid)&select=id,title,price,owner_name,owner_student_id,trade_buyer_name,trade_buyer_id,trade_status,payment_status,created_at'+sf+'&order=created_at.desc'), { headers: SB_HEADERS });
+    const r = await fetch(SB('products?payment_status=in.(pending,paid)&select=id,title,price,owner_name,owner_student_id,trade_buyer_name,trade_buyer_id,trade_status,payment_status,created_at,school'+sf+'&order=created_at.desc'), { headers: SB_HEADERS });
     let data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
