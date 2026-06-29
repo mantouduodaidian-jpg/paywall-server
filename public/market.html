@@ -1222,6 +1222,7 @@ function renderLoggedOut() {
   localStorage.removeItem('marketUser');
   document.getElementById('chatBtn').style.display = 'none';
   document.getElementById('chatPanel').classList.remove('show');
+  document.getElementById('chatBackdrop').classList.remove('show');
 }
 
 function showLogin(){document.getElementById('loginOverlay').classList.add('show')}
@@ -1520,6 +1521,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   }
   document.getElementById('chatPanel').classList.add('show');
   document.getElementById('chatBtn').style.display = 'none';
+  document.getElementById('chatBackdrop').classList.add('show');
   document.getElementById('chatConvs').style.display = 'none';
   document.getElementById('chatConv').classList.add('show');
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
