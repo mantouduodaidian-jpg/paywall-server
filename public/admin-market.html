@@ -511,7 +511,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadTransactions()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'txCb')"></th><th>ID</th><th>商品</th><th>金额</th><th>卖家</th><th>买家</th><th>成交时间</th><th>转账状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="txTbody"></tbody></table><div id="txPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'txCb')"></th><th>ID</th><th>商品</th><th>金额</th><th>学校</th><th>卖家</th><th>买家</th><th>成交时间</th><th>转账状态</th><th style="text-align:center">操作</th></tr></thead><tbody id="txTbody"></tbody></table><div id="txPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1711,7 +1711,7 @@ async function loadTransactions() {
     const f = document.getElementById('txFilter').value;
     let filtered = f ? arr.filter(function(t) { return (t.payment_status||'pending') === f; }) : arr;
     const tbody = document.getElementById('txTbody');
-    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty">暂无交易记录</div></td></tr>'; return; }
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">暂无交易记录</div></td></tr>'; return; }
     tbody.innerHTML = filtered.map(function(t) {
       var status = t.payment_status || 'pending';
       var statusMap = {pending:'待转账',paid:'已转账',failed:'转账失败'};
@@ -1720,6 +1720,7 @@ async function loadTransactions() {
       return '<tr><td><input type="checkbox" class="txCb" value="'+t.id+'"></td><td style="color:#ccc">'+t.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</td>'+
         '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(2)+'</td>'+
+        '<td style="color:#999;font-size:10px">'+schoolName(t.school)+'</td>'+
         '<td style="color:#555">'+dispName(t.owner_student_id, t.owner_name)+'</td>'+
         '<td style="color:#555">'+esc(t.trade_buyer_name||t.trade_buyer_id||'-')+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(t.created_at)+'</td>'+
@@ -1729,7 +1730,7 @@ async function loadTransactions() {
           (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">🔄 重试转账</button>':'')+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
 }
 async function markTx(id, status) {
   if (status === 'paid' && !confirm('确认已转账给卖家？')) return;
