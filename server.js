@@ -1287,7 +1287,7 @@ app.post('/api/marketplace/announcements', schoolScope, express.json(), async (r
   try {
     const { title, content } = req.body;
     if (!title) return res.status(400).json({ error: 'title required' });
-    const school = req.adminSchool || '';
+    const school = req.body.school || req.adminSchool || '';
     const r = await fetch(SB('announcements'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify({ title, content: content||'', active: true, school })
