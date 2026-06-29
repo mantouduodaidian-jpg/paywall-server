@@ -568,6 +568,7 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
       rentPending: arr(products).filter(p => p.status === 'pending' && p.item_type === 'rent').length,
       approved: arr(products).filter(p => p.status === 'approved').length,
       listed: arr(products).filter(p => p.listed !== false).length,
+      txPending: arr(products).filter(p => p.payment_status === "pending").length,
       verTotal: arr(verifications).length,
       verPending: arr(verifications).filter(v => v.status === 'pending').length,
       verApproved: arr(verifications).filter(v => v.status === 'approved').length,
