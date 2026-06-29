@@ -943,6 +943,18 @@ app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Beta check API ======
+var BETA_PASSWORD = process.env.BETA_PASSWORD || '';
+app.post('/api/marketplace/beta-check', express.json(), (req, res) => {
+  if (!BETA_PASSWORD) return res.json({ ok: true, beta: false });
+  if (req.body.password === BETA_PASSWORD) return res.json({ ok: true, beta: true });
+  res.json({ ok: false, msg: '内测密码错误' });
+});
+app.post('/api/admin/beta-password', anyAdmin, express.json(), (req, res) => {
+  if (req.body.password) { BETA_PASSWORD = req.body.password; res.json({ ok: true, password: BETA_PASSWORD }); }
+  else res.json({ ok: false, error: 'password required' });
+});
+
 // ====== Login API ======
 app.post('/api/marketplace/login', express.json(), async (req, res) => {
   try {
