@@ -2061,7 +2061,10 @@ wss.on('connection', (ws, req) => {
   let isAdmin = false;
   ws.on('message', async (raw) => {
     try {
-      const msg = JSON.parse(raw.toString());
+      if (!raw || !raw.toString().trim()) return;
+      var rawStr = (raw && raw.toString && raw.toString().trim()) || '';
+      if (!rawStr || rawStr === 'undefined' || rawStr === 'null') return;
+      const msg = JSON.parse(rawStr);
       if (msg.type === 'auth' && msg.student_id) {
         userId = msg.student_id;
         onlineUsers.set(userId, ws);
