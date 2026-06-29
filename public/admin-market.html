@@ -1930,7 +1930,7 @@ async function delSellerAccount(sid, name) {
 }
 
 async function muteSeller(sid, name) {
-  if (!await showConfirm('确认禁言「'+name+'」？该用户可登录聊天，但无法发布商品。')) return;
+  if (!await showConfirm('确认禁言「'+name+'」？该用户可发布商品，但无法发送消息。')) return;
   await apiFetch('/api/marketplace/sellers/mute', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,action:'mute',reason:'被管理员禁言'})});
   toast('🔇 已禁言'); loadSellers();
 }
