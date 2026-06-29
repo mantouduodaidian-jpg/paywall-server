@@ -1469,7 +1469,7 @@ function openChat(productId, sellerStudentId, sellerName, productTitle) {
   document.getElementById('chatMsgs').innerHTML = '<div style="text-align:center;padding:20px;color:rgba(0,0,0,.15);font-size:12px">加载中...</div>';
   var _dispName = _nickCache && sellerStudentId && sellerStudentId.indexOf("kefu_") !== 0 && _nickCache[sellerStudentId] ? _nickCache[sellerStudentId] : "匿名卖家"; document.getElementById("chatConvLabel").textContent = "💬 " + ((sellerStudentId||"").indexOf("kefu_") === 0 ? (sellerName||"客服") : _dispName);
   // Show nickname (realname) in header if cache available
-  if (_nickCache && sellerStudentId && sellerStudentId.indexOf("kefu_") !== 0) { var _nk = _nickCache[sellerStudentId]; var _gen = _nickCache._gender&&_nickCache._gender[sellerStudentId]; var _gs = _gen ? ({male:"♂️",female:"♀️",男:"♂️",女:"♀️"}[_gen]||"") : ""; if (_nk) document.getElementById("chatConvLabel").textContent = "💬 " + _nk + (_gs ? " " + _gs : ""); }
+  if (_nickCache && sellerStudentId && sellerStudentId.indexOf("kefu_") !== 0 && _nickCache[sellerStudentId]) document.getElementById("chatConvLabel").textContent = "💬 " + _nickCache[sellerStudentId]
   startChatPoll();
   // Load messages immediately (no setTimeout)
   fetch('/api/marketplace/messages?student_id='+currentUser.student_id+'&other_student_id='+sellerStudentId)
