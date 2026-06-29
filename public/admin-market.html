@@ -1720,7 +1720,7 @@ async function loadTransactions() {
       return '<tr><td><input type="checkbox" class="txCb" value="'+t.id+'"></td><td style="color:#ccc">'+t.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</td>'+
         '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(2)+'</td>'+
-        '<td style="color:#999;font-size:10px">'+schoolName(t.school)+'</td>'+
+        '<td style="color:#999;font-size:10px">'+(t.school?schoolName(t.school):'-')+'</td>'+
         '<td style="color:#555">'+dispName(t.owner_student_id, t.owner_name)+'</td>'+
         '<td style="color:#555">'+esc(t.trade_buyer_name||t.trade_buyer_id||'-')+'</td>'+
         '<td style="color:#ccc;font-size:10px">'+fmtDate(t.created_at)+'</td>'+
