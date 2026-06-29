@@ -1233,10 +1233,10 @@ async function applyVerify(){
   const btn=document.querySelector('#verifyOverlay .submit');
   btn.textContent='⏳';btn.disabled=true;
   try{
-    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:_cardImage||'',payment_qr:_paymentQR||''})});
+    const r=await fetch('/api/marketplace/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,student_id:s,phone:p,gender:document.getElementById('vGender').value,nickname:document.getElementById('vNickname').value.trim(),school:document.getElementById('vSchool').value,image:_cardImage||''})});
     const d=await r.json();
     btn.textContent='提交认证';btn.disabled=false;
-    if(d.ok){notify(d.msg, '✅');hideVerify();_cardImage='';_paymentQR='';document.getElementById('vCardName').textContent='';document.getElementById('vQRName').textContent='';}
+    if(d.ok){notify(d.msg, '✅');hideVerify();_cardImage='';document.getElementById('vCardName').textContent='';}
     else notify(d.msg||'提交失败', '❌');
   }catch(e){btn.textContent='提交认证';btn.disabled=false;notify('提交失败', '❌');}
 }
@@ -1266,7 +1266,7 @@ const CAT_ICONS_EMOJI = {
 
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
 
-// ====== Student Card Upload ======
+// ====== Student Card Upload ======
 _cardImage = '';
 
 function compressImage(file, cb) {
