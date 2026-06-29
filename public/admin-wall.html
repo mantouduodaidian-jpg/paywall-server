@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>校园墙管理 - 二豆</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color:#4a4a4a;min-height:100vh}
+.login-gate{position:fixed;inset:0;background:#f7f3ea;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:#fff;border-radius:20px;padding:48px;width:340px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.04)}
+.login-box h1{font-size:22px;color:#4e9e80;margin-bottom:4px}
+.login-box .sub{color:#aaa;font-size:12px;margin-bottom:24px}
+.login-box input{width:100%;padding:14px 18px;border-radius:12px;border:1px solid rgba(0,0,0,.06);background:#fafafa;font-size:15px;outline:none;margin-bottom:14px}
+.login-box input:focus{border-color:#bce0cc}
+.login-box .btn{width:100%;padding:14px;border:none;border-radius:12px;background:#60b88e;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+.app{display:none;max-width:1000px;margin:0 auto;padding:20px}
+.app.show{display:block}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;background:#fff;border-radius:14px;padding:14px 20px;border:1px solid rgba(0,0,0,.04)}
+.header h1{font-size:18px;color:#4e9e80}
+.header .actions{display:flex;gap:8px}
+.header .actions button{padding:8px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.toolbar input,.toolbar select{padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#fafafa;font-size:12px;outline:none}
+.toolbar button{padding:8px 14px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.table-wrap{overflow-x:auto;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,.04)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:rgba(78,158,128,.04);color:#4e9e80;font-weight:600;padding:10px 8px;text-align:left;white-space:nowrap;font-size:11px}
+td{padding:8px;border-bottom:1px solid rgba(0,0,0,.03);color:#555;vertical-align:middle}
+tr:hover td{background:#f8fcf9}
+.empty{text-align:center;padding:40px;color:rgba(0,0,0,.12);font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.badge-green{background:rgba(52,211,153,.1);color:#34d399}
+.badge-yellow{background:rgba(251,191,36,.1);color:#fbbf24}
+.badge-red{background:rgba(239,68,68,.1);color:#ef4444}
+.badge-gray{background:rgba(0,0,0,.05);color:rgba(0,0,0,.25)}
+.btn{display:inline-flex;align-items:center;gap:3px;padding:5px 10px;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all.1s}
+.btn-green{background:rgba(52,211,153,.1);color:#34d399}
+.btn-red{background:rgba(239,68,68,.08);color:#ef4444}
+.btn-yellow{background:rgba(251,191,36,.08);color:#d4a030}
+.btn-ghost{background:rgba(0,0,0,.03);color:rgba(0,0,0,.3)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;overflow-y:auto;padding:20px}
+.modal-overlay.show{display:block}
+.modal{background:#fff;border-radius:16px;max-width:400px;margin:60px auto;padding:24px}
+.modal h2{font-size:15px;color:#333;margin-bottom:14px}
+.modal select,.modal textarea{width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);font-size:13px;margin-bottom:10px;font-family:inherit;outline:none}
+.modal textarea{min-height:80px;resize:vertical}
+.modal .btns{display:flex;gap:8px}
+.modal .btns button{flex:1;padding:10px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+</style>
+</head>
+<body>
+
+<div class="login-gate" id="loginGate">
+  <div class="login-box">
+    <h1>📢 校园墙</h1>
+    <div class="sub">管理后台 · 输入密码登录</div>
+    <input type="password" id="loginPwd" placeholder="管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="loginError" style="color:#e74c3c;font-size:12px;display:none;margin-bottom:10px">密码错误</div>
+    <button class="btn" onclick="doLogin()">登录</button>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <div class="header">
+    <h1>📢 校园墙管理</h1>
+    <div class="actions"><button class="btn btn-ghost" onclick="logout()">退出</button></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="wallSearch" placeholder="搜索标题/发布人..." onkeydown="if(event.key==='Enter')loadWall()">
+    <select id="wallStatus" onchange="loadWall()"><option value="">全部</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
+    <select id="wallType" onchange="loadWall()"><option value="">全部类型</option><option value="post">帖子</option><option value="promotion">推广</option></select>
+    <button class="btn btn-ghost" onclick="loadWall()">🔄 刷新</button>
+  </div>
+
+  <div class="table-wrap">
+    <table><thead><tr><th>ID</th><th>标题</th><th>内容</th><th>类型</th><th>发布人</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="wallTbody"><tr><td colspan="8"><div class="empty">加载中...</div></td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rejectModal" onclick="if(event.target===this)closeReject()">
+  <div class="modal"><h2>✕ 拒绝理由</h2>
+    <select id="rejectReason"><option>内容不实</option><option>违规内容</option><option>广告推广</option><option>重复发布</option><option>其他</option></select>
+    <textarea id="rejectDetail" placeholder="补充说明（选填）"></textarea>
+    <div class="btns"><button class="btn btn-red" onclick="confirmReject()">✕ 拒绝</button><button class="btn-ghost" onclick="closeReject()">取消</button></div>
+  </div>
+</div>
+
+<script>
+var API = 'https://paywall-server.onrender.com';
+var _token = localStorage.getItem('wallAdminToken') || '';
+var _rejectId = null;
+
+if (_token) { document.getElementById('app').classList.add('show'); document.getElementById('loginGate').style.display = 'none'; loadWall(); }
+
+function doLogin() {
+  var pwd = document.getElementById('loginPwd').value;
+  fetch(API + '/api/wall/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
+    .then(function(r){return r.json();}).then(function(d){
+      if (d.ok) {
+        _token = d.token;
+        localStorage.setItem('wallAdminToken', d.token);
+        document.getElementById('app').classList.add('show');
+        document.getElementById('loginGate').style.display = 'none';
+        loadWall();
+      } else {
+        document.getElementById('loginError').style.display = '';
+      }
+    }).catch(function(){ document.getElementById('loginError').style.display = 'block'; document.getElementById('loginError').textContent = '网络错误'; });
+}
+function logout() { _token = ''; localStorage.removeItem('wallAdminToken'); location.reload(); }
+
+function apiFetch(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  if (_token) opts.headers['Authorization'] = 'Bearer ' + _token;
+  return fetch(API + url, opts).then(function(r){ if (r.status === 401) { logout(); throw new Error('未授权'); } return r; });
+}
+
+function loadWall() {
+  var sf = document.getElementById('wallStatus').value;
+  var tf = document.getElementById('wallType').value;
+  var search = document.getElementById('wallSearch').value.trim();
+  var url = '/api/wall/admin/posts?';
+  if (sf) url += '&status=' + sf;
+  if (tf) url += '&type=' + tf;
+  if (search) url += '&search=' + encodeURIComponent(search);
+  apiFetch(url).then(function(r){return r.json();}).then(function(data){
+    var arr = Array.isArray(data) ? data : [];
+    var tbody = document.getElementById('wallTbody');
+    if (!arr.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty">暂无帖子</div></td></tr>'; return; }
+    tbody.innerHTML = arr.map(function(p) {
+      var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
+      var st = p.status==='approved'?'已通过':p.status==='rejected'?'未通过':'待审核';
+      var tp = p.type==='promotion'?'<span style="color:#fbbf24;font-weight:600">🎁 推广</span>':'📄 帖子';
+      return '<tr><td style="color:#ccc">'+p.id+'</td>'+
+        '<td style="max-width:130px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
+        '<td style="color:#bbb;font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis">'+esc(p.content||'')+'</td>'+
+        '<td>'+tp+'</td>'+
+        '<td style="color:#bbb">'+esc(p.author_name||'-')+'</td>'+
+        '<td><span class="badge '+sc+'">'+st+'</span></td>'+
+        '<td style="color:#ccc;font-size:11px">'+fmtDate(p.created_at)+'</td>'+
+        '<td style="text-align:center">'+
+          (p.status==='pending'?'<button class="btn btn-green" onclick="approve('+p.id+')">✅ 通过</button><button class="btn btn-red" onclick="showReject('+p.id+')">✕ 拒绝</button>':'')+
+          (p.status==='approved'?'<button class="btn btn-yellow" onclick="reject('+p.id+')">✕ 下架</button>':'')+
+          '<button class="btn btn-ghost" onclick="del('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
+        '</td></tr>';
+    }).join('');
+  }).catch(function(){ document.getElementById('wallTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; });
+}
+
+function approve(id) {
+  apiFetch('/api/wall/admin/posts/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})}).then(function(){ loadWall(); });
+}
+function showReject(id) { _rejectId = id; document.getElementById('rejectModal').classList.add('show'); }
+function reject(id) {
+  apiFetch('/api/wall/admin/posts/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',reject_reason:'管理员下架'})}).then(function(){ loadWall(); });
+}
+function confirmReject() {
+  var reason = document.getElementById('rejectReason').value;
+  var detail = document.getElementById('rejectDetail').value.trim();
+  apiFetch('/api/wall/admin/posts/'+_rejectId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',reject_reason: reason + (detail?': '+detail:'')})}).then(function(){ closeReject(); loadWall(); });
+}
+function closeReject() { _rejectId = null; document.getElementById('rejectModal').classList.remove('show'); }
+function del(id, title) {
+  if (!confirm('删除「'+title+'」？')) return;
+  apiFetch('/api/wall/admin/posts/'+id, {method:'DELETE'}).then(function(){ loadWall(); });
+}
+function esc(s) { if (!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtDate(t) { if (!t) return ''; var d=new Date(t); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+</script>
+</body>
+</html>

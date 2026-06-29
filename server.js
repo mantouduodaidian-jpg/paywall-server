@@ -853,6 +853,14 @@ app.delete('/api/wall/admin/posts/:id', schoolScope, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ====== Wall Admin Login ======
+app.post("/api/wall/admin/login", express.json(), (req, res) => {
+  const { password } = req.body;
+  if (password === WALL_ADMIN_PASSWORD) { var t = randomBytes(16).toString("hex"); wallAdminTokens.add(t); return res.json({ ok: true, token: t }); }
+  res.status(401).json({ error: "密码错误" });
+});
+
 // ====== Phone-only (guest) login ======
 app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
   try {
@@ -1847,6 +1855,8 @@ app.delete('/api/expenses/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+const WALL_ADMIN_PASSWORD = process.env.WALL_ADMIN_PASSWORD;
+var wallAdminTokens = new Set();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889X';
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
 const JWT_SECRET = process.env.JWT_SECRET || 'paywall-default-jwt-secret-2024';
@@ -1898,6 +1908,16 @@ function anyAdmin(req, res, next) {
   req.adminRole = sess.role;
   req.adminSchool = sess.school;
   req.adminSchoolName = sess.schoolName;
+  next();
+}
+
+function wallScope(req, res, next) {
+  const auth = req.headers.authorization;
+  if (auth && auth.startsWith("Bearer ") && wallAdminTokens.has(auth.slice(7))) { req.adminRole = "wall_admin"; return next(); }
+  const sess = getAdminSession(req);
+  if (!sess) return res.status(401).json({ ok: false, msg: "未授权" });
+  req.adminRole = sess.role;
+  req.adminSchool = sess.school || req.query.school || null;
   next();
 }
 
