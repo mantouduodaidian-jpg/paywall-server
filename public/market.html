@@ -276,6 +276,7 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
     </span>
     <a href="#" class="dash" id="loginBtn" onclick="showLogin();return false">登录</a>
     <a href="#" class="pub" onclick="if(showLoginForPub())showPub();return false">+ 发布闲置</a>
+    <a href="/campus-wall.html" class="dash" style="text-decoration:none">📢 校园墙</a>
   </div>
 </div>
 
@@ -604,12 +605,6 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
       </label>
       <span id="vCardName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
     </div>
-    <div style="margin-bottom:10px">
-      <label style="display:inline-block;padding:8px 16px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:rgba(0,0,0,.2);color:rgba(0,0,0,.3);font-size:12px;cursor:pointer">📷 上传收款码（微信/支付宝）
-        <input type="file" id="vPaymentQR" accept="image/*" style="display:none" onchange="previewPaymentQR(this)">
-      </label>
-      <span id="vQRName" style="font-size:11px;color:rgba(0,0,0,.2);margin-left:8px"></span>
-    </div>
     <div style="font-size:12px;color:rgba(0,0,0,.15);margin:8px 0">信息仅用于认证，不会公开</div>
     <div class="btns">
       <button class="submit" onclick="applyVerify()">提交认证</button>
@@ -631,7 +626,7 @@ const SCHOOLS = [
 ];
 let sellerFilter = null;
 let reportingProductId = null;
-let _promos, _sellerName, _cardImage, _paymentQR, _uploadedImages;
+let _promos, _sellerName, _cardImage, _uploadedImages;
 
 function updateTypeFilterUI(type) {
   const BASE = 'flex:1;padding:6px;border-radius:8px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;';
@@ -1271,8 +1266,7 @@ const CAT_ICONS_EMOJI = {
 
 function getCatIcon(name) { return CAT_ICONS[name] || CAT_ICONS['其他'] || '📦'; }
 
-// ====== Student Card Upload ======
-_paymentQR = '';
+// ====== Student Card Upload ======
 _cardImage = '';
 
 function compressImage(file, cb) {
