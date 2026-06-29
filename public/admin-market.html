@@ -301,7 +301,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadRentals()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>学校</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table><div id="rentPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'rentCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>租金</th><th>周期</th><th>押金</th><th>分类</th><th>偏好</th><th>学校</th><th>状态</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="rentTbody"></tbody></table><div id="rentPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -378,7 +378,7 @@ tr:hover td{background:#f8fcf9}
         <button class="btn btn-ghost" onclick="loadProds()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table><div id="prodPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+        <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'prodCb')"></th><th>ID</th><th>商品</th><th>图片</th><th>¥</th><th>分类</th><th>偏好</th><th>学校</th><th>状态</th><th>上架</th><th>已售</th><th>卖家</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="prodTbody"></tbody></table><div id="prodPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
       </div>
     </div>
   </div>
@@ -1087,7 +1087,7 @@ async function loadProds() {
     const tbody = document.getElementById('prodTbody');
     var _page = adminPage.prodPagination || 0;
     var _total = f.length;
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">无匹配</div></td></tr>'; renderPageNav('prodPagination',_page,_total,'loadProds'); return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="14"><div class="empty">无匹配</div></td></tr>'; renderPageNav('prodPagination',_page,_total,'loadProds'); return; }
     var _pd = f.slice(_page * ADMIN_PAGE_SIZE, (_page + 1) * ADMIN_PAGE_SIZE);
     tbody.innerHTML = _pd.map(p => {
       const sClass = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
@@ -1099,6 +1099,7 @@ async function loadProds() {
         '<td>'+prodImg+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(2)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':p.gender_pref==='all'?'♂️♀️ 均可':'♂️♀️')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sClass+'">'+(p.status||'pending')+'</span></td>'+
         '<td>'+ (p.listed!==false?'<span class="badge badge-green">上架</span>':'<span class="badge badge-gray">下架</span>') +'</td>'+
@@ -1116,7 +1117,7 @@ async function loadProds() {
         '</span></td></tr>';
     }).join('');
     renderPageNav('prodPagination',_page,_total,'loadProds');
-  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('prodTbody').innerHTML = '<tr><td colspan="14"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 async function approveProd(id) {
@@ -1200,7 +1201,7 @@ async function loadRentals() {
     const tbody = document.getElementById('rentTbody');
     var _page = adminPage.rentPagination || 0;
     var _total = f.length;
-    if (!f.length) { tbody.innerHTML = '<tr><td colspan="13"><div class="empty">暂无租借商品</div></td></tr>'; renderPageNav('rentPagination',_page,_total,'loadRentals'); return; }
+    if (!f.length) { tbody.innerHTML = '<tr><td colspan="14"><div class="empty">暂无租借商品</div></td></tr>'; renderPageNav('rentPagination',_page,_total,'loadRentals'); return; }
     var _pd = f.slice(_page * ADMIN_PAGE_SIZE, (_page + 1) * ADMIN_PAGE_SIZE);
     tbody.innerHTML = _pd.map(function(p) {
       var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
@@ -1215,6 +1216,7 @@ async function loadRentals() {
         '<td style="color:#bbb;font-size:10px">'+(periodMap[p.rent_period]||p.rent_period||'天')+'</td>'+
         '<td style="color:#bbb">¥'+parseFloat(p.deposit||0).toFixed(2)+'</td>'+
         '<td style="color:#bbb;font-size:10px">'+esc(p.category)+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+(p.gender_pref==='male'?'♂️ 仅男生':p.gender_pref==='female'?'♀️ 仅女生':p.gender_pref==='all'?'♂️♀️ 均可':'♂️♀️')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
         '<td><span class="badge '+sc+'">'+(p.status||'pending')+'</span></td>'+
         '<td style="color:#bbb;font-size:10px;max-width:60px;overflow:hidden;text-overflow:ellipsis">'+dispName(p.owner_student_id, p.owner_name)+'</td>'+
@@ -1226,7 +1228,7 @@ async function loadRentals() {
         '</td></tr>';
     }).join('');
     renderPageNav('rentPagination',_page,_total,'loadRentals');
-  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="13"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) { document.getElementById('rentTbody').innerHTML = '<tr><td colspan="14"><div class="empty">加载失败</div></td></tr>'; }
 }
 
 // ====== VERIFICATIONS ======
@@ -1238,7 +1240,7 @@ async function loadVers() {
     const f = document.getElementById('verStatusFilter').value;
     const filtered = f ? arr.filter(v => v.status === f) : arr;
     var _vPage = adminPage.verPagination || 0; var _vTotal = filtered.length;
-    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="13"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
+    if (!filtered.length) { document.getElementById('verTbody').innerHTML = '<tr><td colspan="14"><div class="empty">暂无</div></td></tr>'; renderPageNav('verPagination',_vPage,_vTotal,'loadVers'); return; }
     var _vd = filtered.slice(_vPage * ADMIN_PAGE_SIZE, (_vPage + 1) * ADMIN_PAGE_SIZE);
     document.getElementById('verTbody').innerHTML = _vd.map(v => '<tr><td><input type="checkbox" class="verCb" value="'+v.id+'"></td><td style="color:#ccc">'+v.id+'</td><td>'+esc(v.name)+'</td><td style="color:#bbb;font-size:10px">'+esc(v.nickname||'-')+'</td><td style="color:#bbb;font-size:10px">'+({male:'♂️ 男',female:'♀️ 女',男:'♂️',女:'♀️'}[v.gender]||v.gender||'-')+'</td><td style="color:#999">'+esc(v.student_id)+'</td><td style="color:#bbb">'+esc(v.phone||'-')+'</td>'+
         '<td style="color:#999;font-size:10px">'+schoolName(v.school)+'</td>'+
