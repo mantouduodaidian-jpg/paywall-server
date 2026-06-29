@@ -1504,6 +1504,12 @@ async function resolveReport(id, action) {
 }
 
 // ====== REVIEWS ======
+async function updateCredit(sid, delta) {
+  var reason = prompt("修改理由（选填）:");
+  await apiFetch("/api/marketplace/credit", {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({student_id:sid,delta:delta,reason:reason||""})});
+  toast("✅ 信誉分已更新"); loadReviews();
+}
+
 async function loadReviews() {
   try {
     const r = await apiFetch('/api/admin/reviews');
@@ -1745,7 +1751,8 @@ async function loadReviews() {
     el.innerHTML = arr.map(function(rv){
       var tags = rv.tags && rv.tags.length ? rv.tags.map(function(t){ return '<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:rgba(78,158,128,.08);color:#4e9e80;font-size:10px;margin:1px">'+t+'</span>'; }).join('') : '';
       var imgs = (rv.images && rv.images.length) ? '<div style="display:flex;gap:4px;margin-top:4px">'+rv.images.map(function(img){ return '<img src="'+esc(img)+'" style="width:50px;height:50px;border-radius:4px;object-fit:cover;cursor:pointer" onclick="document.getElementById(\'reviewImgViewer\').src=this.src;document.getElementById(\'reviewImgModal\').classList.add(\'show\')">'; }).join('')+'</div>' : '';
-      return '<div style="padding:12px;border-bottom:1px solid rgba(0,0,0,.04)">' +
+      // CREDIT_BUTTONS
+return '<div style="padding:12px;border-bottom:1px solid rgba(0,0,0,.04)">' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:4px">' +
         '<span style="font-size:11px;color:#999">商品 #'+rv.product_id+'</span>' +
         '<span style="font-size:10px;color:#ccc">'+fmtDate(rv.created_at)+'</span></div>' +
