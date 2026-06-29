@@ -1598,6 +1598,12 @@ function updateChatHeader() {
   }).catch(function(){});
 }
 function updateTradeButtons(p) {
+  // Update chat header with gender
+  var _gen = ({male:'♂️',female:'♀️',男:'♂️',女:'♀️'})[p.owner_gender]||'';
+  if (_gen && p.trade_status && p.trade_status !== 'trading' && chatOtherStudent && (chatOtherStudent === p.owner_student_id || chatOtherStudent === p.trade_buyer_id)) {
+    var label = document.getElementById('chatConvLabel');
+    if (label && label.textContent.indexOf(_gen) < 0) label.textContent = label.textContent + ' ' + _gen;
+  }
   var actions = document.getElementById('tradeActions');
   var status = document.getElementById('tradeStatus');
   var buyerBtn = document.getElementById('tradeBuyer');
