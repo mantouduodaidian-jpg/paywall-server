@@ -1688,6 +1688,30 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Reviews API ======
+const REVIEW_TAGS = ['发货速度快', '商品与描述一致', '包装完好', '沟通态度好', '商品有瑕疵', '发货慢', '描述不符', '沟通不愉快'];
+app.post('/api/marketplace/reviews', express.json({ limit: '10mb' }), async (req, res) => {
+  try {
+    const { product_id, buyer_id, seller_id, tags, reason, images } = req.body;
+    if (!product_id || !tags || !reason) return res.status(400).json({ error: '缺少必填字段' });
+    await fetch(SB('reviews'), {
+      method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id, buyer_id, seller_id: seller_id||'', tags: tags||[], reason, images: images||[], created_at: new Date().toISOString() })
+    });
+    // Notify admin
+    notifyAdmin('new_review', { product_id, tags });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Admin: list reviews
+app.get('/api/admin/reviews', anyAdmin, async (req, res) => {
+  try {
+    const r = await fetch(SB('reviews?order=created_at.desc'), { headers: SB_HEADERS });
+    const data = await r.json();
+    res.json(Array.isArray(data) ? data : []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Messages API ======
 function kefuId(school) { return 'kefu_' + (school || 'admin'); }
 function isKefu(id) { return id && id.startsWith('kefu_'); }

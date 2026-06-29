@@ -250,7 +250,7 @@ tr:hover td{background:#f8fcf9}
     <h1>🛂 管理后台</h1>
     <div class="sub">校园严选 · 二手集市</div>
     <input type="password" id="loginPwd" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')login()">
-    <button class="btn" onclick="login()">进入后台</button>
+    <button class="btn" onclick="login()">进入后台</button><button class="btn btn-ghost btn-sm" onclick="viewReviews('+s.student_id+','+esc(s.name)+')">📝 评价</button>
     <div class="error" id="loginError">密码错误</div>
   </div>
 </div>
@@ -280,6 +280,7 @@ tr:hover td{background:#f8fcf9}
     <div class="tab" data-tab="categories" onclick="switchTab('categories')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><circle cx="7" cy="7" r="1.5" fill="#a7f3d0"/></svg> 分类</div>
     <div class="tab" data-tab="reports" onclick="switchTab('reports')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><line x1="4" y1="22" x2="4" y2="15" stroke="#a7f3d0" stroke-width="1.6" stroke-linecap="round"/></svg> 举报 <span class="badge" id="reportBadge" style="display:none">0</span></div>
     <div class="tab" data-tab="reports" onclick="switchTab('reports')" id="reportBadge" style="display:none">0</span></div>
+    <div class="tab" data-tab="reviews" onclick="switchTab('reviews')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/></svg> 评价 <span class="badge" id="reviewBadge" style="display:none">0</span></div>
     <div class="tab" data-tab="announcements" onclick="switchTab('announcements')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M13.73 21a2 2 0 0 1-3.46 0" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M16 12l-6 3v-6z" fill="url(#g2)" stroke="#a7f3d0" stroke-width=".8"/></svg> 公告</div>
     <div class="tab" data-tab="blocked" onclick="switchTab('blocked')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="9" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><line x1="8" y1="8" x2="16" y2="16" stroke="#a7f3d0" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="8" x2="8" y2="16" stroke="#a7f3d0" stroke-width="1.8" stroke-linecap="round"/></svg> 敏感词</div>
     <div class="tab" data-tab="logs" onclick="switchTab('logs')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M14 2v6h6" fill="none" stroke="#a7f3d0" stroke-width="1"/><line x1="8" y1="12" x2="16" y2="12" stroke="#a7f3d0" stroke-width="1.2"/><line x1="8" y1="16" x2="14" y2="16" stroke="#a7f3d0" stroke-width="1.2"/></svg> 日志</div>
@@ -558,6 +559,13 @@ tr:hover td{background:#f8fcf9}
       </div>
     </div>
   </div>
+  <!-- ===== REVIEWS ===== -->
+  <div class="tab-content" id="tabReviews" style="display:none">
+    <div class="section">
+      <h3>📋 交易评价 <span class="badge" id="reviewCount">0</span></h3>
+      <div class="list" id="reviewList"><div class="empty">暂无评价</div></div>
+    </div>
+  </div>
   <!-- ===== LOGS ===== -->
   <div class="tab-content" id="tabLogs" style="display:none">
     <div class="section">
@@ -593,6 +601,22 @@ tr:hover td{background:#f8fcf9}
     </select>
     <textarea id="wallRejectDetail" placeholder="补充说明（选填）"></textarea>
     <div class="btns"><button class="btn-red" onclick="confirmRejectWall()">✕ 拒绝</button><button class="btn-ghost" onclick="closeRejectWall()">取消</button></div>
+  </div>
+</div>
+
+<!-- Review List Modal -->
+<div class="modal-overlay" id="reviewListModal" onclick="if(event.target===this)closeReviewList()">
+  <div class="modal" style="max-width:500px"><h2 id="reviewListTitle">📝 评价</h2>
+    <div id="reviewListBody" style="max-height:400px;overflow-y:auto"></div>
+    <div class="btns"><button class="btn-ghost" onclick="closeReviewList()">关闭</button></div>
+  </div>
+</div>
+
+<!-- Review List Modal -->
+<div class="modal-overlay" id="reviewListModal" onclick="if(event.target===this)closeReviewList()">
+  <div class="modal" style="max-width:500px"><h2 id="reviewListTitle">📝 评价</h2>
+    <div id="reviewListBody" style="max-height:400px;overflow-y:auto"></div>
+    <div class="btns"><button class="btn-ghost" onclick="closeReviewList()">关闭</button></div>
   </div>
 </div>
 
@@ -875,7 +899,7 @@ autoLogin();
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',wall:'tabWall',transactions:'tabTransactions'};
+  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',reviews:'tabReviews',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',wall:'tabWall',transactions:'tabTransactions'};
   document.getElementById(map[name]).style.display = '';
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
   if (name === 'overview') loadOverview();
@@ -884,6 +908,7 @@ function switchTab(name) {
   else if (name === 'sellers') loadSellers();
   else if (name === 'verifications') loadVers();
   else if (name === 'reports') loadReports();
+  else if (name === 'reviews') loadReviews();
   else if (name === 'categories') loadCats();
   else if (name === 'announcements') loadAnns();
   else if (name === 'blocked') loadBws();
@@ -1476,6 +1501,22 @@ async function resolveReport(id, action) {
   toast(action==='resolved'?'✅ 已处理':'已驳回'); loadReports(); loadOverview();
 }
 
+// ====== REVIEWS ======
+async function loadReviews() {
+  try {
+    const r = await apiFetch('/api/admin/reviews');
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    document.getElementById('reviewCount').textContent = arr.length;
+    document.getElementById('reviewList').innerHTML = !arr.length ? '<div class="empty">暂无评价</div>' :
+      '<table class="table"><thead><tr><th>ID</th><th>商品ID</th><th>买家</th><th>标签</th><th>理由</th><th>图片</th><th>时间</th></tr></thead><tbody>'+
+      arr.map(function(r) {
+        var imgs = Array.isArray(r.images) && r.images.length ? r.images.map(function(s) { return s ? '<img src="'+s+'" style="max-width:60px;max-height:60px;border-radius:4px;margin:2px" loading="lazy">' : ''; }).join('') : '-';
+        return '<tr><td>'+r.id+'</td><td>'+r.product_id+'</td><td>'+esc(r.buyer_id||'')+'</td><td>'+(Array.isArray(r.tags)?r.tags.map(function(t){return '<span class="badge badge-green" style="font-size:9px;margin:1px">'+esc(t)+'</span>';}).join(''):'-')+'</td><td style="max-width:200px">'+esc(r.reason||'')+'</td><td>'+imgs+'</td><td style="font-size:10px;color:#ccc">'+fmtDate(r.created_at)+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e) {}
+}
+
 // ====== ANNOUNCEMENTS ======
 async function loadAnns() {
   try {
@@ -1816,7 +1857,7 @@ async function loadSellers() {
         return '<tr><td><strong style="color:#666">'+dispName(s.student_id, s.name)+'</strong><br><span style="font-size:10px;color:#ccc">'+esc(s.student_id)+'</span></td>'+
           '<td>'+s.total+'</td><td>'+s.active+'</td><td>'+s.listed+'</td><td style="color:#bbb;font-size:11px">'+(s.rating_avg?s.rating_avg+' ⭐ ('+s.rating_total+')':'-')+'</td>'+
           '<td style="text-align:center"><span style="display:flex;gap:4px;justify-content:center">'+
-          '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button><button class="btn btn-ghost btn-sm" onclick="viewReviews('+s.student_id+','+esc(s.name)+')">📝 评价</button>'+
           (s.listed > 0 ? '<button class="btn btn-red btn-sm" onclick="toggleAllSeller('+s.student_id+',false,\''+esc(s.name)+'\')">📌 全部下架</button>' : '')+
           (s.listed === 0 && s.active > 0 ? '<button class="btn btn-green btn-sm" onclick="toggleAllSeller('+s.student_id+',true,\''+esc(s.name)+'\')">📌 全部上架</button>' : '')+
           '<button class="btn btn-red btn-sm" onclick="showBan(\''+s.student_id+'\',\''+esc(s.name)+'\')">🚫 封禁</button>'+(s.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 禁言</button>')+
@@ -1859,6 +1900,26 @@ async function unmuteSeller(sid, name) {
   await apiFetch('/api/marketplace/sellers/mute', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:sid,action:'unmute'})});
   toast('🔇 已解除禁言'); loadSellers();
 }
+
+function viewReviews(sid, name) {
+  document.getElementById("reviewListTitle").textContent = "📝 " + name + " 的评价";
+  document.getElementById("reviewListBody").innerHTML = '<div class="empty">加载中...</div>';
+  document.getElementById("reviewListModal").classList.add("show");
+  apiFetch("/api/marketplace/reviews?seller_id="+encodeURIComponent(sid)).then(function(r){return r.json();}).then(function(data){
+    var arr = Array.isArray(data) ? data : [];
+    if (!arr.length) { document.getElementById("reviewListBody").innerHTML = '<div class="empty">暂无评价</div>'; return; }
+    document.getElementById("reviewListBody").innerHTML = arr.map(function(rv){
+      var tags = rv.tags ? rv.tags.map(function(t){ return '<span style="display:inline-block;padding:1px 6px;border-radius:3px;background:rgba(78,158,128,.08);color:#4e9e80;font-size:10px;margin:1px">'+t+'</span>'; }).join("") : '';
+      var imgs = (rv.images && rv.images.length) ? '<div style="display:flex;gap:4px">'+rv.images.slice(0,3).map(function(img){ return '<img src="'+esc(img)+'" style="width:50px;height:50px;border-radius:4px;object-fit:cover">'; }).join("")+'</div>' : '';
+      return '<div style="padding:10px;border-bottom:1px solid rgba(0,0,0,.04)">' +
+        '<div style="font-size:11px;color:#4e9e80;font-weight:600;margin-bottom:4px">'+tags+'</div>' +
+        '<div style="font-size:12px;color:rgba(0,0,0,.45);margin-bottom:4px">'+esc(rv.reason)+'</div>' +
+        imgs + '</div>';
+    }).join("") + '<div style="text-align:center;padding:6px;font-size:10px;color:rgba(0,0,0,.12)">共'+arr.length+'条评价</div>';
+  }).catch(function(){ document.getElementById("reviewListBody").innerHTML = '<div class="empty">加载失败</div>'; });
+}
+function closeReviewList() { document.getElementById("reviewListModal").classList.remove("show"); }
+
 function filterSeller(sid, name) {
   switchTab('products');
   document.getElementById('prodSearch').value = name;
