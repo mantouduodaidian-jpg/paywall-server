@@ -398,6 +398,34 @@ body{font-family:system-ui,'Microsoft YaHei',sans-serif;background:#f7f3ea;color
   <div class="modal-box" id="detailBox"></div>
 </div>
 
+<!-- Review Modal -->
+<div class="modal-overlay" id="reviewModal" onclick="if(event.target===this)hideReview()">
+  <div class="modal" style="max-width:460px"><h2>📝 评价卖家</h2>
+    <p style="font-size:12px;color:rgba(0,0,0,.2);margin-bottom:12px">选一些标签来描述这次交易吧</p>
+    <div id="reviewTags" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="tag-opt" data-tag="诚信交易">诚信交易</span>
+      <span class="tag-opt" data-tag="发货很快">发货很快</span>
+      <span class="tag-opt" data-tag="描述相符">描述相符</span>
+      <span class="tag-opt" data-tag="沟通愉快">沟通愉快</span>
+      <span class="tag-opt" data-tag="质量不错">质量不错</span>
+      <span class="tag-opt" data-tag="价格合理">价格合理</span>
+    </div>
+    <div style="font-size:11px;color:rgba(0,0,0,.15);margin-bottom:8px">评价理由 *</div>
+    <textarea id="reviewReason" placeholder="请描述你的交易体验..." style="width:100%;min-height:70px;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.06);font-size:13px;font-family:inherit;resize:vertical;margin-bottom:10px"></textarea>
+    <div style="font-size:11px;color:rgba(0,0,0,.15);margin-bottom:6px">图片证据（选填）</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px" id="reviewImgs"></div>
+    <label style="display:inline-block;padding:6px 12px;border-radius:6px;border:1px dashed rgba(0,0,0,.1);font-size:11px;color:rgba(0,0,0,.2);cursor:pointer">+ 添加图片
+      <input type="file" accept="image/*" style="display:none" id="reviewImgInput" onchange="addReviewImg(this)">
+    </label>
+    <div class="btns" style="margin-top:12px"><button class="btn-red" onclick="submitReview()" style="flex:1">📤 提交评价</button><button class="btn-ghost" onclick="hideReview()" style="flex:0">跳过</button></div>
+  </div>
+</div>
+
+<style>
+.tag-opt{display:inline-block;padding:5px 12px;border-radius:6px;font-size:12px;background:rgba(0,0,0,.04);color:rgba(0,0,0,.35);cursor:pointer;transition:all.1s;border:1px solid transparent}
+.tag-opt.selected{background:rgba(78,158,128,.1);color:#4e9e80;border-color:rgba(78,158,128,.2);font-weight:500}
+</style>
+
 <!-- Reject Trade Modal -->
 <div class="modal-overlay" id="rejectTradeModal" onclick="if(event.target===this)closeRejectTrade()">
   <div class="modal"><h2>✕ 拒绝交易</h2>
@@ -793,6 +821,40 @@ async function loadPromos() {
     }
   } catch(e) {}
 }
+var _reviewProductId = 0, _reviewSellerId = '', _reviewSellerName = '', _reviewImgs = [];
+function showReview(pid, sid, name) {
+  _reviewProductId = pid; _reviewSellerId = sid; _reviewSellerName = name; _reviewImgs = [];
+  document.getElementById('reviewReason').value = '';
+  document.getElementById('reviewImgs').innerHTML = '';
+  document.querySelectorAll('.tag-opt').forEach(function(el) { el.classList.remove('selected'); });
+  document.getElementById('reviewModal').classList.add('show');
+}
+function hideReview() { document.getElementById('reviewModal').classList.remove('show'); }
+document.getElementById('reviewTags').addEventListener('click', function(e) {
+  if (e.target.classList.contains('tag-opt')) e.target.classList.toggle('selected');
+});
+function addReviewImg(input) {
+  var file = input.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    _reviewImgs.push(e.target.result);
+    var el = document.getElementById('reviewImgs');
+    el.innerHTML += '<div style="position:relative;width:60px;height:60px"><img src="'+e.target.result+'" style="width:60px;height:60px;border-radius:6px;object-fit:cover"><span onclick="delReviewImg('+ (_reviewImgs.length-1) +')" style="position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:9px;text-align:center;line-height:16px;cursor:pointer">✕</span></div>';
+    input.value = '';
+  };
+  reader.readAsDataURL(file);
+}
+function delReviewImg(i) { _reviewImgs.splice(i,1); var el = document.getElementById('reviewImgs'); el.innerHTML = _reviewImgs.map(function(img,j){ return '<div style="position:relative;width:60px;height:60px"><img src="'+img+'"><span onclick="delReviewImg('+j+')" style="position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:9px;text-align:center;line-height:16px;cursor:pointer">✕</span></div>'; }).join(''); }
+function submitReview() {
+  var tags = Array.from(document.querySelectorAll('.tag-opt.selected')).map(function(el) { return el.dataset.tag; });
+  var reason = document.getElementById('reviewReason').value.trim();
+  if (!tags.length) return alert('请选择至少一个标签');
+  if (!reason) return alert('请填写评价理由');
+  fetch('/api/marketplace/reviews', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:_reviewProductId,buyer_id:currentUser?currentUser.student_id:'',seller_id:_reviewSellerId,tags:tags,reason:reason,images:_reviewImgs})})
+    .then(function(r){return r.json();}).then(function(d){ if(d.ok) notify('✅ 评价已提交'); else notify(d.error||'提交失败','❌'); hideReview(); }).catch(function(){ notify('网络错误','❌'); hideReview(); });
+}
+
+
 function showPromoDetail(idx) {
   var arr = _promos || [];
   var p = arr[idx];
