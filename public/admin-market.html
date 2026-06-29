@@ -284,6 +284,7 @@ tr:hover td{background:#f8fcf9}
     <div class="tab" data-tab="logs" onclick="switchTab('logs')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><path d="M14 2v6h6" fill="none" stroke="#a7f3d0" stroke-width="1"/><line x1="8" y1="12" x2="16" y2="12" stroke="#a7f3d0" stroke-width="1.2"/><line x1="8" y1="16" x2="14" y2="16" stroke="#a7f3d0" stroke-width="1.2"/></svg> 日志</div>
     <div class="tab" data-tab="kefu" onclick="switchTab('kefu')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1.1" stroke-linejoin="round"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="13" x2="13" y2="13" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/></svg> 消息 <span id="kefuBadge" class="badge" style="display:none">0</span></div>
     <div class="tab" data-tab="promotions" onclick="switchTab('promotions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="8" width="20" height="12" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><polyline points="12 4 16 8 8 8" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="6" y1="13" x2="10" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/><line x1="14" y1="13" x2="18" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 周边有礼</div>
+    <div class="tab" data-tab="wall" onclick="switchTab('wall')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="18" height="18" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="3" y1="9" x2="21" y2="9" stroke="#a7f3d0" stroke-width="1.2"/><rect x="6" y="12" width="5" height="5" rx="1" fill="none" stroke="#a7f3d0" stroke-width=".9"/><rect x="13" y="12" width="5" height="5" rx="1" fill="none" stroke="#a7f3d0" stroke-width=".9"/></svg> 校园墙</div>
     <div class="tab" data-tab="transactions" onclick="switchTab('transactions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="4" width="20" height="16" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="2" y1="9" x2="22" y2="9" stroke="#a7f3d0" stroke-width="1.2"/><circle cx="7" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><circle cx="17" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><line x1="10" y1="13" x2="14" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 交易</div>
   </div>
 
@@ -402,7 +403,22 @@ tr:hover td{background:#f8fcf9}
     </div>
   </div>
 
-  <!-- ===== CATEGORIES ===== -->
+  <!-- ===== CAMPUS WALL ===== -->
+<div class="tab-content" id="tabWall" style="display:none">
+  <div class="section">
+    <div class="toolbar">
+      <input type="text" id="wallSearch" placeholder="搜索帖子..." onkeydown="if(event.key==='Enter')loadWall()">
+      <select id="wallStatusFilter" onchange="loadWall()"><option value="">全部状态</option><option value="pending">待审核</option><option value="approved">已通过</option><option value="rejected">已拒绝</option></select>
+      <select id="wallTypeFilter" onchange="loadWall()"><option value="">全部类型</option><option value="post">帖子</option><option value="promotion">推广</option></select>
+      <button class="btn btn-ghost" onclick="loadWall()"><svg viewBox="0 0 24 24" width="12" height="12" style="vertical-align:middle"><path d="M1 4v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'wallCb')"></th><th>ID</th><th>标题</th><th>内容</th><th>类型</th><th>发布人</th><th>学校</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="wallTbody"></tbody></table><div id="wallPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CATEGORIES ===== -->
   <div class="tab-content" id="tabCategories" style="display:none">
     <div class="section">
       <div class="toolbar">
@@ -561,6 +577,21 @@ tr:hover td{background:#f8fcf9}
     <input type="text" id="epQuality" placeholder="新旧程度">
     <textarea id="epDesc" placeholder="描述"></textarea>
     <div class="btns"><button class="btn-green" onclick="saveEditProd()">💾 保存</button><button class="btn-ghost" onclick="closeEditProd()">取消</button></div>
+  </div>
+</div>
+
+<!-- Reject Wall Post Modal -->
+<div class="modal-overlay" id="rejectWallModal" onclick="if(event.target===this)closeRejectWall()">
+  <div class="modal"><h2>✕ 拒绝理由</h2>
+    <select id="wallRejectReason">
+      <option>内容不实</option>
+      <option>违规内容</option>
+      <option>广告推广</option>
+      <option>重复发布</option>
+      <option>其他</option>
+    </select>
+    <textarea id="wallRejectDetail" placeholder="补充说明（选填）"></textarea>
+    <div class="btns"><button class="btn-red" onclick="confirmRejectWall()">✕ 拒绝</button><button class="btn-ghost" onclick="closeRejectWall()">取消</button></div>
   </div>
 </div>
 
@@ -843,7 +874,7 @@ autoLogin();
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',transactions:'tabTransactions'};
+  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',wall:'tabWall',transactions:'tabTransactions'};
   document.getElementById(map[name]).style.display = '';
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
   if (name === 'overview') loadOverview();
@@ -858,7 +889,8 @@ function switchTab(name) {
   else if (name === 'kefu') { document.getElementById('kefuContactList').classList.remove('has-chat'); var _kb=document.getElementById('kefuBadge');if(_kb){_kb.textContent='0';_kb.style.display='none';}  loadKefuContacts(); }
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
-  else if (name === 'logs') loadLogs();
+  else if (name === 'wall') loadWall();
+    else if (name === 'logs') loadLogs();
   else if (name === 'kefu') { stopKefuPoll(); loadKefuContacts();
   // Populate ann school selector
   var annSel = document.getElementById('annSchool');
@@ -1707,6 +1739,64 @@ async function delPromo(id, title) {
   if (!await showConfirm('删除「'+title+'」？')) return;
   await apiFetch('/api/marketplace/promotions/'+id,{method:'DELETE'});
   toast('<svg viewBox="0 0 24 24" width="11" height="11" style="vertical-align:middle;margin-right:1px"><path d="M3 6h18" stroke="#e74c3c" stroke-width="1.8" stroke-linecap="round"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" fill="none" stroke="#e74c3c" stroke-width="1.5"/><path d="M10 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M14 11v6" stroke="#e74c3c" stroke-width="1.5" stroke-linecap="round"/><path d="M5 6l1 14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1l1-14" fill="none" stroke="#e74c3c" stroke-width="1.4" stroke-linejoin="round"/></svg> 已删除'); loadPromos();
+}
+
+// ====== Campus Wall ======
+async function loadWall() {
+  try {
+    var sf = document.getElementById('wallStatusFilter').value;
+    var tf = document.getElementById('wallTypeFilter').value;
+    var search = document.getElementById('wallSearch').value.trim();
+    let url = '/api/wall/admin/posts?';
+    if (sf) url += '&status=' + sf;
+    if (tf) url += '&type=' + tf;
+    if (search) url += '&search=' + encodeURIComponent(search);
+    const r = await apiFetch(getSchoolParam(url));
+    let data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    var tbody = document.getElementById('wallTbody');
+    if (!arr.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">暂无帖子</div></td></tr>'; return; }
+    tbody.innerHTML = arr.map(function(p) {
+      var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
+      var st = p.status==='approved'?'已通过':p.status==='rejected'?'未通过':'待审核';
+      var tp = p.type==='promotion'?'<span style="color:#fbbf24;font-weight:600">推广</span>':'帖子';
+      return '<tr><td><input type="checkbox" class="wallCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
+        '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
+        '<td style="color:#bbb;font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(p.content||'')+'</td>'+
+        '<td>'+tp+'</td>'+
+        '<td style="color:#bbb;font-size:10px">'+esc(p.author_name||'-')+'</td>'+
+        '<td style="color:#999;font-size:10px">'+schoolName(p.school)+'</td>'+
+        '<td><span class="badge '+sc+'">'+st+'</span></td>'+
+        '<td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td>'+
+        '<td style="text-align:center">'+
+          (p.status==='pending'?'<button class="btn btn-green btn-sm" onclick="approveWall('+p.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="showRejectWall('+p.id+')">✕ 拒绝</button>':'')+
+          (p.status==='approved'?'<button class="btn btn-yellow btn-sm" onclick="rejectWall('+p.id+')">✕ 下架</button>':'')+
+          '<button class="btn btn-red btn-sm" onclick="delWall('+p.id+',\''+esc(p.title)+'\')">🗑️</button>'+
+        '</td></tr>';
+    }).join('');
+  } catch(e) { document.getElementById('wallTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
+}
+async function approveWall(id) {
+  await apiFetch('/api/wall/admin/posts/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+  toast('✅ 已通过'); loadWall();
+}
+function showRejectWall(id) { rejectingWallId = id; document.getElementById('rejectWallModal').classList.add('show'); }
+async function rejectWall(id) {
+  if (!await showConfirm('下架该帖子？')) return;
+  await apiFetch('/api/wall/admin/posts/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',reject_reason:'管理员下架'})});
+  toast('✕ 已下架'); loadWall();
+}
+async function confirmRejectWall() {
+  var reason = document.getElementById('wallRejectReason').value;
+  var detail = document.getElementById('wallRejectDetail').value.trim();
+  await apiFetch('/api/wall/admin/posts/'+rejectingWallId, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'rejected',reject_reason: reason + (detail?': '+detail:'')})});
+  toast('✕ 已拒绝'); closeRejectWall(); loadWall();
+}
+function closeRejectWall() { rejectingWallId = null; document.getElementById('rejectWallModal').classList.remove('show'); }
+async function delWall(id, title) {
+  if (!await showConfirm('删除「'+title+'」？')) return;
+  await apiFetch('/api/wall/admin/posts/'+id, {method:'DELETE'});
+  toast('🗑️ 已删除'); loadWall();
 }
 
 // ====== Sellers ======

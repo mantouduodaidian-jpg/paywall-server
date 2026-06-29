@@ -795,6 +795,64 @@ app.delete('/api/marketplace/promotions/:id', fullAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Campus Wall API ======
+app.post('/api/wall/posts', express.json(), async (req, res) => {
+  try {
+    const { title, content, images, type, author_name, author_student_id, school } = req.body;
+    if (!title || !content) return res.status(400).json({ error: '标题和内容不能为空' });
+    const r = await fetch(SB('wall_posts'), {
+      method: 'POST', headers: SB_HEADERS2,
+      body: JSON.stringify({ title, content, images: images||[], type: type||'post', status: 'pending', author_name: author_name||'', author_student_id: author_student_id||'', school: school||'', created_at: new Date().toISOString() })
+    });
+    const t = await r.json();
+    res.json(t);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/wall/posts', async (req, res) => {
+  try {
+    const { type, school, limit, offset } = req.query;
+    let url = SB('wall_posts?status=eq.approved&order=created_at.desc&select=*');
+    if (type) url = SB('wall_posts?status=eq.approved&type=eq.'+type+'&order=created_at.desc&select=*');
+    if (school) url += '&school=eq.'+encodeURIComponent(school);
+    if (limit) url += '&limit='+parseInt(limit); else url += '&limit=50';
+    if (offset) url += '&offset='+parseInt(offset);
+    const r = await fetch(url, { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/wall/admin/posts', schoolScope, async (req, res) => {
+  try {
+    const { status, type, search } = req.query;
+    let url = SB('wall_posts?order=created_at.desc&select=*');
+    if (status) url = SB('wall_posts?status=eq.'+status+'&order=created_at.desc&select=*');
+    if (type) url += '&type=eq.'+type;
+    if (req.adminSchool) url += '&school=eq.'+req.adminSchool;
+    if (search) { const r = await fetch(url, { headers: SB_HEADERS }); let d = await r.json(); d = (Array.isArray(d)?d:[]).filter(p => (p.title||'').toLowerCase().includes(search.toLowerCase()) || (p.author_name||'').toLowerCase().includes(search.toLowerCase())); return res.json(d); }
+    const r = await fetch(url, { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/wall/admin/posts/:id', schoolScope, express.json(), async (req, res) => {
+  try {
+    const { status, reject_reason } = req.body;
+    const body = {};
+    if (status) body.status = status;
+    if (reject_reason !== undefined) body.reject_reason = reject_reason;
+    await fetch(SB('wall_posts?id=eq.'+req.params.id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(body) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/wall/admin/posts/:id', schoolScope, async (req, res) => {
+  try {
+    await fetch(SB('wall_posts?id=eq.'+req.params.id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ====== Phone-only (guest) login ======
 app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
   try {
