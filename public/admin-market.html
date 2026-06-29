@@ -1311,7 +1311,7 @@ async function loadVers() {
         '<td style="color:#ccc;font-size:10px">'+fmtDate(v.created_at)+'</td>'+
         '<td style="text-align:center">'+(v.status==='pending'
           ? '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-green btn-sm" onclick="approveVer('+v.id+')">✅ 通过</button><button class="btn btn-red btn-sm" onclick="rejectVer('+v.id+')">✕ 未通过</button><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button><button class="btn btn-red btn-sm" onclick="showBan(\''+v.student_id+'\',\''+esc(v.name)+'\')">🚫 封禁</button></span>'
-          : '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button><button class="btn btn-red btn-sm" onclick="showBan(\''+v.student_id+'\',\''+esc(v.name)+'\')">🚫 封禁</button>'+(v.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller(\''+v.student_id+'\',\''+esc(v.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller(\''+v.student_id+'\',\''+esc(v.name)+'\')">🔇 禁言</button>')+'</span>')+'</td></tr>').join('');
+          : '<span style="display:flex;gap:3px;justify-content:center"><button class="btn btn-red btn-sm" onclick="delVer('+v.id+',\''+esc(v.name)+'\')">🗑️ 删除</button><button class="btn btn-red btn-sm" onclick="showBan(\''+v.student_id+'\',\''+esc(v.name)+'\')">🚫 封禁</button>'+(v.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller(\''+v.student_id+'\',\''+esc(v.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller(\''+v.student_id+'\',\''+esc(v.name)+'\')">🔇 禁言(不可聊)</button>')+'</span>')+'</td></tr>').join('');
     renderPageNav('verPagination',_vPage,_vTotal,'loadVers');
   } catch(e) {}
 }
@@ -1899,7 +1899,7 @@ async function loadSellers() {
           '<button class="btn btn-ghost btn-sm" onclick="filterSeller(\''+s.student_id+'\',\''+esc(s.name)+'\')">📦 查看商品</button><button class="btn btn-ghost btn-sm" onclick="viewReviews('+s.student_id+','+esc(s.name)+')">📝 评价</button>'+
           (s.listed > 0 ? '<button class="btn btn-red btn-sm" onclick="toggleAllSeller('+s.student_id+',false,\''+esc(s.name)+'\')">📌 全部下架</button>' : '')+
           (s.listed === 0 && s.active > 0 ? '<button class="btn btn-green btn-sm" onclick="toggleAllSeller('+s.student_id+',true,\''+esc(s.name)+'\')">📌 全部上架</button>' : '')+
-          '<button class="btn btn-red btn-sm" onclick="showBan(\''+s.student_id+'\',\''+esc(s.name)+'\')">🚫 封禁</button>'+(s.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 禁言</button>')+
+          '<button class="btn btn-red btn-sm" onclick="showBan(\''+s.student_id+'\',\''+esc(s.name)+'\')">🚫 封禁</button>'+(s.status==='muted'?'<button class="btn btn-yellow btn-sm" onclick="unmuteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 解禁言</button>':'<button class="btn btn-ghost btn-sm" onclick="muteSeller('+s.student_id+',\''+esc(s.name)+'\')">🔇 禁言(不可聊)</button>')+
           '<button class="btn btn-red btn-sm" onclick="delSellerAccount(\''+s.student_id+'\',\''+esc(s.name)+'\')">🗑️ 删号</button>'+'</span></td></tr>';
       }).join('');
     renderPageNav('sellerPagination',_sPage,_sTotal,'loadSellers');

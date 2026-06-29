@@ -986,7 +986,7 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         var loginToken = randomBytes(16).toString('hex');
         await fetch(SB('verifications?id=eq.'+muted[0].id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ login_token: loginToken }) });
         muted[0].login_token = loginToken;
-        return res.json({ ok: true, user: { id: muted[0].id, name: muted[0].name, student_id: muted[0].student_id, phone: muted[0].phone, nickname: muted[0].nickname||'', school: muted[0].school||'', login_token: loginToken }, muted: true, msg: '账号已禁言，仅可聊天不可发布商品' });
+        return res.json({ ok: true, user: { id: muted[0].id, name: muted[0].name, student_id: muted[0].student_id, phone: muted[0].phone, nickname: muted[0].nickname||'', school: muted[0].school||'', login_token: loginToken }, muted: true, msg: '账号已禁言，仅可发布商品不可聊天' });
       }
       const banned = arr.filter(v => v.status === 'banned');
       if (banned.length) return res.json({ ok: false, msg: '账号已封禁' + (banned[0]?.reject_reason ? '：' + banned[0].reject_reason : '') });
@@ -1522,17 +1522,6 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
     if (item_type !== 'rent' && !price) return res.status(400).json({ error: 'price required' });
     if (item_type === 'rent' && !rent_price) return res.status(400).json({ error: 'rent_price required' });
 
-    // Check if user is muted
-    if (req.body.owner_student_id) {
-      try {
-        const muteR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(req.body.owner_student_id)+"&select=status"), { headers: SB_HEADERS });
-        const muteD = await muteR.json();
-        if (Array.isArray(muteD) && muteD.length && muteD[0].status === 'muted') {
-          return res.status(403).json({ error: '账号已禁言，无法发布商品' });
-        }
-      } catch(e) {}
-    }
-
     // Check blocked words (school-specific + global)
     try {
       var schoolFilter = req.body.school ? '&school=eq.'+encodeURIComponent(req.body.school) : '';
@@ -1854,6 +1843,12 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
   try {
     let { product_id, from_student_id, from_name, to_student_id, to_name, content } = req.body;
     if (!from_student_id || !content) return res.status(400).json({ error: 'missing fields' });
+    // Check muted — muted users cannot send messages but can publish products
+    try {
+      var muteChk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(from_student_id)+"&status=eq.muted&select=id"), { headers: SB_HEADERS });
+      var muteData = await muteChk.json();
+      if (Array.isArray(muteData) && muteData.length) return res.status(403).json({ error: '账号已禁言，无法发送消息' });
+    } catch(e) {}
     if (product_id === undefined || product_id === null) {
       if (isKefu(to_student_id) || isKefu(from_student_id)) product_id = 0;
       else return res.status(400).json({ error: 'product_id required' });
