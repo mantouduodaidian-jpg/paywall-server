@@ -1989,6 +1989,8 @@ const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
 const JWT_SECRET = process.env.JWT_SECRET || 'paywall-default-jwt-secret-2024';
 let SCHOOL_ADMINS = [];
 try { SCHOOL_ADMINS = JSON.parse(process.env.SCHOOL_ADMINS || '[]'); } catch(e) {}
+// Always add beta school for admin filtering
+if (!SCHOOL_ADMINS.find(s => s.code === 'beta')) SCHOOL_ADMINS.push({ code: 'beta', name: '内测服', password: 'beta' });
 function signToken(payload) {
   var header = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
   var body = Buffer.from(JSON.stringify(payload)).toString('base64url');
