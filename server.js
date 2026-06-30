@@ -2029,7 +2029,7 @@ app.post('/api/admin/login', express.json(), (req, res) => {
     var sa = SCHOOL_ADMINS ? SCHOOL_ADMINS.find(function(s) { return s.code === school; }) : null;
     if (sa) schools.push({ code: sa.code, name: sa.name });
   }
-  var betaSchools = ['gxny','hnkj','gdcj'];
+  var betaSchools = (process.env.BETA_ADMIN_SCHOOLS || 'gxny,hnkj,gdcj').split(',');
   if ((role === 'admin' || betaSchools.includes(school)) && !schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
   res.json({ ok: true, token, role, school, schoolName, schools: schools });
 });
