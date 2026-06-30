@@ -829,7 +829,7 @@ function login() {
           localStorage.setItem('schoolList', JSON.stringify(d.schools));
           var sel = document.getElementById('schoolSelector');
           sel.style.display = 'inline-block';
-          sel.innerHTML = '<option value="'+(d.school||'')+'">'+(d.school && d.school!=='beta' ? SCHOOL_LIST.find(function(s){return s.code===d.school;})?.name||'当前学校' : '所有学校')+'</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'">'+s.name+'</option>'; }).join('');
+          sel.innerHTML = '<option value="">所有学校</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
         }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
