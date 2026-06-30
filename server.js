@@ -2063,10 +2063,17 @@ function schoolScope(req, res, next) {
   const sess = getAdminSession(req);
   if (!sess) return res.status(401).json({ ok: false, msg: '未授权' });
   req.adminRole = sess.role;
-  // Super admin uses ?school= param; school admin locked to their school (can access beta)
-  req.adminSchool = sess.school || req.query.school || null;
   req.adminSchoolName = sess.schoolName;
-  if (sess.role === 'school_admin' && !sess.school) return res.status(403).json({ ok: false, msg: '无学校权限' });
+  if (sess.role === 'admin') {
+    req.adminSchool = req.query.school || null;
+  } else if (sess.role === 'school_admin') {
+    if (!sess.school) return res.status(403).json({ ok: false, msg: '无学校权限' });
+    // school_admin: can only switch between own school and beta
+    var allowed = [sess.school, 'beta'];
+    req.adminSchool = allowed.indexOf(req.query.school) >= 0 ? req.query.school : sess.school;
+  } else {
+    req.adminSchool = sess.school || req.query.school || null;
+  }
   next();
 }
 

@@ -824,12 +824,19 @@ function login() {
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin only
-        if (d.role === 'admin' || (d.schools && d.schools.length > 1)) {
-          SCHOOL_LIST = d.schools;
-          localStorage.setItem('schoolList', JSON.stringify(d.schools));
-          var sel = document.getElementById('schoolSelector');
+        SCHOOL_LIST = d.schools || [];
+        var listKey = 'schoolList_' + (d.role || 'admin');
+        localStorage.setItem(listKey, JSON.stringify(d.schools || []));
+        localStorage.removeItem('schoolList');
+        var sel = document.getElementById('schoolSelector');
+        if (d.role === 'admin') {
           sel.style.display = 'inline-block';
           sel.innerHTML = '<option value="">所有学校</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
+        } else if (d.schools && d.schools.length > 1) {
+          sel.style.display = 'inline-block';
+          sel.innerHTML = d.schools.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
+        } else {
+          sel.style.display = 'none';
         }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
@@ -845,6 +852,12 @@ function applyRole() {
     document.querySelectorAll('.tab[data-tab="blocked"]').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.tab[data-tab="promotions"]').forEach(el => el.style.display = 'none');
   }
+  if (role === 'school_admin') {
+    ['annSchool','bwSchool','promoSchool'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.style.display = 'none'; }
+    });
+  }
 }
 
 function logout() {
@@ -854,9 +867,8 @@ function logout() {
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
 }
-// School list for super admin
+// School list — loaded per role from localStorage
 var SCHOOL_LIST = [];
-try { var sl = localStorage.getItem('schoolList'); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) {}
 var _adminNickCache = {};
 async function loadAdminNickCache() {
   try { var r = await apiFetch('/api/verify/list'); var d = await r.json(); var arr = Array.isArray(d)?d:[]; arr.forEach(function(v){ if(v.student_id) _adminNickCache[v.student_id] = v.nickname||v.name||''; }); } catch(e){}}
@@ -881,23 +893,33 @@ function switchSchool(code) {
 async function autoLogin() {
   if (!token) return;
   role = localStorage.getItem('marketAdminRole');
+  localStorage.removeItem('schoolList'); // cleanup old generic key
+  var listKey = 'schoolList_' + (role || 'admin');
+  try { var sl = localStorage.getItem(listKey); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) { SCHOOL_LIST = []; }
+  var curSchool = localStorage.getItem('adminSchool') || '';
   var sn = localStorage.getItem('adminSchoolName') || '';
   document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('app').classList.add('show');
-  // Restore school selector
-  if (SCHOOL_LIST.length) {
-    var sel = document.getElementById('schoolSelector');
+  // Restore school selector — role-aware
+  var sel = document.getElementById('schoolSelector');
+  if (role === 'admin') {
     if (sel) {
-      var cur = localStorage.getItem('adminSchool') || '';
       sel.style.display = 'inline-block';
-      sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===cur?' selected':'')+'>'+s.name+'</option>'; }).join('');
+      sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
+  } else if (role === 'school_admin' && SCHOOL_LIST.length > 1) {
+    if (sel) {
+      sel.style.display = 'inline-block';
+      sel.innerHTML = SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
+    }
+  } else {
+    if (sel) sel.style.display = 'none';
   }
-  // Ensure beta school is in cached list
-  if (!SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
+  // Ensure beta school in cached list (for admin only — server controls beta perms for school_admin)
+  if (role === 'admin' && !SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
     SCHOOL_LIST.push({ code: 'beta', name: '🛠 内测服' });
-    try { localStorage.setItem('schoolList', JSON.stringify(SCHOOL_LIST)); } catch(e) {}
+    try { localStorage.setItem(listKey, JSON.stringify(SCHOOL_LIST)); } catch(e) {}
   }
   init(); applyRole();
 }
@@ -1680,7 +1702,7 @@ async function loadKefuMsgs() {
       var msgHtml = esc(m.content);
         if (msgHtml.indexOf('[img]') >= 0) {
           var parts = msgHtml.split('[img]');
-          msgHtml = parts.map(function(part, i){ if (i===0) return part||''; return '<br><img src="'+part+'" style="max-width:180px;max-height:120px;border-radius:6px;display:block;cursor:pointer" onclick="openChatImage(\''+part+'\')">'; }).join('');
+          msgHtml = parts.map(function(part, i){ if (i===0) return part||''; return '<br><img src="'+part+'" style="max-width:180px;max-height:120px;border-radius:6px;display:block;cursor:pointer" onclick="openChatImage(&#39;'+part+'&#39;)">'; }).join('');
         }
       el.innerHTML += '<div style="margin:4px 0;text-align:'+(me?'right':'left')+'">'+
         '<div style="font-size:9px;color:'+(me?'rgba(78,158,128,.3)':'rgba(0,0,0,.15)')+';margin:1px 4px">'+mtime+'</div>'+
@@ -1725,7 +1747,7 @@ async function sendKefuMsg() {
   var escContent = esc(content);
   if (escContent.indexOf('[img]') >= 0) {
     var parts = escContent.split('[img]');
-    escContent = parts.map(function(part, i){ if (i===0) return part||''; return '<br><img src="'+part+'" style="max-width:180px;max-height:120px;border-radius:6px;display:block;cursor:pointer" onclick="openChatImage(\''+part+'\')">'; }).join('');
+    escContent = parts.map(function(part, i){ if (i===0) return part||''; return '<br><img src="'+part+'" style="max-width:180px;max-height:120px;border-radius:6px;display:block;cursor:pointer" onclick="openChatImage(&#39;'+part+'&#39;)">'; }).join('');
   }
   document.getElementById('kefuMsgs').innerHTML += '<div style="margin:4px 0;text-align:right">'+
     '<div style="font-size:9px;color:rgba(78,158,128,.3);margin:1px 4px">'+mtime+'</div>'+
