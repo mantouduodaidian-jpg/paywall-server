@@ -972,7 +972,7 @@ app.post("/api/marketplace/beta-login", express.json(), async (req, res) => {
 // ====== Beta check API ======
 var BETA_PASSWORD = process.env.BETA_PASSWORD || '';
 app.post('/api/marketplace/beta-check', express.json(), (req, res) => {
-  if (!BETA_PASSWORD) return res.json({ ok: true, beta: false });
+  if (!BETA_PASSWORD) return res.json({ ok: true, beta: true });
   if (req.body.password === BETA_PASSWORD) return res.json({ ok: true, beta: true });
   res.json({ ok: false, msg: '内测密码错误' });
 });
