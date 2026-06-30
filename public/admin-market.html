@@ -824,7 +824,7 @@ function login() {
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin only
-        if (d.role === 'admin' || (d.schools && d.schools.length > 1)) {
+        if (d.role === 'admin') {
           SCHOOL_LIST = d.schools;
           localStorage.setItem('schoolList', JSON.stringify(d.schools));
           var sel = document.getElementById('schoolSelector');
@@ -886,7 +886,7 @@ async function autoLogin() {
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('app').classList.add('show');
   // Restore school selector
-  if (SCHOOL_LIST.length) {
+  if (role === 'admin' && SCHOOL_LIST.length) {
     var sel = document.getElementById('schoolSelector');
     if (sel) {
       var cur = localStorage.getItem('adminSchool') || '';
