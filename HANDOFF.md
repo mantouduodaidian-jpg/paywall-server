@@ -1,193 +1,135 @@
-# 二豆校园二手 · 交接文档
+# 二豆校园 · 交接文档
 
 ## 新对话必读
 
-继续开发二豆校园二手项目。先读 `CHECKLIST.md`、`PROJECT_SUMMARY.md`、`PROJECT_BACKEND.md` 了解全貌，再读本文件了解当前阶段。
+先读 `CHECKLIST.md`、`PROJECT_SUMMARY.md`、`PROJECT_BACKEND.md` 了解全貌，再读本文件了解当前阶段。
 
-**网页版已完善，停止新功能开发，只修 Bug。当前主攻微信小程序。**
-
-小程序目录：`D:\OneDrive\桌面\创造i\miniprogram\`
-
-**优先任务：**
-1. 修登录页 — 对齐网页版登录流程（学号+电话 / 手机验证）
-2. 修底部导航 — 首页/分类/发布/消息/我的
-3. 补交易按钮 — 商品详情加「购买」「联系卖家」
-4. 补收藏功能 — 前端收藏 + 后端接口
-
-## 项目概览
-校园二手交易平台，前后端分离架构。后端 Node.js + Supabase，前端网页版 + 微信小程序。
-
-## 目录结构
-```
-D:\OneDrive\桌面\创造i\server\          ← 后端 + 网页前端
-├── server.js                          ← 主服务器（API + WebSocket）
-├── CHECKLIST.md                       ← AI 改前必读
-├── PROJECT_SUMMARY.md                 ← 项目完整说明（AI 必读）
-├── WECHAT_MP_GUIDE.md                 ← 小程序对接 API 文档
-├── HANDOFF.md                         ← 本文件
-├── public/
-│   ├── market.html                    ← 前台（二手集市）
-│   └── admin-market.html              ← 后台管理面板
-├── api/verify.js                      ← 密码验证系统（旧，可忽略）
-└── .gitignore
-
-D:\OneDrive\桌面\创造i\miniprogram\    ← 微信小程序代码
-├── app.js / app.json / app.wxss
-├── pages/
-│   ├── index/     ← 首页（商品列表+分类+学校选择）
-│   ├── detail/    ← 商品详情
-│   ├── login/     ← 登录
-│   ├── message/   ← 消息列表
-│   ├── chat/      ← 聊天
-│   ├── profile/   ← 个人中心
-│   └── publish/   ← 发布商品
-└── images/
-```
+**网页版功能完善，主攻微信小程序。**
 
 ## 部署信息
 - **线上地址**: https://paywall-server.onrender.com
 - **GitHub**: github.com/mantouduodaidian-jpg/paywall-server.git
 - **Supabase**: hcinnimptpsjocbkkbna.supabase.co
-- **自动部署**: GitHub push → Render 自动部署
+- **自动部署**: GitHub push → Render 自动部署（~2分钟）
+- **Git 结构**: 根目录 git（含 miniprogram/）+ server/ 子模块 git
 
-## 网页版已完成功能
+## 环境变量（Render 需设置）
 
-### 前台 (market.html)
-- ✅ 商品列表（分类/搜索/价格区间/排序）
-- ✅ 出售/出租切换
-- ✅ 商品收藏 ❤️
-- ✅ 昵称/匿名系统（交易完成前匿名，完成后显示真名）
-- ✅ 交易流程三阶段（购买请求 → 卖家确认 → 买家收货）
-- ✅ 聊天系统（私聊 + 客服）
-- ✅ 系统通知面板（右下角喇叭）
-- ✅ 提示音（消息音 + 系统铃铛音）
-- ✅ 未读消息（关闭聊天才标记已读，像微信）
-- ✅ 发布/编辑商品
-- ✅ 卖家自下架可上架
-- ✅ 被下架/未通过可编辑重新提交审核
-- ✅ 游客提示（主题色卡片）
-- ✅ SVG 主题图标全部替换
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| ADMIN_PASSWORD | ✅ | 超管密码 |
+| SCHOOL_ADMINS | ✅ | JSON 数组，各校分管密码 |
+| WALL_ADMIN_PASSWORD | ❌ | 校园墙后台密码 |
+| MANAGER_PASSWORD | ❌ | 经理密码 |
+| BETA_ADMIN_SCHOOLS | ❌ | 能管内测的学校代码，默认 gxny,hnkj,gdcj |
+| BETA_PASSWORD | ❌ | 内测入口密码（不设也能进） |
 
-### 后台 (admin-market.html)
-- ✅ 13 个 Tab 管理面板
-- ✅ 批量处理（全选 + 批量通过/拒绝/删除）
-- ✅ 认证表昵称列
-- ✅ 卖家账号删除
-- ✅ 审核通知自动发送
-- ✅ 商品/租借待审核 badge 分开
-
-### 服务器 (server.js)
-- ✅ 所有 API 端点（商品/交易/聊天/认证/通知等）
-- ✅ WebSocket 实时推送
-- ✅ 通知系统全覆盖
-- ✅ 昵称公开接口
-
-## 微信小程序现状
-
-### 已完成
-- ✅ 首页（商品列表 + 分类滚动 + 学校选择 + 搜索）
-- ✅ 详情页
-- ✅ 登录页
-- ✅ 消息列表 + 聊天
-- ✅ 个人中心
-- ✅ 发布商品
-
-### 未完成 / 需要继续的
-- ❌ 底部 Tab 导航栏（缺图标 PNG）
-- ❌ 交易状态按钮（聊天底部确认/取消/收货）
-- ❌ 收藏功能
-- ❌ 我的商品列表
-- ❌ 图片上传
-- ❌ 下拉刷新/加载更多
-- ❌ 提示音
-- ❌ 出租类型发布
-
-## 关键业务逻辑（AI 必读）
-
-### 交易状态机
-```
-购买请求 → trade_status='trading' → 卖家看到确认/取消按钮
-卖家确认 → trade_status='awaiting_buyer' → 双方可见真实姓名
-买家收货 → trade_status='completed', sold=true → 双方通知
-取消     → trade_status='' → 清空买家信息
+### SCHOOL_ADMINS 格式
+```json
+[
+  {"code":"gxny","name":"广西农业职业技术大学","password":"phy91"},
+  {"code":"hnkj","name":"海南科技职业大学","password":"wqs91"},
+  {"code":"gdcj","name":"广东财经大学","password":"whm91"},
+  {"code":"lztd","name":"柳州铁道职业技术学院","password":"wly91"}
+]
 ```
 
-### 昵称规则
-| 场景 | 显示 |
-|------|------|
-| 浏览商品（非卖家） | 昵称 or "匿名卖家" |
-| 自己看自己商品 | 真名 |
-| 交易中/已完成 | 昵称 (真名) |
-
-### 上下架规则
-| 操作 | 标记 | 能否恢复 |
-|------|------|---------|
-| 卖家自下架 | reject_reason='owner_delisted' | ✅ 可上架 |
-| 管理员下架 | 无特殊标记 | ❌ 不可上架，可编辑后提交审核 |
-| 审核未通过 | status='rejected' | 可编辑后提交审核 |
-
-### 通知覆盖
-- 买家请求 → 卖家收到
-- 卖家确认 → 买家收到
-- 买家收货 → 双方收到
-- 卖家取消 → 双方收到
-- 商品审核通过/拒绝 → 卖家收到
-- 商品被下架 → 卖家收到
-- 认证通过/拒绝 → 用户收到
-
-### 错误排查方法
-```bash
-node --check server.js              # 后端语法
-grep -o '{' file.html | wc -l       # 数 { 必须等于 }
-grep -o '(' file.js | wc -l         # 数 ( 必须等于 )
-cat -A file.html | grep -n "div"    # 查缩进 / 缺 </div>
+## 目录结构
+```
+D:\OneDrive\桌面\创造i\
+├── server/                     ← 后端 + 网页前端
+│   ├── server.js               ← 主服务器（API + WebSocket，~2100行）
+│   ├── public/
+│   │   ├── market.html         ← 前台二手集市
+│   │   ├── admin-market.html   ← 后台管理面板（15+ Tab）
+│   │   ├── admin-wall.html     ← 校园墙独立管理页
+│   │   ├── campus-wall.html    ← 校园墙前台页面
+│   │   └── ...
+│   └── HANDOFF.md
+│
+├── miniprogram/                ← 微信小程序
+│   ├── pages/
+│   │   ├── index/    ← 首页（商品+分类+学校+公告+筛选）
+│   │   ├── detail/   ← 商品详情
+│   │   ├── login/    ← 登录/注册（含内测入口）
+│   │   ├── message/  ← 消息列表
+│   │   ├── chat/     ← 聊天（交易+评价+图片）
+│   │   ├── profile/  ← 个人中心
+│   │   └── publish/  ← 发布商品
+│   └── custom-tab-bar/
 ```
 
-## 小程序注意事项
-1. Render 免费版冷启动约 30 秒，第一次请求可能超时
-2. 微信开发者工具必须勾选「不校验合法域名」
-3. 小程序不支持 WXML 内联 SVG，图标用 emoji 或 PNG
-4. 图片上传建议用微信云存储，接口已支持 base64
+## 后台功能 (admin-market.html)
 
-## 工作模式（AI 必读）
+| Tab | 功能 |
+|-----|------|
+| 概览 | 统计卡片+图表（可点击跳转筛选）+已交易金额 |
+| 商品 | 商品审核、多图预览、偏好列 |
+| 租借 | 出租商品管理 |
+| 卖家 | 卖家列表+评价数+信誉分 |
+| 认证 | 学生证审核+性别+评价+**信誉分** |
+| 评价 | 所有评价列表+信誉分 +/- 操作 |
+| 交易 | 转账管理+待转账角标+学校列 |
+| 公告 | 发布公告（选学校或全局）|
+| 周边有礼 | 推广管理 |
+| 消息 | 客服聊天（文字+图片）|
+| 校园墙 | 帖子审核（暂停）|
 
-### 改前流程
-1. **先出方案** — 用户说需求，AI 给方案。用户说「开搞」才写代码
-2. **改前检查** — 三项必做：
-   ```bash
-   node --check server.js                   # 后端语法
-   grep -o '{' file.html | wc -l           # { } 必须相等
-   grep -o '(' file.js | wc -l             # ( ) 必须相等
-   ```
-3. **分批隔离** — 工作 vs 不工作部分找分界线，定位 DOM 炸点
-4. **`cat -A` 查缩进** — 真实空格数，缺 `</div>` 一眼看出来
-5. **不用 CSS 字符串判断状态** — 用 JS 变量（如 `_pubType`）
-6. **前端送数归一化** — `parseFloat(x) || 0`
-7. **前后端校验一致** — 出租判 `rent_price`，不出售判 `price`
+### 权限
+- **超管**: 全部，可切换学校
+- **分管**: 锁定本校，不可切换
+- **内测分管** (BETA_ADMIN_SCHOOLS): 可切到内测服
 
-### 推前检查
-```bash
-git add .
-git commit -m "类型: 描述"     # 类型: fix/feat/perf/style/docs
-git push origin master         # Render 自动部署
+### 新增核心功能
+- 信用分（初始80，后台 +/-）
+- 交易评价（标签+理由+图片）
+- 交易角标+已交易金额统计
+- 学校隔离（school=beta 完全隔离）
+
+## 小程序功能
+
+| 页面 | 已完成功能 |
+|------|-----------|
+| 首页 | 商品列表+分类+搜索+公告条+分页+状态角标+价格筛选+排序 |
+| 详情 | 商品信息+联系卖家+购买+性别显示 |
+| 登录 | 学号+电话登录/注册+学生证+内测入口 |
+| 聊天 | 消息+交易确认/取消/收货+评价弹窗+图片发送/显示 |
+| 发布 | 出售/出租+图片上传+租期+性别偏好 |
+
+### 内测系统
+- 登录页「🔒 内测入口」→ 用户名+密码登录
+- school=beta 隔离，商品列表空
+- 账号: phy/phw91, wqs/wqs91, whm/whm91
+
+## 交易流程
+```
+购买请求 → trading
+  → 卖家确认 → awaiting_buyer, payment_status=pending（产生待转账）
+    → 买家收货 → completed（弹出评价窗口）
+    → 取消 → 清空
 ```
 
-### 沟通风格（用户是超管）
-- 用户主动提需求，AI 给方案
-- 用户说「开搞」才写代码
-- 出错先看 console 报错
-- 括号不平衡、node --check 不通过 = 不能推
-- 用户是超级管理员，密码在 Render 环境变量里
-- 用户喜欢「分批隔离法」排查问题
+## 新增后端 API
 
-### 小程序开发特别规则
-- 微信开发者工具必须勾选「不校验合法域名」
-- 不要在 WXML 里内联 SVG（不支持）
-- 图标用 emoji 或 PNG 图片
-- `bindtap` 事件需配合 `value="{{var}}"` 双向绑定
-- `wx:key` 建议用 `wx:for-index="idx" wx:key="idx"`
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | /api/marketplace/reviews | 提交评价 |
+| GET | /api/marketplace/reviews | 查评价 |
+| PATCH | /api/marketplace/credit | 改信誉分 |
+| POST | /api/marketplace/beta-login | 内测用户登录 |
+| GET | /api/chat-image/:id | 聊天图片代理 |
+| POST | /api/wall/posts | 校园墙发帖（暂停）|
 
-## 当前问题
-1. 小程序登录页没有快捷测试账号（不知道手机号）
-2. 小程序请求因 Render 冷启动易超时
-3. 网页版 admin-market.html 仍有 `class` 语法错误（用户自己修）
+## Supabase 关键表
+- **products**: 商品（含 payment_status, gender_pref）
+- **verifications**: 用户（含 credit_score, gender）
+- **reviews**: 交易评价（tags[], reason, images[]）
+- **messages**: 聊天消息（含[img]标记）
+- **wall_posts**: 校园墙帖子（暂停）
+
+## 注意事项
+1. Render 冷启动 ~30s，首次请求会超时或 502
+2. 小程序必须勾「不校验合法域名」
+3. 小程序不支持 base64 图片，用 `/api/chat-image/:id` 代理
+4. 系统通知用 `sys_` 前缀，客服用 `kefu_` 前缀，互不干扰
+5. 校园墙功能暂停开发
