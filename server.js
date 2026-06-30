@@ -944,6 +944,23 @@ app.post('/api/marketplace/phone-login', express.json(), async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ====== Beta Users ======
+const BETA_USERS = [
+  { name: "phy", password: "phy91", nickname: "phy" },
+  { name: "wqs", password: "wqs91", nickname: "wqs" },
+  { name: "whm", password: "whm91", nickname: "whm" },
+  { name: "wly", password: "wly91", nickname: "wly" },
+];
+var _betaTokens = new Set();
+app.post("/api/marketplace/beta-login", express.json(), async (req, res) => {
+  const { name, password } = req.body;
+  var user = BETA_USERS.find(function(u) { return u.name === name && u.password === password; });
+  if (!user) return res.status(401).json({ error: "用户名或密码错误" });
+  var token = randomBytes(16).toString("hex");
+  _betaTokens.add(token);
+  res.json({ ok: true, token: token, user: { student_id: "beta_" + name, name: name, nickname: user.nickname, school: "beta" } });
+});
+
 // ====== Beta check API ======
 var BETA_PASSWORD = process.env.BETA_PASSWORD || '';
 app.post('/api/marketplace/beta-check', express.json(), (req, res) => {
