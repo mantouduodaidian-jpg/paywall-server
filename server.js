@@ -1717,11 +1717,6 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
         .then(function(c) { imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' }); try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {} })
         .catch(function(){});
     }
-      .then(function(c) {
-        imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' });
-        try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {}
-      })
-      .catch(function(){});
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
