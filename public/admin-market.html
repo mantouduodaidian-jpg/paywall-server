@@ -903,11 +903,12 @@ async function autoLogin() {
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('app').classList.add('show');
   // Restore school selector for super admin
-  if (role === 'admin' && SCHOOL_LIST.length) {
+  if (SCHOOL_LIST.length) {
     var sel = document.getElementById('schoolSelector');
     if (sel) {
+      var cur = localStorage.getItem('adminSchool') || '';
       sel.style.display = 'inline-block';
-      sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===localStorage.getItem('adminSchool')?' selected':'')+'>'+s.name+'</option>'; }).join('');
+      sel.innerHTML = SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===cur?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   }
   // Ensure beta school is in cached list
