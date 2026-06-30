@@ -950,6 +950,7 @@ const BETA_USERS = [
   { name: "wqs", password: "wqs91", nickname: "wqs" },
   { name: "whm", password: "whm91", nickname: "whm" },
   { name: "wly", password: "wly91", nickname: "wly" },
+  { name: "xsw", password: "xsw91", nickname: "xsw" },
 ];
 var _betaTokens = new Set();
 app.post("/api/marketplace/beta-login", express.json(), async (req, res) => {
