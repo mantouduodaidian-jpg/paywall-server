@@ -1994,7 +1994,13 @@ app.post('/api/admin/login', express.json(), (req, res) => {
 
   var tokenHours = parseInt(process.env.TOKEN_EXPIRY_HOURS) || 12;
   var token = signToken({ role, school, schoolName, exp: Date.now() + tokenHours * 3600000 });
-  var schools = (SCHOOL_ADMINS || []).slice();
+  var schools = [];
+  if (role === 'admin') {
+    schools = (SCHOOL_ADMINS || []).slice();
+  } else if (school) {
+    var sa = SCHOOL_ADMINS ? SCHOOL_ADMINS.find(function(s) { return s.code === school; }) : null;
+    if (sa) schools.push({ code: sa.code, name: sa.name });
+  }
   if (!schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
   res.json({ ok: true, token, role, school, schoolName, schools: schools });
 });
@@ -2028,8 +2034,8 @@ function schoolScope(req, res, next) {
   const sess = getAdminSession(req);
   if (!sess) return res.status(401).json({ ok: false, msg: '未授权' });
   req.adminRole = sess.role;
-  // Super admin uses ?school= param; school admin locked to their school
-  req.adminSchool = sess.school || req.query.school || null;
+  // Super admin uses ?school= param; school admin locked to their school (can access beta)
+  req.adminSchool = (sess.school && req.query.school !== 'beta') ? sess.school : (req.query.school || null);
   req.adminSchoolName = sess.schoolName;
   if (sess.role === 'school_admin' && !sess.school) return res.status(403).json({ ok: false, msg: '无学校权限' });
   next();
