@@ -959,7 +959,15 @@ app.post("/api/marketplace/beta-login", express.json(), async (req, res) => {
   if (!user) return res.status(401).json({ error: "用户名或密码错误" });
   var token = randomBytes(16).toString("hex");
   _betaTokens.add(token);
-  res.json({ ok: true, token: token, user: { student_id: "beta_" + name, name: name, nickname: user.nickname, school: "beta" } });
+  // Ensure verification record exists
+      try {
+        var vr = await fetch(SB("verifications?student_id=eq.beta_"+encodeURIComponent(name)+"&select=id"), { headers: SB_HEADERS });
+        var vd = await vr.json();
+        if (!Array.isArray(vd) || !vd.length) {
+          await fetch(SB("verifications"), { method: "POST", headers: SB_HEADERS2, body: JSON.stringify({ student_id: "beta_"+name, name: user.nickname, phone: "00000000000", school: "beta", status: "approved", credit_score: 80, nickname: user.nickname, created_at: new Date().toISOString() }) });
+        }
+      } catch(e) {}
+      res.json({ ok: true, token: token, user: { student_id: "beta_" + name, name: name, nickname: user.nickname, school: "beta" } });
 });
 
 // ====== Beta check API ======
