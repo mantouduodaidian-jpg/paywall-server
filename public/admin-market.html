@@ -1662,10 +1662,10 @@ async function openKefuChat(studentId, name) {
   }
   
 }
-var _kefuLoading = false;
+
 async function loadKefuMsgs() {
-  if (!kefuContactId || _kefuLoading) return;
-  _kefuLoading = true;
+  if (!kefuContactId) return;
+
   try {
     var url = '/api/marketplace/messages?student_id='+kefuId()+'&other_student_id='+kefuContactId;
     if (kefuLastId) url += '&since_id='+kefuLastId;
@@ -1689,7 +1689,7 @@ async function loadKefuMsgs() {
     });
     el.scrollTop = el.scrollHeight;
   } catch(e) {}
-  _kefuLoading = false;
+
 }
 var _kefuImgData = null;
 function clearKefuImg() {
