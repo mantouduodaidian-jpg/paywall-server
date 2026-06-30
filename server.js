@@ -4,8 +4,9 @@ import cors from 'cors';
 import { randomBytes, createHmac } from 'crypto';
 import http from 'http';
 import { WebSocketServer } from 'ws';
-import sharp from 'sharp';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+var _sharp = null;
+try { _sharp = (await import('sharp')).default; } catch(e) { console.error('sharp not available:', e.message); }
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -1710,7 +1711,11 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=604800');
     res.send(raw);
     // Background compress for next visit (fire-and-forget)
-    sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+    if (_sharp) {
+      _sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+        .then(function(c) { imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' }); try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {} })
+        .catch(function(){});
+    }
       .then(function(c) {
         imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' });
         try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {}
