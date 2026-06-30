@@ -824,7 +824,7 @@ function login() {
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin only
-        if (d.role === 'admin' && d.schools && d.schools.length) {
+        if (d.role === 'admin' || (d.schools && d.schools.length > 1)) {
           SCHOOL_LIST = d.schools;
           localStorage.setItem('schoolList', JSON.stringify(d.schools));
           var sel = document.getElementById('schoolSelector');
