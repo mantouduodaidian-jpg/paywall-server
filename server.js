@@ -1994,9 +1994,9 @@ app.post('/api/admin/login', express.json(), (req, res) => {
 
   var tokenHours = parseInt(process.env.TOKEN_EXPIRY_HOURS) || 12;
   var token = signToken({ role, school, schoolName, exp: Date.now() + tokenHours * 3600000 });
-  var schools = role === 'admin' ? (SCHOOL_ADMINS || []) : [];
+  var schools = (SCHOOL_ADMINS || []).slice();
   if (!schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
-  res.json({ ok: true, token, role, school, schoolName, schools: role === 'admin' ? schools : undefined });
+  res.json({ ok: true, token, role, school, schoolName, schools: schools });
 });
 
 function getAdminSession(req) {

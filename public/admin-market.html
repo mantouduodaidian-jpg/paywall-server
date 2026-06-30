@@ -841,12 +841,12 @@ function login() {
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin
-        if (d.role === 'admin' && d.schools) {
+        if (d.schools && d.schools.length) {
           SCHOOL_LIST = d.schools;
           localStorage.setItem('schoolList', JSON.stringify(d.schools));
           var sel = document.getElementById('schoolSelector');
           sel.style.display = 'inline-block';
-          sel.innerHTML = '<option value="">所有学校</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'">'+s.name+'</option>'; }).join('');
+          sel.innerHTML = '<option value="'+(d.school||'')+'">'+(d.school && d.school!=='beta' ? SCHOOL_LIST.find(function(s){return s.code===d.school;})?.name||'当前学校' : '所有学校')+'</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'">'+s.name+'</option>'; }).join('');
         }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
@@ -991,11 +991,16 @@ async function loadOverview() {
     const txR = await apiFetch(getSchoolParam('/api/marketplace/transactions'));
     const txData = await txR.json();
     var txArr = Array.isArray(txData) ? txData : [];
-    var pendingTotal = 0, pendingCount = 0;
-    txArr.forEach(function(t) { if ((t.payment_status||'pending') === 'pending') { pendingTotal += parseFloat(t.price||0); pendingCount++; } });
+    var pendingTotal = 0, pendingCount = 0, paidTotal = 0, paidCount = 0;
+    txArr.forEach(function(t) {
+      var s = t.payment_status||'pending';
+      if (s === 'pending') { pendingTotal += parseFloat(t.price||0); pendingCount++; }
+      else if (s === 'paid') { paidTotal += parseFloat(t.price||0); paidCount++; }
+    });
     renderTxChart(txArr);
     var sc = document.getElementById('statsContainer');
     if (sc) sc.innerHTML += '<div class="stat-card"><div class="num blue">¥'+pendingTotal.toFixed(2)+'</div><div class="label">待转账金额 <span style="color:#ccc">('+pendingCount+'笔)</span></div></div>';
+    if (sc) sc.innerHTML += '<div class="stat-card"><div class="num green">¥'+paidTotal.toFixed(2)+'</div><div class="label">已交易金额 <span style="color:#ccc">('+paidCount+'笔)</span></div></div>';
   } catch(e) {}
   // Recent
   try {
