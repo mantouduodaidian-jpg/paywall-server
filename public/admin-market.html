@@ -287,6 +287,7 @@ tr:hover td{background:#f8fcf9}
     <div class="tab" data-tab="kefu" onclick="switchTab('kefu')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1.1" stroke-linejoin="round"/><line x1="8" y1="9" x2="16" y2="9" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/><line x1="8" y1="13" x2="13" y2="13" stroke="#a7f3d0" stroke-width="1.5" stroke-linecap="round"/></svg> 消息 <span id="kefuBadge" class="badge" style="display:none">0</span></div>
     <div class="tab" data-tab="promotions" onclick="switchTab('promotions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="8" width="20" height="12" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><polyline points="12 4 16 8 8 8" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="6" y1="13" x2="10" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/><line x1="14" y1="13" x2="18" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 周边有礼</div>
     <div class="tab" data-tab="wall" onclick="switchTab('wall')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="18" height="18" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="3" y1="9" x2="21" y2="9" stroke="#a7f3d0" stroke-width="1.2"/><rect x="6" y="12" width="5" height="5" rx="1" fill="none" stroke="#a7f3d0" stroke-width=".9"/><rect x="13" y="12" width="5" height="5" rx="1" fill="none" stroke="#a7f3d0" stroke-width=".9"/></svg> 校园墙</div>
+    <div class="tab" data-tab="beta" onclick="switchTab('beta')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M20 12H4" stroke="#a7f3d0" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="9" fill="url(#gF)" stroke="#a7f3d0" stroke-width="1"/><text x="12" y="16" text-anchor="middle" font-size="12" font-weight="bold" fill="#a7f3d0">β</text></svg> 内测 <span class="badge" id="betaBadge" style="display:none">0</span></div>
     <div class="tab" data-tab="transactions" id="txTab" onclick="switchTab('transactions')"><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:middle;margin-right:3px"><rect x="2" y="4" width="20" height="16" rx="2" fill="url(#gF)" stroke="#a7f3d0" stroke-width=".9"/><line x1="2" y1="9" x2="22" y2="9" stroke="#a7f3d0" stroke-width="1.2"/><circle cx="7" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><circle cx="17" cy="13" r="1.5" fill="#60b88e" stroke="#a7f3d0" stroke-width=".7"/><line x1="10" y1="13" x2="14" y2="13" stroke="#a7f3d0" stroke-width="1.4" stroke-linecap="round"/></svg> 交易 <span class="badge" id="txBadge" style="display:none">0</span></div>
   </div>
 
@@ -416,6 +417,22 @@ tr:hover td{background:#f8fcf9}
     </div>
     <div class="table-wrap">
       <table><thead><tr><th style="width:28px"><input type="checkbox" onchange="toggleAllCb(this,'wallCb')"></th><th>ID</th><th>标题</th><th>内容</th><th>类型</th><th>发布人</th><th>学校</th><th>状态</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="wallTbody"></tbody></table><div id="wallPagination" style="padding:8px 0;display:flex;justify-content:center;gap:4px;font-size:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BETA ===== -->
+<div class="tab-content" id="tabBeta" style="display:none">
+  <div class="section">
+    <h3>🧪 内测服管理 <span class="badge" id="betaCount">0</span></h3>
+    <div class="toolbar">
+      <span>学校: <strong style="color:#a7f3d0">🛠 内测服</strong></span>
+      <span style="flex:1"></span>
+      <select id="betaStatusFilter" onchange="loadBeta()"><option value="">全部状态</option><option value="approved">已通过</option><option value="pending">待审核</option><option value="rejected">已拒绝</option></select>
+      <button class="btn btn-ghost" onclick="loadBeta()" title="刷新">↻</button>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>ID</th><th>标题</th><th>价格</th><th>卖家</th><th>状态</th><th>审核</th><th>时间</th><th style="text-align:center">操作</th></tr></thead><tbody id="betaTbody"></tbody></table>
     </div>
   </div>
 </div>
@@ -899,7 +916,7 @@ autoLogin();
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',reviews:'tabReviews',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',wall:'tabWall',transactions:'tabTransactions'};
+  const map = {overview:'tabOverview',products:'tabProducts',rentals:'tabRentals',sellers:'tabSellers',verifications:'tabVerifications',categories:'tabCategories',reports:'tabReports',reviews:'tabReviews',announcements:'tabAnnouncements',blocked:'tabBlocked',logs:'tabLogs',kefu:'tabKefu',promotions:'tabPromotions',wall:'tabWall',beta:'tabBeta',transactions:'tabTransactions'};
   document.getElementById(map[name]).style.display = '';
   document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.tab === name));
   if (name === 'overview') loadOverview();
@@ -916,6 +933,7 @@ function switchTab(name) {
   else if (name === 'promotions') loadPromos();
   else if (name === 'transactions') loadTransactions();
   else if (name === 'wall') loadWall();
+  else if (name === 'beta') loadBeta();
     else if (name === 'logs') loadLogs();
   else if (name === 'kefu') { stopKefuPoll(); loadKefuContacts();
   // Populate ann school selector
@@ -1857,6 +1875,37 @@ async function loadWall() {
         '</td></tr>';
     }).join('');
   } catch(e) { document.getElementById('wallTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
+}
+async function loadBeta() {
+  try {
+    var sf = document.getElementById('betaStatusFilter').value;
+    let url = '/api/marketplace/products?admin=true&school=beta&limit=500&offset=0';
+    if (sf) url += '&status=' + sf;
+    const r = await apiFetch(url);
+    let json = await r.json();
+    var arr = Array.isArray(json.data) ? json.data : (Array.isArray(json) ? json : []);
+    document.getElementById('betaCount').textContent = arr.length;
+    var tbody = document.getElementById('betaTbody');
+    if (!arr.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty">暂无内测商品</div></td></tr>'; return; }
+    tbody.innerHTML = arr.map(function(p) {
+      var sc = p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow';
+      var st = p.status==='approved'?'✅ 已通过':p.status==='rejected'?'✕ 未通过':'⏳ 待审核';
+      var actions = '';
+      if (p.status==='pending') actions = '<button class="btn btn-green btn-sm" onclick="betaApprove('+p.id+')">✅通过</button><button class="btn btn-red btn-sm" onclick="betaReject('+p.id+')">✕拒绝</button>';
+      else if (p.status==='approved') actions = '<button class="btn btn-yellow btn-sm" onclick="betaReject('+p.id+')">下架</button>';
+      return '<tr><td style="color:#ccc">'+p.id+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td><td style="color:#4e9e80;font-weight:600">¥'+(parseFloat(p.price||p.rent_price||0).toFixed(0))+'</td><td style="color:#bbb;font-size:10px">'+esc(p.owner_name||p.owner_student_id||'')+'</td><td><span class="badge '+sc+'">'+st+'</span></td><td>'+actions+'</td><td style="color:#ccc;font-size:10px">'+fmtDate(p.created_at)+'</td></tr>';
+    }).join('');
+  } catch(e) { document.getElementById('betaTbody').innerHTML = '<tr><td colspan="8"><div class="empty">加载失败</div></td></tr>'; }
+}
+async function betaApprove(id) {
+  await apiFetch('/api/marketplace/products/'+id+'/approve', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({admin:true})});
+  toast('✅ 已通过'); loadBeta();
+}
+async function betaReject(id) {
+  var r = prompt('请输入拒绝/下架原因（选填）');
+  if (r === null) return;
+  await apiFetch('/api/marketplace/products/'+id+'/reject', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({reason:r||'',admin:true})});
+  toast('✕ 已操作'); loadBeta();
 }
 async function approveWall(id) {
   await apiFetch('/api/wall/admin/posts/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
