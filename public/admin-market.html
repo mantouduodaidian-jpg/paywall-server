@@ -910,6 +910,11 @@ async function autoLogin() {
       sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===localStorage.getItem('adminSchool')?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   }
+  // Ensure beta school is in cached list
+  if (!SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
+    SCHOOL_LIST.push({ code: 'beta', name: '🛠 内测服' });
+    try { localStorage.setItem('schoolList', JSON.stringify(SCHOOL_LIST)); } catch(e) {}
+  }
   init(); applyRole();
 }
 autoLogin();
