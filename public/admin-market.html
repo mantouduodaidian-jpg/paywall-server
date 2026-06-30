@@ -1651,7 +1651,7 @@ async function openKefuChat(studentId, name) {
   if (kefuPollTimer) clearInterval(kefuPollTimer);
   document.getElementById('kefuMsgs').innerHTML = '';
   await loadKefuMsgs();
-  kefuPollTimer = setInterval(loadKefuMsgs, 1500);
+  kefuPollTimer = setInterval(loadKefuMsgs, 800);
   loadKefuContacts();
   // Populate ann school selector
   var annSel = document.getElementById('annSchool');
@@ -1718,9 +1718,23 @@ async function sendKefuMsg() {
   var content = t;
   if (_kefuImgData) { content = t ? t + ' [img]' + _kefuImgData : '[img]' + _kefuImgData; clearKefuImg(); }
   inp.value = '';
+  // Optimistic: add message immediately
+  var me = isKefuId(kefuId());
+  var now = new Date();
+  var mtime = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  var escContent = esc(content);
+  if (escContent.indexOf('[img]') >= 0) {
+    var parts = escContent.split('[img]');
+    escContent = parts.map(function(part, i){ if (i===0) return part||''; return '<br><img src="'+part+'" style="max-width:180px;max-height:120px;border-radius:6px;display:block;cursor:pointer" onclick="openChatImage(''+part+'')">'; }).join('');
+  }
+  document.getElementById('kefuMsgs').innerHTML += '<div style="margin:4px 0;text-align:right">'+
+    '<div style="font-size:9px;color:rgba(78,158,128,.3);margin:1px 4px">'+mtime+'</div>'+
+    '<span style="display:inline-block;padding:6px 10px;border-radius:8px;font-size:11px;max-width:70%;background:rgba(78,158,128,.12);color:#4e9e80">'+escContent+'</span></div>';
+  document.getElementById('kefuMsgs').scrollTop = document.getElementById('kefuMsgs').scrollHeight;
   try {
     await apiFetch('/api/marketplace/messages', {method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({product_id:0,from_student_id:kefuId(),from_name:'校园严选客服',to_student_id:kefuContactId,to_name:'',content:content})});
+    loadKefuMsgs();
   } catch(e) { toast('发送失败'); }
 }
 
