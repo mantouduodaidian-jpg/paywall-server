@@ -891,7 +891,7 @@ async function autoLogin() {
     if (sel) {
       var cur = localStorage.getItem('adminSchool') || '';
       sel.style.display = 'inline-block';
-      sel.innerHTML = SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===cur?' selected':'')+'>'+s.name+'</option>'; }).join('');
+      sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===cur?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   }
   // Ensure beta school is in cached list
