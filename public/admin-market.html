@@ -823,8 +823,8 @@ function login() {
         if (d.school) { localStorage.setItem('adminSchool', d.school); localStorage.setItem('adminSchoolName', d.schoolName || ''); }
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
-        // Show school selector for super admin
-        if (d.schools && d.schools.length) {
+        // Show school selector for super admin only
+        if (d.role === 'admin' && d.schools && d.schools.length) {
           SCHOOL_LIST = d.schools;
           localStorage.setItem('schoolList', JSON.stringify(d.schools));
           var sel = document.getElementById('schoolSelector');
@@ -885,8 +885,8 @@ async function autoLogin() {
   document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('app').classList.add('show');
-  // Restore school selector for super admin
-  if (SCHOOL_LIST.length) {
+  // Restore school selector for super admin only
+  if (role === 'admin' && SCHOOL_LIST.length) {
     var sel = document.getElementById('schoolSelector');
     if (sel) {
       var cur = localStorage.getItem('adminSchool') || '';
