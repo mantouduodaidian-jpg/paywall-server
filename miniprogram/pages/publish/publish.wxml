@@ -1,103 +1,125 @@
 <view class="page">
-  <view class="custom-header">
-    <view class="ch-back" wx:if="{{isEdit}}" bindtap="goBack">
-      <text class="ch-arrow">‹</text>
-      <text class="ch-text">返回</text>
-    </view>
-    <view class="ch-spacer" wx:else></view>
-    <text class="ch-title">{{isEdit?'编辑商品':'发布商品'}}</text>
-    <view class="ch-spacer"></view>
-  </view>
+  <!-- 出售/出租切换 -->
   <view class="type-bar">
-    <view class="type {{itemType==='sell'?'active':''}}" bindtap="setType" data-type="sell">
-      <image class="t-icon" src="/images/pub-sell{{itemType==='sell'?'':'-gray'}}.png"></image>
+    <view class="type-btn {{tradeType === 'sell' ? 'type-on' : ''}}" bindtap="switchType" data-type="sell">
+      <view class="type-icon {{tradeType === 'sell' ? 'icon-on' : ''}}">✓</view>
       <text>出售</text>
     </view>
-    <view class="type {{itemType==='rent'?'active':''}}" bindtap="setType" data-type="rent">
-      <image class="t-icon" src="/images/pub-rent{{itemType==='rent'?'':'-gray'}}.png"></image>
+    <view class="type-btn {{tradeType === 'rent' ? 'type-on' : ''}}" bindtap="switchType" data-type="rent">
+      <view class="type-icon {{tradeType === 'rent' ? 'icon-on' : ''}}">🏠</view>
       <text>出租</text>
     </view>
   </view>
-  <view class="card">
-    <view class="card-title"><image class="c-icon" src="/images/pub-cam.png"></image><text>商品图片</text></view>
-    <view class="imgs">
-      <view wx:for="{{images}}" wx:key="*this" class="img-item">
-        <image class="img-preview" src="{{item}}"></image>
-        <view class="img-del" bindtap="delImage" data-index="{{idx}}">✕</view>
+
+  <!-- 商品图片 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon">📷</text>
+      <text class="section-title">商品图片</text>
+    </view>
+    <view class="image-grid">
+      <view class="image-box" wx:for="{{images}}" wx:key="*this">
+        <image src="{{item}}" mode="aspectFill" class="image-preview" />
+        <view class="image-del" bindtap="removeImage" data-index="{{index}}">×</view>
       </view>
-      <view class="img-add" bindtap="pickImage" wx:if="{{images.length<4}}">
-        <text class="img-plus">+</text>
-        <text class="img-tip">添加照片</text>
-      </view>
-    </view>
-  </view>
-  <view class="card">
-    <view class="card-title"><image class="c-icon" src="/images/pub-clip.png"></image><text>基本信息</text></view>
-    <view class="field">
-      <text class="label">物品名称 *</text>
-      <input class="ipt" placeholder="请输入物品名称" value="{{title}}" bindinput="onTitle" />
-    </view>
-    <view class="field">
-      <text class="label">物品描述</text>
-      <textarea class="ipt area" placeholder="描述物品的新旧、使用情况..." value="{{desc}}" bindinput="onDesc" />
-    </view>
-    <view class="field">
-      <text class="label">分类 *</text>
-      <view class="picker-wrap">
-        <picker mode="selector" range="{{catNames}}" bindchange="onCat">
-          <view class="picker-inner">
-            <view class="picker-val {{catSel?'':'placeholder'}}">{{catSel||'选择分类'}}</view>
-            <text class="picker-arrow">∨</text>
-          </view>
-        </picker>
+      <view class="image-add" wx:if="{{images.length < 6}}" bindtap="addImage">
+        <text class="add-icon">+</text>
+        <text class="add-text">添加照片</text>
       </view>
     </view>
   </view>
-  <view class="card">
-    <view class="card-title"><image class="c-icon" src="/images/pub-tagp.png"></image><text>价格</text></view>
-    <view class="field" wx:if="{{itemType==='sell'}}">
-      <text class="label">售价（元）</text>
-      <input class="ipt ipt-price" placeholder="¥ 0.00" type="digit" value="{{price}}" bindinput="onPrice" />
+
+  <!-- 基本信息 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon">📋</text>
+      <text class="section-title">基本信息</text>
     </view>
-    <view class="field" wx:if="{{itemType==='rent'}}">
-      <text class="label">租金（元/{{rentLabel}}）</text>
-      <input class="ipt ipt-price" placeholder="¥ 0" type="digit" value="{{price}}" bindinput="onPrice" />
-    </view>
-    <view class="field" wx:if="{{itemType==='rent'}}">
-      <text class="label">押金（元）</text>
-      <input class="ipt ipt-price" placeholder="¥ 0" type="digit" value="{{deposit}}" bindinput="onDeposit" />
-    </view>
-    <view class="field" wx:if="{{itemType==='rent'}}">
-      <text class="label">租期单位</text>
-      <view class="period-bar">
-        <view wx:for="{{periods}}" wx:key="v" class="period {{rentPeriod===item.v?'active':''}}" bindtap="onPeriod" data-val="{{item.v}}">{{item.l}}</view>
-      </view>
-    </view>
-    <view class="field row">
-      <text class="label">可议价</text>
-      <switch class="switch" color="#4e9e80" checked="{{negotiable}}" bindchange="onNegotiable" />
+
+    <view class="field">
+      <text class="field-label">物品名称 *</text>
+      <input class="field-input" placeholder="请输入物品名称" value="{{title}}" bindinput="onInput" data-field="title" />
     </view>
     <view class="field">
-      <text class="label">可见范围</text>
-      <view class="gender-bar">
-        <view class="gender {{genderPref==='all'?'active':''}}" bindtap="pickGenderPref" data-val="all">全部可见</view>
-        <view class="gender {{genderPref==='male'?'active':''}}" bindtap="pickGenderPref" data-val="male">仅男生</view>
-        <view class="gender {{genderPref==='female'?'active':''}}" bindtap="pickGenderPref" data-val="female">仅女生</view>
+      <text class="field-label">物品描述</text>
+      <textarea class="field-textarea" placeholder="描述物品的新旧、使用情况..." value="{{desc}}" bindinput="onInput" data-field="desc" />
+    </view>
+    <view class="field">
+      <text class="field-label">分类 *</text>
+      <picker mode="selector" range="{{categories}}" bindchange="onCategoryChange">
+        <view class="field-picker">
+          <text class="{{category ? 'pv-val' : 'pv-ph'}}">{{category || '选择分类'}}</text>
+          <text class="pv-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">成色</text>
+      <picker mode="selector" range="{{qualities}}" bindchange="onQualityChange">
+        <view class="field-picker">
+          <text class="{{quality ? 'pv-val' : 'pv-ph'}}">{{quality || '选择成色'}}</text>
+          <text class="pv-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 价格 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon">¥</text>
+      <text class="section-title">价格</text>
+    </view>
+
+    <view class="field" wx:if="{{tradeType === 'sell'}}">
+      <text class="field-label">售价（元）</text>
+      <input class="field-input" placeholder="请输入售价" value="{{price}}" bindinput="onInput" data-field="price" type="digit" />
+    </view>
+
+    <view class="field" wx:if="{{tradeType === 'rent'}}">
+      <text class="field-label">租价（元/月）</text>
+      <input class="field-input" placeholder="请输入月租价" value="{{rentPrice}}" bindinput="onInput" data-field="rentPrice" type="digit" />
+    </view>
+    <view class="field" wx:if="{{tradeType === 'rent'}}">
+      <text class="field-label">押金（元）</text>
+      <input class="field-input" placeholder="请输入押金" value="{{deposit}}" bindinput="onInput" data-field="deposit" type="digit" />
+    </view>
+    <view class="field" wx:if="{{tradeType === 'rent'}}">
+      <text class="field-label">租期</text>
+      <picker mode="selector" range="{{rentPeriods}}" bindchange="onRentPeriodChange">
+        <view class="field-picker">
+          <text class="{{rentPeriod ? 'pv-val' : 'pv-ph'}}">{{rentPeriod || '选择租期'}}</text>
+          <text class="pv-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <view class="checkbox-row">
+        <view class="checkbox {{negotiable ? 'cb-on' : ''}}" bindtap="toggleNegotiable">
+          <text wx:if="{{negotiable}}">✓</text>
+        </view>
+        <text class="checkbox-label">可议价</text>
       </view>
     </view>
   </view>
-  <view class="card">
-    <view class="card-title"><image class="c-icon" src="/images/pub-tagq.png"></image><text>新旧程度</text></view>
-    <view class="quality-list">
-      <view wx:for="{{qualities}}" wx:key="*this" class="quality {{quality===item?'active':''}}" bindtap="pickQuality" data-val="{{item}}">{{item}}</view>
+
+  <!-- 交易偏好 -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-icon">👤</text>
+      <text class="section-title">交易偏好</text>
+    </view>
+    <view class="field">
+      <text class="field-label">期望交易对象</text>
+      <view class="gender-pref-bar">
+        <view class="gp-item {{genderPref === '' ? 'gp-on' : ''}}" bindtap="setGenderPref" data-val="">不限</view>
+        <view class="gp-item {{genderPref === 'male' ? 'gp-on' : ''}}" bindtap="setGenderPref" data-val="male">仅男</view>
+        <view class="gp-item {{genderPref === 'female' ? 'gp-on' : ''}}" bindtap="setGenderPref" data-val="female">仅女</view>
+      </view>
     </view>
   </view>
-  <view wx:if="{{isEdit && wasRejected}}" class="dual-btn">
-    <button class="btn half" bindtap="saveOnly">保存修改</button>
-    <button class="btn half primary" bindtap="saveAndSubmit">保存修改并提交</button>
-  </view>
-  <button class="btn" wx:else bindtap="publish">
-    <image class="btn-icon" src="/images/pub-up.png"></image>
-    <text>{{isEdit?'保存修改':'发布商品'}}</text>
-  </button>
+
+  <!-- 提交 -->
+  <button class="submit-btn" bindtap="submitProduct">{{isEdit ? '保存修改' : '发布商品'}}</button>
 </view>

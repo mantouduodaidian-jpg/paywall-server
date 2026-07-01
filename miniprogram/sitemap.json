@@ -1,3 +1,10 @@
 {
-  "rules": [{ "action": "allow", "page": "*" }]
+  "rules": [
+    {
+      "action": "display",
+      "page": "pages/index/index",
+      "condition": "user",
+      "title": "二豆校园"
+    }
+  ]
 }

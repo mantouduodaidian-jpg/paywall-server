@@ -1,6 +1,20 @@
 <view class="tab-bar">
-  <view wx:for="{{list}}" wx:key="idx" class="tab-item {{selected===idx?'active':''}}" bindtap="switchTab" data-idx="{{idx}}">
-    <image class="tab-icon" src="{{selected===idx?item.selectedIconPath:item.iconPath}}"></image>
-    <text class="tab-label">{{item.text}}</text>
+  <view class="tab-item {{selected===0?'active':''}}" bindtap="switchTab" data-idx="0">
+    <text class="tab-icon">{{selected===0?'🏠':'🏠'}}</text>
+    <text class="tab-label">首页</text>
+  </view>
+  <view class="tab-item {{selected===1?'active':''}}" bindtap="switchTab" data-idx="1">
+    <text class="tab-icon">{{selected===1?'💬':'💬'}}</text>
+    <text class="tab-label">消息</text>
+  </view>
+  <view class="tab-item {{selected===2?'active':''}}" bindtap="switchTab" data-idx="2">
+    <view class="pub-btn">
+      <text class="pub-icon">+</text>
+    </view>
+    <text class="tab-label pub-label">发布</text>
+  </view>
+  <view class="tab-item {{selected===3?'active':''}}" bindtap="switchTab" data-idx="3">
+    <text class="tab-icon">{{selected===3?'👤':'👤'}}</text>
+    <text class="tab-label">我的</text>
   </view>
 </view>

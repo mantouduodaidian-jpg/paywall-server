@@ -1,94 +1,87 @@
 <view class="page">
-  <image class="logo-img" src="https://paywall-server.onrender.com/logo.jpg" mode="aspectFill"></image>
-  <view class="logo">二豆</view>
-  <view class="subtitle">校园严选 · 二手集市</view>
+  <!-- LOGO 区域 -->
+  <view class="logo-area">
+    <view class="logo-circle">
+      <image src="/images/logo.jpg" mode="aspectFill" class="logo-img" />
+    </view>
+    <text class="logo-title">二豆</text>
+    <text class="logo-sub">校园严选 · 二手集市</text>
+  </view>
 
-  <!-- Mode switch -->
+  <!-- 注册/登录切换 -->
   <view class="mode-bar">
-    <view class="mode {{mode==='register'?'active':''}}" bindtap="switchMode" data-mode="register">注册</view>
-    <view class="mode {{mode==='login'?'active':''}}" bindtap="switchMode" data-mode="login">登录</view>
+    <view class="mode {{mode === 'register' ? 'mode-active' : ''}}" bindtap="switchMode" data-mode="register">注册</view>
+    <view class="mode {{mode === 'login' ? 'mode-active' : ''}}" bindtap="switchMode" data-mode="login">登录</view>
   </view>
 
-  <!-- ====== 注册模式 ====== -->
-  <view class="form" wx:if="{{mode==='login' && betaMode}}">
-    <view class="beta-badge">🔒 内测服</view>
-    <input class="ipt" placeholder="用户名" value="{{betaName}}" bindinput="onBetaName" />
-    <input class="ipt" placeholder="密码" password="{{true}}" value="{{betaLoginPwd}}" bindinput="onBetaLoginPwd" />
-    <button class="btn btn-beta" bindtap="doBetaLoginSubmit">进入内测服</button>
-  </view>
-
-  <view class="form" wx:if="{{mode==='register' && !betaMode}}">
+  <!-- 注册表单 -->
+  <view class="form" wx:if="{{mode === 'register'}}">
     <view class="field">
-      <text class="label">真实姓名 *</text>
-      <input class="ipt" placeholder="请输入真实姓名" value="{{regName}}" bindinput="onRegName" />
+      <text class="field-label">姓名 *</text>
+      <input class="field-input" placeholder="请输入真实姓名" value="{{name}}" bindinput="onInput" data-field="name" />
     </view>
     <view class="field">
-      <text class="label">学号 *</text>
-      <input class="ipt" placeholder="请输入学号" value="{{regSid}}" bindinput="onRegSid" />
+      <text class="field-label">学号 *</text>
+      <input class="field-input" placeholder="请输入学号" value="{{studentId}}" bindinput="onInput" data-field="studentId" />
     </view>
     <view class="field">
-      <text class="label">手机号 *</text>
-      <input class="ipt" placeholder="11位手机号" type="number" maxlength="11" value="{{regPhone}}" bindinput="onRegPhone" />
+      <text class="field-label">手机号 *</text>
+      <input class="field-input" placeholder="请输入手机号" value="{{phone}}" bindinput="onInput" data-field="phone" type="number" maxlength="11" />
     </view>
-    <view class="field-row">
-      <view class="field half">
-        <text class="label">性别 *</text>
-        <view class="gender-bar">
-          <view class="gender {{regGender==='male'?'active':''}}" bindtap="pickGender" data-val="male">男</view>
-          <view class="gender {{regGender==='female'?'active':''}}" bindtap="pickGender" data-val="female">女</view>
+    <view class="field">
+      <text class="field-label">昵称</text>
+      <input class="field-input" placeholder="给自己取个昵称" value="{{nickname}}" bindinput="onInput" data-field="nickname" />
+    </view>
+    <view class="field">
+      <text class="field-label">学校 *</text>
+      <picker mode="selector" range="{{schools}}" bindchange="onSchoolChange">
+        <view class="field-picker">
+          <text class="{{school ? 'picker-val' : 'picker-ph'}}">{{school || '请选择学校'}}</text>
+          <text class="picker-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+    <view class="field">
+      <text class="field-label">性别</text>
+      <view class="gender-bar">
+        <view class="gender {{gender === 'male' ? 'gender-active' : ''}}" bindtap="setGender" data-gender="male">
+          <text>男</text>
+        </view>
+        <view class="gender {{gender === 'female' ? 'gender-active' : ''}}" bindtap="setGender" data-gender="female">
+          <text>女</text>
         </view>
       </view>
-      <view class="field half">
-        <text class="label">学校 *</text>
-        <view class="picker-wrap">
-          <picker mode="selector" range="{{schoolNames}}" bindchange="onRegSchool">
-            <view class="picker-val {{regSchool?'':'ph'}}">{{regSchool||'选择学校'}}</view>
-          </picker>
-          <text class="picker-arrow">∨</text>
-        </view>
-      </view>
     </view>
     <view class="field">
-      <text class="label">匿名昵称（选填）</text>
-      <input class="ipt" placeholder="如 山山来迟" value="{{regNick}}" bindinput="onRegNick" />
-    </view>
-    <view class="field">
-      <text class="label">学生证照片 *</text>
+      <text class="field-label">学生证照片</text>
       <view class="upload-row">
         <view class="upload-box" bindtap="uploadCard">
-          <text wx:if="{{!cardImg}}" class="upload-plus">+</text>
-          <image wx:else class="upload-preview" src="{{cardImg}}"></image>
+          <text class="upload-plus">+</text>
         </view>
-        <text class="upload-tip" wx:if="{{cardImg}}" bindtap="clearCard">✕ 清除</text>
+        <image wx:if="{{cardImage}}" src="{{cardImage}}" class="upload-preview" mode="aspectFill" />
+        <text class="upload-tip" wx:if="{{cardImage}}">{{cardImageName || '已上传'}}</text>
       </view>
     </view>
-    <button class="btn" bindtap="doRegister">提交注册</button>
+    <button class="btn" bindtap="doRegister">注册</button>
   </view>
 
-  <!-- ====== 登录模式 ====== -->
-  <view class="form" wx:if="{{mode==='login' && !betaMode}}">
-    <input class="ipt" placeholder="学号" value="{{student_id}}" bindinput="onIdInput" />
-    <input class="ipt" placeholder="手机号" type="number" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" />
+  <!-- 登录表单 -->
+  <view class="form" wx:else>
+    <view class="field">
+      <text class="field-label">学号</text>
+      <input class="field-input" placeholder="请输入学号" value="{{studentId}}" bindinput="onInput" data-field="studentId" />
+    </view>
+    <view class="field">
+      <text class="field-label">手机号</text>
+      <input class="field-input" placeholder="请输入手机号" value="{{phone}}" bindinput="onInput" data-field="phone" type="number" maxlength="11" />
+    </view>
     <button class="btn" bindtap="doLogin">登录</button>
-    <view class="tip">首次使用请切换到"注册"</view>
-
-    <view wx:if="{{!betaMode}}">
-      <view class="beta-entrance" bindtap="toggleBeta">
-        <text class="beta-link">{{showBeta?'收起':'🔒 内测入口'}}</text>
-      </view>
-      <view class="beta-box" wx:if="{{showBeta}}">
-        <input class="ipt" placeholder="输入内测密码" password="{{true}}" value="{{betaPwd}}" bindinput="onBetaPwd" />
-        <button class="btn btn-beta" bindtap="doBetaLogin">进入内测服</button>
-        <view class="beta-hint">内测人员请输入管理员提供的内测密码</view>
-      </view>
-    </view>
+    <text class="tip">首次使用请切换到"注册"</text>
   </view>
 
-  <!-- School picker modal (after login if no school) -->
-  <view class="modal-overlay" wx:if="{{showSchoolPicker}}" bindtap="hidePicker"></view>
-  <view class="modal" wx:if="{{showSchoolPicker}}">
-    <view class="modal-title">选择学校</view>
-    <view class="modal-sub">请选择你的学校</view>
-    <view wx:for="{{schools}}" wx:key="code" class="modal-item" bindtap="pickSchool" data-code="{{item.code}}">{{item.name}}</view>
+  <!-- 内测入口 -->
+  <view class="beta-entrance" bindtap="enterBeta">
+    <text class="beta-star">✨</text>
+    <text class="beta-text">内测入口</text>
   </view>
 </view>

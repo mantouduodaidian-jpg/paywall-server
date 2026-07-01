@@ -1,44 +1,23 @@
 <view class="page">
-  <!-- ── Top Bar ── -->
-  <view class="top-bar">
-    <image class="logo" src="/images/logo.jpg" mode="aspectFit" />
-    <view class="school-selector {{user ? 'fixed' : ''}}" bindtap="toggleSchool">
-      <text class="school-name">{{schoolName}}</text>
-      <text class="arrow {{showSchool ? 'up' : 'down'}}">▼</text>
+  <!-- 顶部用户栏 -->
+  <view class="user-bar">
+    <view class="ub-left">
+      <image class="ub-avatar" src="/images/logo.jpg" mode="aspectFill" />
+      <view class="ub-info">
+        <view class="ub-name-row">
+          <text class="ub-name">二豆校园</text>
+          <view class="ub-beta" bindtap="onBetaTap">
+            <text>内测服</text>
+            <text class="ub-arrow">▼</text>
+          </view>
+        </view>
+      </view>
     </view>
-    <view class="user-area">
-      <block wx:if="{{user}}">
-        <image class="top-avatar" src="{{user.avatar || '/images/tab-me.png'}}" bindtap="goProfile" mode="aspectFill" />
-      </block>
-      <block wx:else>
-        <button class="login-btn" bindtap="goLogin">登录</button>
-      </block>
-    </view>
+    <view wx:if="{{!user}}" class="ub-login" bindtap="onLoginTap">登录</view>
+    <text wx:else class="ub-logged" bindtap="onLoginTap">{{user.nickname || user.name || '已登录'}}</text>
   </view>
 
-  <!-- ── School Dropdown (visitor only) ── -->
-  <view class="school-mask {{showSchool ? 'show' : ''}}" bindtap="toggleSchool"></view>
-  <view class="school-dropdown {{showSchool ? 'show' : ''}}">
-    <view class="school-item {{schoolCode === '' ? 'active' : ''}}" bindtap="pickSchool" data-code="">
-      <text>全部学校</text>
-      <text class="check" wx:if="{{schoolCode === ''}}">✓</text>
-    </view>
-    <view wx:for="{{schools}}" wx:key="code" class="school-item {{schoolCode === item.code ? 'active' : ''}}" bindtap="pickSchool" data-code="{{item.code}}">
-      <text>{{item.name}}</text>
-      <text class="check" wx:if="{{schoolCode === item.code}}">✓</text>
-    </view>
-  </view>
-
-  <!-- ── Announcement Bar ── -->
-  <view class="ann-bar {{annShow ? '' : 'hidden'}}" bindtap="goAnnouncement">
-    <text class="ann-icon">📢</text>
-    <view class="ann-scroll">
-      <text class="ann-text">{{annText}}</text>
-    </view>
-    <text class="ann-go">›</text>
-  </view>
-
-  <!-- ── Category Bar ── -->
+  <!-- 分类标签 -->
   <scroll-view class="cat-bar" scroll-x enhanced show-scrollbar="{{false}}">
     <view class="cat-item {{selCat === '' ? 'active' : ''}}" bindtap="setCat" data-cat="">
       <text>全部</text>
@@ -54,93 +33,70 @@
     </view>
   </scroll-view>
 
-  <!-- ── Search Bar ── -->
+  <!-- 搜索栏 -->
   <view class="search-bar">
     <view class="search-wrap">
-      <text class="search-icon">🔍</text>
-      <input class="search-input" placeholder="搜索商品名称..." value="{{search}}" bindconfirm="onSearch" confirm-type="search" />
-      <text class="search-clear {{search ? 'show' : ''}}" bindtap="clearSearch">✕</text>
+      <input class="search-input" placeholder="搜索商品..." value="{{searchKeyword}}" bindinput="onSearchInput" />
     </view>
     <button class="search-btn" bindtap="onSearch">搜索</button>
   </view>
 
-  <!-- ── Sort / Filter Row ── -->
-  <view class="filter-row">
-    <picker class="sort-picker" range="{{sortOpts}}" value="{{sortIdx}}" bindchange="onSort">
-      <view class="sort-display">
-        <text class="sort-label">{{sortOpts[sortIdx]}}</text>
-        <text class="sort-arrow">▾</text>
-      </view>
-    </picker>
-
-    <view class="type-tabs">
-      <view class="type-tab {{itemType === 'sell' ? 'active' : ''}}" bindtap="toggleItemType" data-type="sell">
-        <text>🛒 出售</text>
-      </view>
-      <view class="type-tab {{itemType === 'buy' ? 'active' : ''}}" bindtap="toggleItemType" data-type="buy">
-        <text>📋 求购</text>
-      </view>
-      <view class="type-tab {{itemType === 'rent' ? 'active' : ''}}" bindtap="toggleItemType" data-type="rent">
-        <text>📦 租赁</text>
-      </view>
+  <!-- 出售/出租切换 -->
+  <view class="type-bar">
+    <view class="type-btn {{tradeType === 'sell' ? 'type-active' : ''}}" bindtap="onTypeTap" data-type="sell">
+      <text>出售</text>
     </view>
-
-    <view class="filter-btn" bindtap="toggleFilter">
-      <text>筛选 ▾</text>
+    <view class="type-btn {{tradeType === 'rent' ? 'type-active' : ''}}" bindtap="onTypeTap" data-type="rent">
+      <text>出租</text>
     </view>
   </view>
 
-  <!-- ── Filter Popup ── -->
-  <view class="filter-mask {{showFilter ? 'show' : ''}}" bindtap="toggleFilter"></view>
-  <view class="filter-panel {{showFilter ? 'show' : ''}}">
-    <view class="filter-header">
-      <text class="filter-title">价格区间</text>
-      <text class="filter-close" bindtap="toggleFilter">✕</text>
+  <!-- 排序/筛选 -->
+  <view class="filter-bar">
+    <view class="filter-sort {{sortBy === 'latest' ? 'filter-sort-on' : ''}}" bindtap="onSortTap">
+      <text>{{sortBy === 'latest' ? '最新' : '最新'}}</text>
     </view>
-    <view class="price-row">
-      <input class="price-input" placeholder="最低价" value="{{priceMin}}" bindinput="onPriceMin" type="digit" />
-      <text class="price-sep">—</text>
-      <input class="price-input" placeholder="最高价" value="{{priceMax}}" bindinput="onPriceMax" type="digit" />
+    <view class="filter-price">
+      <input class="fp-input" placeholder="¥ 最低" value="{{minPrice}}" bindinput="onMinPriceInput" type="digit" />
+      <text class="fp-sep">-</text>
+      <input class="fp-input" placeholder="¥ 最高" value="{{maxPrice}}" bindinput="onMaxPriceInput" type="digit" />
     </view>
-    <button class="filter-apply" bindtap="applyFilter">确定筛选</button>
+    <button class="filter-btn" bindtap="onFilterConfirm">确定</button>
   </view>
 
-  <!-- ── Product Grid ── -->
-  <view class="product-grid" wx:if="{{list.length > 0}}">
-    <view wx:for="{{list}}" wx:key="id" class="product-card" bindtap="goDetail" data-id="{{item.id}}">
-      <image class="card-img" src="{{item._firstImg}}" mode="aspectFill" />
-      <view class="card-info">
-        <text class="card-title">{{item.title}}</text>
-        <view class="card-price-row">
-          <text wx:if="{{item.item_type === 'rent' && item.rent_price}}" class="card-price">¥{{item.rent_price}}<text class="card-unit">/天</text></text>
-          <text wx:else class="card-price">¥{{item.price}}</text>
-          <text wx:if="{{item.quality}}" class="card-quality">{{item.quality}}</text>
+  <!-- 统计行 -->
+  <view class="stats-bar">
+    <text class="stats-text">{{activeCatLabel || '全部'}} · {{totalCount}} 件 · 第{{page + 1}}/{{totalPages}}页</text>
+  </view>
+
+  <!-- 商品列表 -->
+  <view class="product-list" wx:if="{{products.length > 0}}">
+    <view class="product-grid">
+      <view class="product-card" wx:for="{{products}}" wx:key="id" bindtap="onProductTap" data-id="{{item.id}}">
+        <view class="pc-img">
+          <image wx:if="{{item.images && item.images.length > 0}}" src="{{'https://paywall-server.onrender.com' + item.images[0]}}" mode="aspectFill" />
+          <text wx:else class="pc-img-placeholder">📦</text>
+          <view wx:if="{{item.status === 'sold'}}" class="pc-badge pc-sold">已售</view>
+          <view wx:elif="{{item.status === 'pending'}}" class="pc-badge pc-pending">待审</view>
+          <view wx:if="{{item.images && item.images.length > 1}}" class="pc-photos">{{item.images.length}}</view>
         </view>
-        <view class="card-meta">
-          <text class="card-school" wx:if="{{item.schoolName}}">{{item.schoolName}}</text>
-          <text class="card-time">{{item._dateStr}}</text>
+        <view class="pc-info">
+          <text class="pc-title">{{item.title}}</text>
+          <text class="pc-price">{{item.trade_type === 'rent' ? (item.rent_price || item.price) : item.price}}<text class="pc-unit">{{item.trade_type === 'rent' ? '/月' : '元'}}</text></text>
+          <view class="pc-meta">
+            <text class="pc-tag">{{item.school || '未知'}}</text>
+            <text class="pc-tag" wx:if="{{item.quality}}">{{item.quality}}</text>
+          </view>
         </view>
       </view>
     </view>
-  </view>
-
-  <!-- ── Load More ── -->
-  <view class="load-more" wx:if="{{list.length > 0}}">
-    <text wx:if="{{hasMore}}" class="loading-text">上拉加载更多</text>
-    <text wx:else class="end-text">— 已经到底了 —</text>
-  </view>
-
-  <!-- ── Empty State ── -->
-  <view class="empty-state" wx:if="{{list.length === 0 && resultLabel !== '加载中...'}}">
-    <image class="empty-img" src="/images/tab-home.png" mode="aspectFit" />
-    <text class="empty-text">{{resultLabel}}</text>
-    <view class="empty-actions">
-      <button class="empty-btn" bindtap="onPullDownRefresh">刷新试试</button>
+    <view class="load-more" wx:if="{{loading}}">
+      <text>加载中...</text>
     </view>
   </view>
 
-  <!-- ── Initial Loading ── -->
-  <view class="init-loading" wx:if="{{list.length === 0 && resultLabel === '加载中...'}}">
-    <text class="init-text">加载中...</text>
+  <!-- 空状态：纯文字无图标 -->
+  <view class="empty-state" wx:else>
+    <text class="empty-text">还没有商品</text>
   </view>
 </view>

@@ -1,1 +1,5 @@
-page{background:#f7f3ea;color:#333;font-size:14px;box-sizing:border-box;-webkit-font-smoothing:antialiased}view,text,image{box-sizing:border-box}button::after{border:none}
+page {
+  background: #f8f5f0;
+  color: #555;
+  font-family: -apple-system, 'Microsoft YaHei', sans-serif;
+}
