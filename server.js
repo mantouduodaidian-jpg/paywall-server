@@ -1586,7 +1586,7 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
 app.get('/api/marketplace/products', async (req, res) => {
   try {
     const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max } = req.query;
-    if (school === "beta") return res.json({ data: [], total: 0, limit: 0, offset: 0 });
+    if (school === "beta" && !admin) return res.json({ data: [], total: 0, limit: 0, offset: 0 });
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
     var orderBy = 'pinned.desc,created_at.desc';
