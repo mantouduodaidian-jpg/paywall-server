@@ -1,0 +1,77 @@
+.page{padding:0 16px 96px;background:#f7f3ea;min-height:100vh;box-sizing:border-box}
+.custom-header{display:flex;align-items:center;padding:44px 12px 6px;background:#fff;border-bottom:1px solid rgba(0,0,0,.04);min-height:44px;margin:0 -16px 12px}
+.ch-back{display:inline-flex;align-items:center;gap:2px;cursor:pointer;padding:4px 0;flex-shrink:0}
+.ch-back:active{opacity:.5}
+.ch-arrow{font-size:22px;color:#4e9e80;font-weight:300;line-height:1}
+.ch-text{font-size:15px;color:#4e9e80}
+.ch-title{font-size:16px;font-weight:600;color:#333;flex:1;text-align:center}
+.ch-spacer{width:40px;flex-shrink:0}
+
+/* 类型切换 */
+.type-bar{display:flex;gap:8px;margin-bottom:16px}
+.type{flex:1;padding:10px;border-radius:12px;text-align:center;font-size:14px;font-weight:500;background:#fff;color:rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;gap:5px}
+.type.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+.t-icon{width:18px;height:18px;flex-shrink:0}
+
+/* 卡片 */
+.card{background:#fff;border-radius:14px;padding:14px 14px 12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.02)}
+.card-title{font-size:14px;font-weight:600;color:#333;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.c-icon{width:16px;height:16px;flex-shrink:0}
+
+/* 图片选择 */
+.imgs{display:flex;gap:8px;flex-wrap:wrap}
+.img-add{width:72px;height:72px;border-radius:12px;border:1.5px dashed rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.img-plus{font-size:24px;color:rgba(0,0,0,.15);line-height:1}
+.img-tip{font-size:10px;color:rgba(0,0,0,.15)}
+.img-item{position:relative;width:72px;height:72px;border-radius:12px;overflow:hidden}
+.img-preview{width:72px;height:72px;border-radius:12px;background:rgba(0,0,0,.03)}
+.img-del{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:12px;text-align:center;line-height:20px}
+
+/* 字段 */
+.field{margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field.row{display:flex;align-items:center;justify-content:space-between}
+.label{display:block;font-size:13px;font-weight:500;color:rgba(0,0,0,.45);margin-bottom:5px}
+
+/* 输入框 */
+.ipt{display:block;width:100%;height:42px;padding:0 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:15px;color:#333;line-height:42px;box-sizing:border-box}
+.ipt::placeholder{color:rgba(0,0,0,.2)}
+.area{height:auto;min-height:80px;padding:10px 12px;line-height:1.5}
+
+/* 价格输入框 */
+.ipt-price{font-size:16px;font-weight:600;color:#4e9e80}
+.ipt-price::placeholder{color:rgba(78,158,128,.3);font-weight:400}
+
+/* 分类选择器 */
+.picker-wrap{display:flex;align-items:center;height:42px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;padding:0 8px 0 0}
+.picker-wrap picker{flex:1;height:42px;display:block}
+.picker-inner{display:flex;align-items:center;justify-content:space-between;height:42px;padding:0 12px}
+.picker-val{font-size:15px;color:#333;flex:1}
+.picker-val.placeholder{color:rgba(0,0,0,.2)}
+.picker-arrow{font-size:12px;color:rgba(0,0,0,.12);line-height:1}
+
+/* 租期单位 */
+.period-bar{display:flex;gap:6px}
+.period{padding:7px 14px;border-radius:8px;font-size:13px;background:#f5f2eb;color:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.04);font-weight:500}
+.period.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 可见范围 */
+.gender-bar{display:flex;gap:6px}
+.gender{flex:1;padding:9px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:13px;font-weight:500;text-align:center;color:rgba(0,0,0,.25)}
+.gender.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 开关 */
+.switch{transform:scale(.75);transform-origin:right center}
+
+/* 新旧程度 */
+.quality-list{display:flex;gap:6px;flex-wrap:wrap}
+.quality{padding:7px 14px;border-radius:8px;font-size:13px;background:#f5f2eb;color:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.04);font-weight:500}
+.quality.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 提交按钮 */
+.btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#4e9e80,#3d8a6e);color:#fff;font-size:16px;font-weight:600;border:none;margin-top:4px;box-shadow:0 4px 12px rgba(78,158,128,.25);display:flex;align-items:center;justify-content:center;gap:6px}
+.dual-btn{display:flex;gap:8px;margin-top:4px}
+.dual-btn .btn{margin-top:0}
+.dual-btn .half.primary{background:linear-gradient(135deg,#4e9e80,#3d8a6e)}
+.dual-btn .half:not(.primary){background:#fff;color:#4e9e80;border:2px solid rgba(78,158,128,.2);box-shadow:none}
+.btn-icon{width:18px;height:18px;flex-shrink:0}

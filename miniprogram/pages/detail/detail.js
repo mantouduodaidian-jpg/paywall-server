@@ -81,6 +81,7 @@ Page({
         error: false,
         currentSwiper: 0,
         showDesc: false,
+        dateStr: (p.created_at || '').substring(0, 10),
       });
 
       // Load buyer info if available

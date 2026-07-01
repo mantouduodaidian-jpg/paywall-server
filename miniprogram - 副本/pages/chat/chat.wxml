@@ -81,7 +81,7 @@
   <view class="review-modal" wx:if="{{showReview}}">
     <view class="rev-title">评价本次交易</view>
     <view class="rev-tags">
-      <view wx:for="{{reviewTags}}" wx:key="*this" class="rev-tag {{_selTags[item]?'active':''}}" bindtap="toggleReviewTag" data-tag="{{item}}">{{item}}</view>
+      <view wx:for="{{reviewTags}}" wx:key="*this" class="rev-tag {{reviewSel.indexOf(item)>=0?'active':''}}" bindtap="toggleReviewTag" data-tag="{{item}}">{{item}}</view>
     </view>
     <textarea class="rev-text" placeholder="请填写评价理由（必填）" value="{{reviewText}}" bindinput="onReviewText" />
     <view class="rev-imgs">

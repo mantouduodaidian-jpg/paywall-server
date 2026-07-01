@@ -50,7 +50,7 @@
       <text class="info-title">{{product.title}}</text>
       <view class="info-meta">
         <text class="info-cat" wx:if="{{product.categoryName || product.category}}">{{product.categoryName || product.category}}</text>
-        <text class="info-date">{{(product.created_at || '').substring(0, 10)}}</text>
+        <text class="info-date">{{dateStr}}</text>
       </view>
     </view>
 

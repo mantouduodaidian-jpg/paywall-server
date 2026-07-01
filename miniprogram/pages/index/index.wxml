@@ -118,7 +118,7 @@
         </view>
         <view class="card-meta">
           <text class="card-school" wx:if="{{item.schoolName}}">{{item.schoolName}}</text>
-          <text class="card-time">{{(item.created_at || '').substring(0, 10)}}</text>
+          <text class="card-time">{{item._dateStr}}</text>
         </view>
       </view>
     </view>

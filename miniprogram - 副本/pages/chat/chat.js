@@ -5,7 +5,7 @@ Page({
   data: { msgs: [], input: '', user: null, pid: 0, sid: '', name: '', _loaded: false,
     product: null, tradeRole: '', tradeStatus: '', tradeProducts: [], tradePicker: [], tradeIdx: -1,
     otherNick: '', otherGender: '', msgTopId: '', pendingImg: '',
-    showReview: false, reviewTags: [], reviewSel: [], _selTags: {}, reviewText: '', reviewImgs: [] },
+    showReview: false, reviewTags: [], reviewSel: [], reviewText: '', reviewImgs: [] },
   _tradeTimer: null,
   goBack() {
     try { wx.navigateBack({ delta: 1 }); } catch(e) {
@@ -261,24 +261,19 @@ Page({
         this.setData({ tradeStatus: 'completed' });
         this.loadMsgs();
         // Show review modal
-        this.setData({ showReview: true, reviewTags: REVIEW_TAGS, reviewSel: [], _selTags: {}, reviewText: '', reviewImgs: [] });
+        this.setData({ showReview: true, reviewTags: REVIEW_TAGS, reviewSel: [], reviewText: '', reviewImgs: [] });
       } else {
         app.toast(d.error || '操作失败');
       }
     }).catch(() => wx.hideLoading());
   },
   // Review
-  _makeSelMap(sel) {
-    var m = {};
-    sel.forEach(function(t) { m[t] = true; });
-    return m;
-  },
   toggleReviewTag(e) {
     var tag = e.currentTarget.dataset.tag;
     var sel = this.data.reviewSel.slice();
     var idx = sel.indexOf(tag);
     if (idx >= 0) sel.splice(idx, 1); else sel.push(tag);
-    this.setData({ reviewSel: sel, _selTags: this._makeSelMap(sel) });
+    this.setData({ reviewSel: sel });
   },
   onReviewText(e) { this.setData({ reviewText: e.detail.value }); },
   pickReviewImg() {

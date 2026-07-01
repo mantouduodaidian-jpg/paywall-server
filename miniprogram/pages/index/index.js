@@ -164,6 +164,8 @@ Page({
       }
 
       if (records) {
+        // Pre-process dates for WXML (no .substring allowed)
+        records = records.map(function(r) { return { ...r, _dateStr: (r.created_at || '').substring(0, 10) }; });
         const newList = page === 0 ? records : list.concat(records);
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
         const more = page + 1 < totalPages;
