@@ -1,0 +1,146 @@
+<view class="page">
+  <!-- ── Loading State ── -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- ── Error State ── -->
+  <view class="error-state" wx:if="{{!loading && error}}">
+    <text class="error-text">加载失败</text>
+    <button class="retry-btn" bindtap="onPullDownRefresh">重试</button>
+  </view>
+
+  <!-- ── Product Detail ── -->
+  <block wx:if="{{!loading && !error && product}}">
+    <!-- Custom Header -->
+    <view class="detail-header">
+      <view class="dh-back" bindtap="goBack">
+        <text class="dh-arrow">‹</text>
+        <text class="dh-text">返回</text>
+      </view>
+      <text class="dh-title">商品详情</text>
+      <view class="dh-spacer"></view>
+    </view>
+
+    <!-- Image Carousel -->
+    <view class="swiper-wrap" wx:if="{{images.length > 0}}">
+      <swiper class="img-swiper" circular autoplay="{{false}}" indicator-dots="{{images.length > 1}}" indicator-color="rgba(255,255,255,.4)" indicator-active-color="#fff" bindchange="onSwiperChange">
+        <swiper-item wx:for="{{images}}" wx:key="*this">
+          <image class="swiper-img" src="{{item}}" mode="aspectFill" />
+        </swiper-item>
+      </swiper>
+      <view class="swiper-count" wx:if="{{images.length > 1}}">
+        <text>{{currentSwiper + 1}}/{{images.length}}</text>
+      </view>
+    </view>
+    <view class="no-img" wx:else>
+      <text class="no-img-text">暂无图片</text>
+    </view>
+
+    <!-- Product Info -->
+    <view class="info-section">
+      <view class="price-row">
+        <text wx:if="{{product.item_type === 'rent' && product.rent_price}}" class="price">¥{{product.rent_price}}<text class="price-unit">/天</text></text>
+        <text wx:else class="price">¥{{product.price}}</text>
+        <view class="info-tags">
+          <text class="info-tag type-tag">{{product.item_type === 'rent' ? '租赁' : product.item_type === 'buy' ? '求购' : '出售'}}</text>
+          <text class="info-tag quality-tag" wx:if="{{product.quality}}">{{product.quality}}</text>
+        </view>
+      </view>
+      <text class="info-title">{{product.title}}</text>
+      <view class="info-meta">
+        <text class="info-cat" wx:if="{{product.categoryName || product.category}}">{{product.categoryName || product.category}}</text>
+        <text class="info-date">{{(product.created_at || '').substring(0, 10)}}</text>
+      </view>
+    </view>
+
+    <!-- Seller Info -->
+    <view class="seller-section" bindtap="contactSeller">
+      <view class="seller-avatar">
+        <image class="s-avatar" src="{{product.ownerAvatar || '/images/tab-me.png'}}" mode="aspectFill" />
+      </view>
+      <view class="seller-info">
+        <text class="seller-name">{{product.ownerName || product.owner_nickname || '卖家'}}</text>
+        <text class="seller-tip">联系卖家 ›</text>
+      </view>
+    </view>
+
+    <!-- Trade Status Bar -->
+    <view class="trade-section" wx:if="{{tradeStatus && tradeRole}}">
+      <!-- Buyer: waiting for seller -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'trading' && tradeRole === 'buyer'}}">
+        <text class="trade-icon">⏳</text>
+        <view class="trade-info">
+          <text class="trade-label">等待卖家确认交易</text>
+        </view>
+        <button class="trade-btn cancel" bindtap="cancelTrade">取消</button>
+      </view>
+
+      <!-- Seller: buyer requested -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'trading' && tradeRole === 'seller'}}">
+        <text class="trade-icon">📦</text>
+        <view class="trade-info">
+          <text class="trade-label">买家已下单，请确认</text>
+          <text class="trade-name" wx:if="{{tradeBuyer}}">{{tradeBuyer.name || '买家'}}</text>
+        </view>
+        <view class="trade-actions">
+          <button class="trade-btn cancel" bindtap="cancelTrade">拒绝</button>
+          <button class="trade-btn confirm" bindtap="confirmTrade">确认</button>
+        </view>
+      </view>
+
+      <!-- Buyer: seller confirmed, waiting for receipt -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'awaiting_buyer' && tradeRole === 'buyer'}}">
+        <text class="trade-icon">✅</text>
+        <view class="trade-info">
+          <text class="trade-label">卖家已确认交易</text>
+          <text class="trade-tip">请确认收货</text>
+        </view>
+        <view class="trade-actions">
+          <button class="trade-btn cancel" bindtap="cancelTrade">取消</button>
+          <button class="trade-btn confirm" bindtap="receiveGoods">收货</button>
+        </view>
+      </view>
+
+      <!-- Seller: waiting for buyer receipt -->
+      <view class="trade-bar info" wx:if="{{tradeStatus === 'awaiting_buyer' && tradeRole === 'seller'}}">
+        <text class="trade-icon">✅</text>
+        <view class="trade-info">
+          <text class="trade-label">已确认交易，等待买家收货</text>
+          <text class="trade-name" wx:if="{{tradeBuyer}}">{{tradeBuyer.name || '买家'}}</text>
+        </view>
+        <button class="trade-btn chat" bindtap="goChatWithBuyer">联系买家</button>
+      </view>
+
+      <!-- Completed -->
+      <view class="trade-bar completed" wx:if="{{tradeStatus === 'completed'}}">
+        <text class="trade-icon">🎉</text>
+        <view class="trade-info">
+          <text class="trade-label">交易已完成</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Available to buy (no active trade) -->
+    <view class="buy-section" wx:if="{{!tradeStatus && user && tradeRole !== 'seller'}}">
+      <button class="buy-btn" bindtap="buyNow">立即购买</button>
+      <button class="contact-btn" bindtap="contactSeller">联系卖家</button>
+    </view>
+
+    <!-- Login prompt -->
+    <view class="login-section" wx:if="{{!user}}">
+      <button class="login-tip-btn" bindtap="contactSeller">登录后联系卖家</button>
+    </view>
+
+    <!-- Description -->
+    <view class="desc-section">
+      <view class="desc-header" bindtap="toggleDesc">
+        <text class="desc-title">商品描述</text>
+        <text class="desc-toggle {{showDesc ? 'up' : ''}}">▾</text>
+      </view>
+      <view class="desc-body {{showDesc ? 'show' : ''}}">
+        <text class="desc-text">{{product.description || '暂无描述'}}</text>
+      </view>
+    </view>
+  </block>
+</view>

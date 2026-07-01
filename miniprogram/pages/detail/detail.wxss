@@ -1,0 +1,379 @@
+/* ── Page Base ── */
+.page {
+  padding: 0 0 32px;
+  background: #f7f3ea;
+  min-height: 100vh;
+}
+
+/* ── Loading / Error ── */
+.loading-state, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+}
+.loading-text, .error-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+  margin-bottom: 16px;
+}
+.retry-btn {
+  padding: 8px 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+
+/* ── Header ── */
+.detail-header {
+  display: flex;
+  align-items: center;
+  padding: 44px 12px 6px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.dh-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.dh-back:active {
+  opacity: .5;
+}
+.dh-arrow {
+  font-size: 22px;
+  color: #4e9e80;
+  font-weight: 300;
+  line-height: 1;
+}
+.dh-text {
+  font-size: 15px;
+  color: #4e9e80;
+}
+.dh-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+.dh-spacer {
+  width: 50px;
+  flex-shrink: 0;
+}
+
+/* ── Image Carousel ── */
+.swiper-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #f0ede4;
+}
+.img-swiper {
+  width: 100%;
+  height: 100%;
+}
+.swiper-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.swiper-count {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,.4);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.no-img {
+  width: 100%;
+  height: 200px;
+  background: #f0ede4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.no-img-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.15);
+}
+
+/* ── Info Section ── */
+.info-section {
+  background: #fff;
+  padding: 16px;
+  margin: 0 0 8px;
+}
+.price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e74c3c;
+}
+.price-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(231,76,60,.6);
+}
+.info-tags {
+  display: flex;
+  gap: 6px;
+}
+.info-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.type-tag {
+  background: rgba(78,158,128,.1);
+  color: #4e9e80;
+}
+.quality-tag {
+  background: #f5f2eb;
+  color: rgba(0,0,0,.35);
+}
+.info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  display: block;
+}
+.info-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.info-cat {
+  font-size: 12px;
+  color: rgba(0,0,0,.3);
+  background: #f5f2eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.info-date {
+  font-size: 12px;
+  color: rgba(0,0,0,.2);
+}
+
+/* ── Seller Section ── */
+.seller-section {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.seller-section:active {
+  background: #faf8f4;
+}
+.seller-avatar {
+  flex-shrink: 0;
+}
+.s-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(78,158,128,.15);
+  display: block;
+}
+.seller-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.seller-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.seller-tip {
+  font-size: 13px;
+  color: #4e9e80;
+}
+
+/* ── Trade Section ── */
+.trade-section {
+  margin: 0 0 8px;
+}
+.trade-bar {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  gap: 12px;
+}
+.trade-bar.info {
+  background: #f0faf5;
+}
+.trade-bar.completed {
+  background: #f0faf5;
+}
+.trade-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.trade-info {
+  flex: 1;
+  min-width: 0;
+}
+.trade-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  display: block;
+}
+.trade-tip {
+  font-size: 12px;
+  color: rgba(0,0,0,.35);
+  display: block;
+  margin-top: 2px;
+}
+.trade-name {
+  font-size: 12px;
+  color: #4e9e80;
+  display: block;
+  margin-top: 2px;
+}
+.trade-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.trade-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.trade-btn.confirm {
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+}
+.trade-btn.cancel {
+  background: #f5f2eb;
+  color: rgba(0,0,0,.45);
+}
+.trade-btn.chat {
+  background: rgba(78,158,128,.1);
+  color: #4e9e80;
+}
+
+/* ── Buy Section ── */
+.buy-section {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+}
+.buy-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 12px rgba(78,158,128,.25);
+}
+.contact-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  color: #4e9e80;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid rgba(78,158,128,.2);
+}
+
+/* ── Login Section ── */
+.login-section {
+  padding: 12px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+}
+.login-tip-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+}
+
+/* ── Description ── */
+.desc-section {
+  background: #fff;
+  margin: 0 0 8px;
+}
+.desc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+.desc-header:active {
+  opacity: .7;
+}
+.desc-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.desc-toggle {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+  transition: transform .2s;
+}
+.desc-toggle.up {
+  transform: rotate(180deg);
+}
+.desc-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.desc-body.show {
+  max-height: 600px;
+}
+.desc-text {
+  display: block;
+  padding: 0 16px 16px;
+  font-size: 14px;
+  color: rgba(0,0,0,.55);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}

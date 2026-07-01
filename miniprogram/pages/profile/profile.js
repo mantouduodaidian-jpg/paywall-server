@@ -8,7 +8,7 @@ const SCHOOLS = [
 ];
 
 Page({
-  data: { user: null, schoolName: '', showPicker: false, schools: SCHOOLS, soundOn: true },
+  data: { user: null, schoolName: '', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80 },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ active: 3 });
@@ -17,6 +17,11 @@ Page({
     if (user) {
       const s = SCHOOLS.find(s => s.code === user.school);
       this.setData({ user, schoolName: s ? s.name : '' });
+      // Load credit score
+      var self = this;
+      app.request('/api/marketplace/reviews?student_id=' + user.student_id).then(function(d) {
+        if (d && d.credit_score) self.setData({ creditScore: d.credit_score });
+      });
     }
     this.setData({ soundOn: app._soundEnabled !== false });
   },
@@ -79,6 +84,11 @@ Page({
   goMyFavs() {
     if (!this.data.user) return app.toast('请先登录');
     app.globalData.tabIntent = 'fav';
+    wx.switchTab({ url: '/pages/index/index' });
+  },
+  goMyPurchases() {
+    if (!this.data.user) return app.toast('请先登录');
+    app.globalData.tabIntent = 'bought';
     wx.switchTab({ url: '/pages/index/index' });
   }
 });

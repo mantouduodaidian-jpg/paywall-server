@@ -1,0 +1,44 @@
+<view class="page">
+  <!-- ── Header ── -->
+  <view class="msg-header">
+    <text class="msg-title">消息</text>
+    <view class="msg-spacer"></view>
+  </view>
+
+  <!-- ── Not logged in ── -->
+  <view class="login-prompt" wx:if="{{!user && !loading}}">
+    <image class="prompt-img" src="/images/tab-msg.png" mode="aspectFit" />
+    <text class="prompt-text">登录后查看消息</text>
+    <button class="prompt-btn" bindtap="goChat" data-contact="">去登录</button>
+  </view>
+
+  <!-- ── Loading ── -->
+  <view class="msg-loading" wx:if="{{loading}}">
+    <text class="msg-loading-text">加载中...</text>
+  </view>
+
+  <!-- ── Empty ── -->
+  <view class="msg-empty" wx:if="{{!loading && user && contacts.length === 0}}">
+    <image class="empty-img" src="/images/tab-msg.png" mode="aspectFit" />
+    <text class="empty-text">暂无消息</text>
+  </view>
+
+  <!-- ── Contact List ── -->
+  <view class="contact-list" wx:if="{{contacts.length > 0}}">
+    <view wx:for="{{contacts}}" wx:key="student_id" class="contact-item" bindtap="goChat" data-contact="{{item}}">
+      <view class="contact-avatar-wrap">
+        <image class="contact-avatar" src="{{item.avatar || '/images/tab-me.png'}}" mode="aspectFill" />
+        <view class="unread-badge" wx:if="{{item.unread > 0}}">
+          <text class="unread-num">{{item.unread > 99 ? '99+' : item.unread}}</text>
+        </view>
+      </view>
+      <view class="contact-info">
+        <view class="contact-top">
+          <text class="contact-name">{{item.name || item.nickname || '未知用户'}}</text>
+          <text class="contact-time">{{item.lastTime}}</text>
+        </view>
+        <text class="contact-msg">{{item.last_message || item.lastMessage || ''}}</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,15 @@
+{
+  "projectname": "二豆校园",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "newFeature": true
+  },
+  "appid": "wxc9c41036a658dfc3",
+  "compileType": "miniprogram",
+  "libVersion": "3.16.1",
+  "condition": {}
+}
