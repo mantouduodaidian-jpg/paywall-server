@@ -1,0 +1,3666 @@
+
+========================================
+ FILE: app.js
+========================================
+const API_BASE = 'https://paywall-server.onrender.com';
+const _wsHandlers = {};
+var _ws = null, _wsTimer = null, _wsReconnect = 0;
+
+App({
+  globalData: { user: null, token: null, nickCache: null, genderCache: null, _needRefresh: false },
+  onLaunch() {
+    var u = wx.getStorageSync('user') || null;
+    var t = wx.getStorageSync('token') || '';
+    if (u) { this.globalData.user = u; this.globalData.token = t; this.connectWS(); }
+  },
+  toast(msg, type) {
+    wx.showToast({ title: msg, icon: type === 'success' ? 'success' : 'none', duration: 2000 });
+  },
+  request(url, method, body) {
+    var token = this.globalData.token || wx.getStorageSync('token') || '';
+    return new Promise(function(resolve, reject) {
+      wx.request({
+        url: API_BASE + url,
+        method: method || 'GET',
+        data: body,
+        header: { 'Content-Type': 'application/json', 'Authorization': token ? 'Bearer ' + token : '' },
+        success: function(r) { resolve(r.data); },
+        fail: function(e) { reject(e); }
+      });
+    });
+  },
+  connectWS() {
+    var self = this;
+    if (_ws) try { _ws.close(); } catch(e) {}
+    try {
+      _ws = wx.connectSocket({ url: 'wss://paywall-server.onrender.com' });
+      _ws.onOpen(function() {
+        _wsReconnect = 0;
+        var u = self.globalData.user;
+        if (u) _ws.send(JSON.stringify({ type: 'auth', student_id: u.student_id }));
+      });
+      _ws.onMessage(function(res) {
+        try {
+          var d = JSON.parse(res.data);
+          if (d.type && _wsHandlers[d.type]) {
+            _wsHandlers[d.type].forEach(function(h) { try { h(d.data, d.type); } catch(e) {} });
+          }
+        } catch(e) {}
+      });
+      _ws.onClose(function() {
+        _ws = null;
+        if (_wsReconnect < 5) {
+          _wsReconnect++;
+          setTimeout(function() { self.connectWS(); }, 3000 * _wsReconnect);
+        }
+      });
+      _ws.onError(function() {});
+    } catch(e) {}
+  },
+  disconnectWS() {
+    _wsReconnect = 5;
+    if (_ws) try { _ws.close(); } catch(e) {}
+    _ws = null;
+  },
+  getNickCache(forceRefresh) {
+    var self = this;
+    return new Promise(function(resolve) {
+      if (self.globalData.nickCache && !forceRefresh) { resolve(self.globalData.nickCache); return; }
+      self.request('/api/marketplace/nicknames').then(function(d) {
+        self.globalData.nickCache = d || {};
+        resolve(self.globalData.nickCache);
+      }).catch(function() { resolve(self.globalData.nickCache || {}); });
+    });
+  },
+  onWS(type, handler) {
+    if (!_wsHandlers[type]) _wsHandlers[type] = [];
+    _wsHandlers[type].push(handler);
+  },
+  offWS(type) {
+    delete _wsHandlers[type];
+  },
+  playSound(name) {
+    try {
+      var m = wx.createInnerAudioContext();
+      m.src = 'sounds/' + name + '.wav';
+      m.play();
+    } catch(e) {}
+  }
+});
+
+========================================
+ FILE: app.json
+========================================
+{
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/message/message",
+    "pages/chat/chat",
+    "pages/login/login",
+    "pages/profile/profile",
+    "pages/publish/publish"
+  ],
+  "window": {
+    "navigationBarTitleText": "二豆校园",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#999999",
+    "selectedColor": "#4e9e80",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tab-home.png",
+        "selectedIconPath": "images/tab-home-active.png"
+      },
+      {
+        "pagePath": "pages/message/message",
+        "text": "消息",
+        "iconPath": "images/tab-msg.png",
+        "selectedIconPath": "images/tab-msg-active.png"
+      },
+      {
+        "pagePath": "pages/publish/publish",
+        "text": "发布",
+        "iconPath": "images/tab-pub.png",
+        "selectedIconPath": "images/tab-pub-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tab-me.png",
+        "selectedIconPath": "images/tab-me-active.png"
+      }
+    ]
+  },
+  "usingComponents": {},
+  "sitemapLocation": "sitemap.json"
+}
+
+========================================
+ FILE: app.wxss
+========================================
+page{background:#f7f3ea;color:#333;font-size:14px;box-sizing:border-box;-webkit-font-smoothing:antialiased}view,text,image{box-sizing:border-box}button::after{border:none}
+
+========================================
+ FILE: custom-tab-bar/index.js
+========================================
+var app = getApp();
+var PAGE_MAP = ['pages/index/index', 'pages/message/message', 'pages/publish/publish', 'pages/profile/profile'];
+Component({
+  data: { selected: 0, list: [
+    { iconPath: '/images/tab-home.png', selectedIconPath: '/images/tab-home-active.png', text: '首页' },
+    { iconPath: '/images/tab-msg.png', selectedIconPath: '/images/tab-msg-active.png', text: '消息' },
+    { iconPath: '/images/tab-pub.png', selectedIconPath: '/images/tab-pub-active.png', text: '发布' },
+    { iconPath: '/images/tab-me.png', selectedIconPath: '/images/tab-me-active.png', text: '我的' }
+  ]},
+  lifetimes: {
+    attached() {
+      var p = getCurrentPages();
+      var cur = p[p.length - 1];
+      if (cur) {
+        var route = cur.route || '';
+        var idx = PAGE_MAP.indexOf(route);
+        if (idx >= 0) this.setData({ selected: idx });
+      }
+    }
+  },
+  methods: {
+    switchTab(e) {
+      var idx = e.currentTarget.dataset.idx;
+      wx.switchTab({ url: '/' + PAGE_MAP[idx] });
+    }
+  }
+});
+
+========================================
+ FILE: custom-tab-bar/index.json
+========================================
+{ "component": true }
+
+========================================
+ FILE: custom-tab-bar/index.wxml
+========================================
+<view class="tab-bar">
+  <view wx:for="{{list}}" wx:key="idx" class="tab-item {{selected===idx?'active':''}}" bindtap="switchTab" data-idx="{{idx}}">
+    <image class="tab-icon" src="{{selected===idx?item.selectedIconPath:item.iconPath}}"></image>
+    <text class="tab-label">{{item.text}}</text>
+  </view>
+</view>
+
+========================================
+ FILE: custom-tab-bar/index.wxss
+========================================
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid rgba(0,0,0,.04);padding:4px 0 8px;z-index:100}.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}.tab-icon{width:24px;height:24px}.tab-label{font-size:10px;color:#999}.tab-item.active .tab-label{color:#4e9e80}
+
+========================================
+ FILE: pages/chat/chat.js
+========================================
+const app = getApp();
+const API_BASE = 'https://paywall-server.onrender.com';
+const REVIEW_TAGS = ['商品与描述一致', '沟通态度好', '准时到达', '商品完好', '价格合理', '交易顺利', '与描述不符', '沟通不愉快'];
+Page({
+  data: { msgs: [], input: '', user: null, pid: 0, sid: '', name: '', _loaded: false,
+    product: null, tradeRole: '', tradeStatus: '', tradeProducts: [], tradePicker: [], tradeIdx: -1,
+    otherNick: '', otherGender: '', msgTopId: '', pendingImg: '',
+    showReview: false, reviewTags: [], reviewSel: [], _selTags: {}, reviewText: '', reviewImgs: [] },
+  _tradeTimer: null,
+  goBack() {
+    try { wx.navigateBack({ delta: 1 }); } catch(e) {
+      wx.switchTab({ url: '/pages/message/message' });
+    }
+  },
+  onLoad(opt) {
+    if (this._tradeTimer) { clearTimeout(this._tradeTimer); this._tradeTimer = null; }
+    this.setData({ tradeProducts: [], tradePicker: [], tradeIdx: -1 });
+    const user = app.globalData.user || wx.getStorageSync('user');
+    this.data.pid = parseInt(opt.pid);
+    this.data.sid = opt.sid;
+    this.data.name = decodeURIComponent(opt.name || '');
+    this.setData({ user, pid: this.data.pid, sid: this.data.sid, name: this.data.name });
+    // Load messages immediately (non-blocking)
+    this.loadMsgs();
+    // Load product and nickname in parallel
+    this.loadProduct();
+    this.loadNickname();
+    // Load trades in background (non-blocking)
+    this._tradeTimer = setTimeout(function() { this._tradeTimer = null; this.loadTrades(); }.bind(this), 500);
+    // Listen for WebSocket real-time messages
+    this._wsHandler = function(data, type) {
+      if (type === 'chat' && data) {
+        var msg = data.data || data;
+        if ((msg.from_student_id === this.data.sid || msg.to_student_id === this.data.sid) && msg.from_student_id !== this.data.user.student_id) {
+          var msgs = this.data.msgs.concat([this.processMsg({ ...msg, time: (msg.created_at||'').substring(11,16), mine: false })]);
+          this.setData({ msgs });
+          app.playSound('msg');
+        }
+      }
+    }.bind(this);
+    app.onWS('chat', this._wsHandler);
+  },
+  loadNickname(retries) {
+    if (!retries) retries = 0;
+    app.getNickCache(retries > 0).then(function(cache) {
+      var nick = cache[this.data.sid];
+      if (nick) { this.data.name = nick; this.setData({ name: nick }); wx.setNavigationBarTitle({ title: nick }); }
+    }.bind(this)).catch(function() {
+      if (retries < 3) setTimeout(function() { this.loadNickname(retries + 1); }.bind(this), 2000);
+    }.bind(this));
+  },
+  loadProduct() {
+    app.request('/api/marketplace/products/' + this.data.pid).then(p => {
+      if (!p) return;
+      this.setData({ product: p });
+      // Determine trade role
+      let role = '';
+      if (p.owner_student_id === this.data.user.student_id) role = 'seller';
+      else if (p.trade_buyer_id === this.data.user.student_id) role = 'buyer';
+      this.setData({ tradeRole: role, tradeStatus: p.trade_status || '' });
+      this.updateOtherInfo(p);
+    });
+  },
+  loadMsgs() {
+    const d = this.data;
+    app.request('/api/marketplace/messages?student_id=' + d.user.student_id + '&other_student_id=' + d.sid)
+      .then(data => {
+        const arr = Array.isArray(data) ? data : [];
+        // Play sound for new incoming messages (skip first load)
+        var hasNew = this.data._loaded && arr.length > this.data.msgs.length && arr.slice(-1)[0] && arr.slice(-1)[0].from_student_id !== d.user.student_id;
+        if (hasNew) app.playSound('msg');
+        const msgs = arr.map(m => this.processMsg({
+          ...m,
+          time: (m.created_at || '').substring(11, 16),
+          mine: m.from_student_id === d.user.student_id
+        }));
+        this.setData({ msgs, _loaded: true, msgTopId: msgs.length ? msgs[msgs.length - 1].id : '' });
+        app.request('/api/marketplace/messages/read', 'POST', { from_student_id: d.sid, student_id: d.user.student_id });
+      });
+  },
+  loadTrades(cb) {
+    // Load products traded between current user and chat partner
+    var u = this.data.user;
+    var otherId = this.data.sid;
+    if (!u || !otherId) return;
+    otherId = String(otherId);
+    Promise.all([
+      app.request('/api/marketplace/products?owner=' + u.student_id + '&limit=50'),
+      app.request('/api/marketplace/products?owner=' + this.data.sid + '&limit=50')
+    ]).then(function(results) {
+      var all = [];
+      results.forEach(function(r) {
+        var arr = r.data || r || [];
+        if (Array.isArray(arr)) all = all.concat(arr);
+      });
+      // Filter: only trades involving BOTH users
+      var myId = String(u.student_id);
+      var seen = {};
+      var traded = all.filter(function(p) {
+        if (!p.trade_status || seen[p.id]) return false;
+        seen[p.id] = true;
+        var o = String(p.owner_student_id || ''), b = String(p.trade_buyer_id || '');
+        // Both users must be involved (one is owner, other is buyer)
+        return (o === myId && b === otherId) || (o === otherId && b === myId);
+      });
+      if (traded.length <= 1) return;
+      var picker = traded.map(function(p) {
+        var statusMap = { trading: '⏳等待', awaiting_buyer: '📦确认', completed: '✅完成' };
+        return (statusMap[p.trade_status] || '') + ' ' + p.title;
+      });
+      this.setData({ tradeProducts: traded, tradePicker: picker, tradeIdx: -1 });
+      if (cb) cb();
+    }.bind(this)).catch(function(){ if (cb) cb(); });
+  },
+  showTradePicker() {
+    var self = this;
+    if (!this.data.tradePicker.length) {
+      wx.showLoading({ title: '加载中' });
+      this.loadTrades(function() {
+        wx.hideLoading();
+        if (self.data.tradePicker.length > 1) {
+          wx.showActionSheet({ itemList: self.data.tradePicker, success: function(e) { self.switchTrade(e.tapIndex); } });
+        }
+      });
+      return;
+    }
+    if (this.data.tradePicker.length > 1) {
+      wx.showActionSheet({ itemList: this.data.tradePicker, success: function(e) { self.switchTrade(e.tapIndex); } });
+    }
+  },
+  switchTrade(idx) {
+    var p = this.data.tradeProducts[idx];
+    if (!p) return;
+    this.setData({ pid: p.id, product: p, tradeIdx: idx });
+    // Update trade status
+    var role = '';
+    if (p.owner_student_id === this.data.user.student_id) role = 'seller';
+    else if (p.trade_buyer_id === this.data.user.student_id) role = 'buyer';
+    this.setData({ tradeRole: role, tradeStatus: p.trade_status || '' });
+    this.updateOtherInfo(p);
+    // Reload messages for this product
+    this.loadMsgs();
+  },
+  updateOtherInfo(p) {
+    if (!p) return;
+    // Ensure nick cache is loaded
+    if (!Object.keys(app.globalData.nickCache || {}).length) {
+      app.getNickCache().then(function() { this.updateOtherInfo(p); }.bind(this));
+      return;
+    }
+    var cache = app.globalData.nickCache || {};
+    var genderCache = app.globalData.genderCache || {};
+    var otherSid = '';
+    if (this.data.tradeRole === 'seller') otherSid = p.trade_buyer_id;
+    else if (this.data.tradeRole === 'buyer') otherSid = p.owner_student_id;
+    // Only show other party's info if they match the chat partner
+    if (otherSid && String(otherSid) === String(this.data.sid)) {
+      var nick = cache[otherSid] || '';
+      var gender = genderCache[otherSid] || '';
+      this.setData({ otherNick: nick, otherGender: ({male:'♂️',female:'♀️',男:'♂️',女:'♀️'})[gender] || '' });
+    } else {
+      this.setData({ otherNick: '', otherGender: '' });
+    }
+  },
+  onPullDownRefresh() { this.loadMsgs(); wx.stopPullDownRefresh(); },
+  onUnload() {
+    if (this._pollTimer) { clearInterval(this._pollTimer); this._pollTimer = null; }
+    if (this._wsHandler) app.offWS('chat');
+    if (this._tradeTimer) { clearTimeout(this._tradeTimer); this._tradeTimer = null; }
+  },
+  onInput(e) { this.setData({ input: e.detail.value }); },
+  // Parse [img] markers into renderable parts
+  processMsg(m) {
+    var content = m.content || '';
+    var hasImg = content.indexOf('[img]') >= 0;
+    if (!hasImg) return { ...m, _hasImg: false };
+    var msgId = m.id;
+    var raw = content.split('[img]');
+    var parts = raw.map(function(v, i) {
+      if (i === 0) return { isImg: false, val: v };
+      return { isImg: true, val: API_BASE + '/api/chat-image/' + msgId };
+    });
+    return { ...m, _hasImg: true, _parts: parts };
+  },
+  pickChatImg() {
+    wx.chooseImage({ count: 1, sizeType: ['compressed'],
+      success: res => {
+        wx.compressImage({ src: res.tempFilePaths[0], quality: 60,
+          success: cp => {
+            var b64 = wx.getFileSystemManager().readFileSync(cp.tempFilePath, 'base64');
+            this.setData({ pendingImg: 'data:image/jpeg;base64,' + b64 });
+          },
+          fail: () => {
+            var b64 = wx.getFileSystemManager().readFileSync(res.tempFilePaths[0], 'base64');
+            this.setData({ pendingImg: 'data:image/jpeg;base64,' + b64 });
+          }
+        });
+      }
+    });
+  },
+  clearPendingImg() { this.setData({ pendingImg: '' }); },
+  sendMsg() {
+    const d = this.data;
+    if (!d.input.trim() && !d.pendingImg) return;
+    app.getNickCache().then(function(cache) {
+      var nick = cache[d.user.student_id] || d.user.name;
+      var content = d.input.trim();
+      if (d.pendingImg) content = '[img]' + d.pendingImg + (content ? '\n' + content : '');
+      app.request('/api/marketplace/messages', 'POST', {
+        product_id: d.pid, from_student_id: d.user.student_id, from_name: nick,
+        to_student_id: d.sid, to_name: d.name, content: content
+      }).then(() => {
+        this.setData({ input: '', pendingImg: '' });
+        this.loadMsgs();
+      });
+    }.bind(this));
+  },
+  // === Trade actions ===
+  goDetail() {
+    wx.navigateTo({ url: '/pages/detail/detail?id=' + this.data.pid });
+  },
+  confirmTrade() {
+    wx.showLoading({ title: '处理中' });
+    app.request('/api/marketplace/trade/confirm', 'POST', {
+      product_id: this.data.pid, seller_id: this.data.user.student_id
+    }).then(d => {
+      wx.hideLoading();
+      if (d.ok) {
+        app.toast('已确认交易', 'success');
+        this.setData({ tradeStatus: 'awaiting_buyer' });
+        this.updateOtherInfo(this.data.product);
+        this.loadMsgs();
+      } else {
+        app.toast(d.error || '操作失败');
+      }
+    }).catch(() => wx.hideLoading());
+  },
+  cancelTrade() {
+    wx.showLoading({ title: '处理中' });
+    app.request('/api/marketplace/trade/cancel', 'POST', {
+      product_id: this.data.pid, student_id: this.data.user.student_id
+    }).then(d => {
+      wx.hideLoading();
+      if (d.ok) {
+        app.toast('已取消交易');
+        this.setData({ tradeStatus: '' });
+        this.loadMsgs();
+      } else {
+        app.toast(d.error || '操作失败');
+      }
+    }).catch(() => wx.hideLoading());
+  },
+  receiveGoods() {
+    wx.showLoading({ title: '处理中' });
+    app.request('/api/marketplace/trade/buyer-confirm', 'POST', {
+      product_id: this.data.pid, buyer_id: this.data.user.student_id
+    }).then(d => {
+      wx.hideLoading();
+      if (d.ok) {
+        app.toast('已确认收货', 'success');
+        this.setData({ tradeStatus: 'completed' });
+        this.loadMsgs();
+        // Show review modal
+        this.setData({ showReview: true, reviewTags: REVIEW_TAGS, reviewSel: [], _selTags: {}, reviewText: '', reviewImgs: [] });
+      } else {
+        app.toast(d.error || '操作失败');
+      }
+    }).catch(() => wx.hideLoading());
+  },
+  // Review
+  _makeSelMap(sel) {
+    var m = {};
+    sel.forEach(function(t) { m[t] = true; });
+    return m;
+  },
+  toggleReviewTag(e) {
+    var tag = e.currentTarget.dataset.tag;
+    var sel = this.data.reviewSel.slice();
+    var idx = sel.indexOf(tag);
+    if (idx >= 0) sel.splice(idx, 1); else sel.push(tag);
+    this.setData({ reviewSel: sel, _selTags: this._makeSelMap(sel) });
+  },
+  onReviewText(e) { this.setData({ reviewText: e.detail.value }); },
+  pickReviewImg() {
+    wx.chooseImage({ count: 3, sizeType: ['compressed'],
+      success: res => {
+        var imgs = this.data.reviewImgs.slice();
+        res.tempFilePaths.forEach(function(p) { if (imgs.length < 3) imgs.push(p); });
+        this.setData({ reviewImgs: imgs });
+      }
+    });
+  },
+  delReviewImg(e) {
+    var imgs = this.data.reviewImgs.slice();
+    imgs.splice(e.currentTarget.dataset.index, 1);
+    this.setData({ reviewImgs: imgs });
+  },
+  submitReview() {
+    var d = this.data;
+    if (!d.reviewText) return app.toast('请填写评价理由');
+    wx.showLoading({ title: '提交中' });
+    app.request('/api/marketplace/reviews', 'POST', {
+      product_id: this.data.pid,
+      buyer_id: this.data.user.student_id,
+      seller_id: this.data.sid,
+      tags: d.reviewSel,
+      reason: d.reviewText,
+      images: d.reviewImgs.map(function(p) {
+        try { return 'data:image/jpeg;base64,' + wx.getFileSystemManager().readFileSync(p, 'base64'); } catch(e) { return ''; }
+      }).filter(Boolean)
+    }).then(function(r) {
+      wx.hideLoading();
+      if (r && r.ok) app.toast('评价已提交', 'success');
+      else app.toast('提交失败');
+      this.setData({ showReview: false });
+    }.bind(this)).catch(function() { wx.hideLoading(); app.toast('网络错误'); this.setData({ showReview: false }); }.bind(this));
+  },
+  closeReview() { this.setData({ showReview: false }); }
+});
+
+========================================
+ FILE: pages/chat/chat.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/chat/chat.wxml
+========================================
+<view class="page">
+  <!-- Back button -->
+  <view class="chat-back">
+    <view class="back-hit" bindtap="goBack">
+      <text class="back-arrow">‹</text>
+      <text class="back-text">返回</text>
+    </view>
+    <text class="chat-title">{{name}}</text>
+    <view class="ch-spacer"></view>
+  </view>
+
+  <!-- Trade product selector -->
+  <view class="trade-picker" wx:if="{{tradePicker.length>=1}}" bindtap="showTradePicker">
+    <view class="tp-val">{{tradeIdx>=0 ? tradePicker[tradeIdx] : '选择交易商品'}}</view>
+    <text class="tp-arrow">∨</text>
+  </view>
+
+  <!-- Product info header -->
+  <view class="product-header" wx:if="{{product && tradeIdx>=0 && tradeStatus!=='completed'}}" data-id="{{product.id}}" bindtap="goDetail">
+    <text class="ph-icon">📦</text>
+    <view class="ph-info">
+      <text class="ph-title">{{product.title}}</text>
+      <text class="ph-price" wx:if="{{product.item_type==='rent'}}">¥{{product.rent_price}}/天</text>
+      <text class="ph-price" wx:else>¥{{product.price}}</text>
+    </view>
+    <text class="ph-arrow">›</text>
+  </view>
+
+  <!-- Trade status bar -->
+  <view class="trade-bar" wx:if="{{tradeStatus && tradeRole && otherNick}}">
+    <view wx:if="{{tradeStatus==='trading' && tradeRole==='seller'}}" class="trade-actions">
+      <text class="trade-tip">买家已下单，等待你确认</text>
+      <view class="trade-btns">
+        <button class="trade-btn cancel" bindtap="cancelTrade">取消交易</button>
+        <button class="trade-btn confirm" bindtap="confirmTrade">确认交易</button>
+      </view>
+    </view>
+    <view wx:elif="{{tradeStatus==='awaiting_buyer' && tradeRole==='buyer'}}" class="trade-actions">
+      <text class="trade-tip">{{otherNick}} {{otherGender}} 已确认交易，请确认收货</text>
+      <button class="trade-btn confirm" bindtap="receiveGoods">确认收货</button>
+    </view>
+    <view wx:elif="{{tradeStatus==='awaiting_buyer' && tradeRole==='seller'}}" class="trade-info">
+      <text class="trade-tip">✅ 已确认交易，等待 {{otherNick}} {{otherGender}} 收货</text>
+    </view>
+    <view wx:elif="{{tradeStatus==='trading' && tradeRole==='buyer'}}" class="trade-info">
+      <text class="trade-tip">⏳ 等待卖家确认中</text>
+    </view>
+    <view wx:elif="{{tradeStatus==='completed'}}" class="trade-info">
+      <text class="trade-tip">✅ 与 {{otherNick}} {{otherGender}} 交易完成</text>
+    </view>
+  </view>
+
+  <!-- Messages -->
+  <scroll-view class="msgs" scroll-y scroll-into-view="msg_{{msgTopId}}" scroll-with-animation="{{false}}">
+    <view wx:for="{{msgs}}" wx:key="id" id="msg_{{item.id}}" class="msg {{item.from_student_id===user.student_id?'mine':'other'}}">
+      <view wx:if="{{!item._hasImg}}" class="bubble">{{item.content}}</view>
+      <view wx:else class="bubble">
+        <block wx:for="{{item._parts}}" wx:key="idx">
+          <image wx:if="{{item._parts[idx].isImg}}" src="{{item._parts[idx].val}}" mode="widthFix" style="max-width:180px;min-width:60px;min-height:60px;border-radius:6px;margin:2px 0;background:rgba(0,0,0,.04)"></image>
+          <text wx:else>{{item._parts[idx].val}}</text>
+        </block>
+      </view>
+      <view class="time">{{item.time}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- Image preview -->
+  <view class="img-preview" wx:if="{{pendingImg}}">
+    <image class="img-preview-src" src="{{pendingImg}}" mode="aspectFill"></image>
+    <text class="img-preview-del" bindtap="clearPendingImg">✕</text>
+  </view>
+  <!-- Input -->
+  <view class="input-row">
+    <view class="img-btn" bindtap="pickChatImg">📷</view>
+    <input class="ipt" placeholder="输入消息..." bindinput="onInput" value="{{input}}" />
+    <button class="send" bindtap="sendMsg">{{pendingImg?'发送':'发送'}}</button>
+  </view>
+
+  <!-- Review modal -->
+  <view class="modal-overlay" wx:if="{{showReview}}" bindtap="closeReview"></view>
+  <view class="review-modal" wx:if="{{showReview}}">
+    <view class="rev-title">评价本次交易</view>
+    <view class="rev-tags">
+      <view wx:for="{{reviewTags}}" wx:key="*this" class="rev-tag {{_selTags[item]?'active':''}}" bindtap="toggleReviewTag" data-tag="{{item}}">{{item}}</view>
+    </view>
+    <textarea class="rev-text" placeholder="请填写评价理由（必填）" value="{{reviewText}}" bindinput="onReviewText" />
+    <view class="rev-imgs">
+      <view wx:for="{{reviewImgs}}" wx:key="*this" class="rev-img">
+        <image class="rev-img-src" src="{{item}}"></image>
+        <text class="rev-img-del" bindtap="delReviewImg" data-index="{{idx}}">✕</text>
+      </view>
+      <view class="rev-img-add" wx:if="{{reviewImgs.length<3}}" bindtap="pickReviewImg">+</view>
+    </view>
+    <view class="rev-btns">
+      <view class="rev-btn cancel" bindtap="closeReview">关闭</view>
+      <view class="rev-btn primary" bindtap="submitReview">提交评价</view>
+    </view>
+  </view>
+</view>
+
+========================================
+ FILE: pages/chat/chat.wxss
+========================================
+.page{display:flex;flex-direction:column;height:100vh;background:#f7f3ea}.chat-back{display:flex;align-items:center;padding:40px 12px 8px;background:#fff;border-bottom:1px solid rgba(0,0,0,.04);flex-shrink:0;z-index:10}.back-hit{display:inline-flex;align-items:center;gap:2px;cursor:pointer;padding:2px 0}.back-hit:active{background:rgba(0,0,0,.04);border-radius:4px}.back-arrow{font-size:22px;color:#4e9e80;font-weight:300;line-height:1}.back-text{font-size:14px;color:#4e9e80}.chat-title{font-size:15px;font-weight:600;color:#333;flex:1;text-align:center;padding-right:40px}.ch-spacer{width:40px;flex-shrink:0}.trade-picker{display:flex;align-items:center;padding:0 12px;background:rgba(78,158,128,.04);border-bottom:1px solid rgba(78,158,128,.08);flex-shrink:0;min-height:40px}.tp-val{font-size:12px;color:#4e9e80;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px;height:40px;line-height:40px}.tp-arrow{font-size:12px;color:rgba(78,158,128,.3)}.product-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#fff;border-bottom:1px solid rgba(0,0,0,.04);flex-shrink:0}.ph-icon{font-size:24px;flex-shrink:0}.ph-info{flex:1;overflow:hidden}.ph-title{font-size:13px;font-weight:600;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ph-price{font-size:11px;color:#4e9e80;margin-top:2px}.ph-arrow{font-size:18px;color:rgba(0,0,0,.15)}.trade-bar{flex-shrink:0;padding:8px 12px;background:rgba(78,158,128,.06);border-bottom:1px solid rgba(78,158,128,.08)}.trade-actions{display:flex;flex-direction:column;gap:6px}.trade-info{padding:4px 0}.trade-tip{font-size:12px;color:#4e9e80;text-align:center}.trade-btns{display:flex;gap:6px}.trade-btn{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;border:none}.trade-btn.confirm{background:#4e9e80;color:#fff}.trade-btn.cancel{background:rgba(0,0,0,.05);color:rgba(0,0,0,.4)}.msgs{flex:1;height:0;padding:12px;overflow-y:auto}.msg{margin-bottom:12px;width:100%}.mine{text-align:right}.other{text-align:left}.bubble{display:inline-block;padding:8px 14px;border-radius:14px;max-width:80%;font-size:14px;line-height:1.5;word-break:break-word}.mine .bubble{background:rgba(78,158,128,.12);color:#2d7a62;border-radius:14px 14px 4px 14px}.other .bubble{background:#fff;color:rgba(0,0,0,.8);border-radius:14px 14px 14px 4px}.time{font-size:10px;color:rgba(0,0,0,.35);margin-top:2px}.img-preview{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#f7f3ea;border-top:1px solid rgba(0,0,0,.04);flex-shrink:0}.img-preview-src{width:48px;height:48px;border-radius:6px;object-fit:cover}.img-preview-del{font-size:14px;color:rgba(0,0,0,.2);padding:4px}.input-row{display:flex;gap:6px;padding:10px 12px;background:#fff;border-top:1px solid rgba(0,0,0,.04);flex-shrink:0}.ipt{flex:1;padding:8px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f7f3ea;font-size:14px}.img-btn{width:36px;height:36px;border-radius:8px;background:rgba(0,0,0,.03);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}.send{padding:8px 20px;border-radius:8px;background:#4e9e80;color:#fff;font-size:13px;font-weight:600;border:none}.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:99}.review-modal{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:16px 16px 0 0;z-index:100;padding:16px;max-height:70vh;overflow-y:auto}.rev-title{font-size:16px;font-weight:700;color:#333;text-align:center;margin-bottom:12px}.rev-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.rev-tag{padding:6px 12px;border-radius:6px;font-size:12px;background:#f5f2eb;color:rgba(0,0,0,.3)}.rev-tag.active{background:rgba(78,158,128,.08);color:#4e9e80}.rev-text{width:100%;min-height:60px;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.06);font-size:13px;box-sizing:border-box;margin-bottom:10px}.rev-imgs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.rev-img{width:56px;height:56px;border-radius:6px;overflow:hidden;position:relative}.rev-img-src{width:100%;height:100%}.rev-img-del{position:absolute;top:-2px;right:-2px;font-size:12px;color:rgba(0,0,0,.3);background:#fff;border-radius:50%;width:18px;height:18px;text-align:center;line-height:18px}.rev-img-add{width:56px;height:56px;border-radius:6px;border:1.5px dashed rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(0,0,0,.12)}.rev-btns{display:flex;gap:8px}.rev-btn{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;text-align:center}.rev-btn.cancel{background:rgba(0,0,0,.04);color:rgba(0,0,0,.35)}.rev-btn.primary{background:rgba(78,158,128,.1);color:#4e9e80}
+
+========================================
+ FILE: pages/detail/detail.js
+========================================
+const app = getApp();
+
+Page({
+  data: {
+    product: null,
+    loading: true,
+    error: false,
+    user: null,
+    images: [],
+    // Trade state
+    tradeRole: '',          // 'seller' | 'buyer' | ''
+    tradeStatus: '',        // 'trading' | 'awaiting_buyer' | 'completed' | ''
+    tradeBuyer: null,
+    // UI
+    currentSwiper: 0,
+    showDesc: false,
+  },
+
+  onLoad(options) {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    this.setData({ user });
+    if (options.id) {
+      this.loadProduct(options.id);
+    } else {
+      this.setData({ loading: false, error: true });
+      app.toast('缺少商品ID');
+    }
+  },
+
+  onShow() {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    if (this.data.product && (!user || !this.data.user || user.student_id !== this.data.user.student_id)) {
+      this.setData({ user });
+    }
+  },
+
+  onPullDownRefresh() {
+    if (this.data.product) {
+      this.loadProduct(this.data.product.id);
+    }
+    wx.stopPullDownRefresh();
+  },
+
+  loadProduct(id) {
+    this.setData({ loading: true, error: false });
+    app.request('/api/marketplace/products/' + id).then(res => {
+      const p = res && (res.data || res);
+      if (!p) {
+        this.setData({ loading: false, error: true });
+        return;
+      }
+
+      const images = [];
+      if (p.images && Array.isArray(p.images)) {
+        p.images.forEach(img => {
+          if (typeof img === 'string') images.push(img);
+          else if (img && img.url) images.push(img.url);
+        });
+      }
+      if (images.length === 0 && p.image) images.push(p.image);
+
+      // Determine trade role for current user
+      let tradeRole = '';
+      const user = this.data.user;
+      if (user) {
+        if (p.owner_student_id === user.student_id) {
+          tradeRole = 'seller';
+        } else if (p.trade_buyer_id === user.student_id) {
+          tradeRole = 'buyer';
+        }
+      }
+
+      wx.setNavigationBarTitle({ title: p.title || '商品详情' });
+
+      this.setData({
+        product: p,
+        images,
+        tradeRole,
+        tradeStatus: p.trade_status || '',
+        loading: false,
+        error: false,
+        currentSwiper: 0,
+        showDesc: false,
+        dateStr: (p.created_at || '').substring(0, 10),
+      });
+
+      // Load buyer info if available
+      if (p.trade_buyer_id) {
+        app.getNickCache().then(cache => {
+          const nick = (cache && cache[p.trade_buyer_id]) || '';
+          this.setData({ tradeBuyer: { student_id: p.trade_buyer_id, name: nick } });
+        }).catch(() => {});
+      }
+    }).catch(err => {
+      console.error(err);
+      this.setData({ loading: false, error: true });
+    });
+  },
+
+  onSwiperChange(e) {
+    this.setData({ currentSwiper: e.detail.current });
+  },
+
+  toggleDesc() {
+    this.setData({ showDesc: !this.data.showDesc });
+  },
+
+  // ─── Contact Seller ───
+  contactSeller() {
+    const p = this.data.product;
+    const user = this.data.user;
+    if (!user) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+    if (!p || !p.owner_student_id) {
+      app.toast('无法获取卖家信息');
+      return;
+    }
+    // Navigate to chat with seller
+    wx.navigateTo({
+      url: '/pages/chat/chat?pid=' + p.id + '&sid=' + p.owner_student_id + '&name=' + encodeURIComponent('卖家')
+    });
+  },
+
+  // ─── Trade Actions ───
+  buyNow() {
+    const user = this.data.user;
+    if (!user) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+    const p = this.data.product;
+    if (!p) return;
+
+    wx.showModal({
+      title: '确认购买',
+      content: '确定要购买「' + p.title + '」吗？',
+      success: res => {
+        if (res.confirm) {
+          wx.showLoading({ title: '提交中...' });
+          app.request('/api/marketplace/trade/confirm', 'POST', {
+            product_id: p.id,
+            student_id: user.student_id,
+          }).then(d => {
+            wx.hideLoading();
+            if (d && d.ok) {
+              app.toast('购买请求已发送', 'success');
+              this.setData({ tradeStatus: 'trading', tradeRole: 'buyer' });
+            } else {
+              app.toast((d && d.error) || '操作失败');
+            }
+          }).catch(() => {
+            wx.hideLoading();
+            app.toast('网络错误');
+          });
+        }
+      }
+    });
+  },
+
+  confirmTrade() {
+    const p = this.data.product;
+    const user = this.data.user;
+    if (!p || !user) return;
+
+    wx.showModal({
+      title: '确认交易',
+      content: '确认与买家进行交易？',
+      success: res => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          app.request('/api/marketplace/trade/confirm', 'POST', {
+            product_id: p.id,
+            seller_id: user.student_id,
+          }).then(d => {
+            wx.hideLoading();
+            if (d && d.ok) {
+              app.toast('已确认交易', 'success');
+              this.setData({ tradeStatus: 'awaiting_buyer' });
+            } else {
+              app.toast((d && d.error) || '操作失败');
+            }
+          }).catch(() => {
+            wx.hideLoading();
+            app.toast('网络错误');
+          });
+        }
+      }
+    });
+  },
+
+  cancelTrade() {
+    const p = this.data.product;
+    const user = this.data.user;
+    if (!p || !user) return;
+
+    wx.showModal({
+      title: '取消交易',
+      content: '确定要取消这笔交易吗？',
+      success: res => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          app.request('/api/marketplace/trade/cancel', 'POST', {
+            product_id: p.id,
+            student_id: user.student_id,
+          }).then(d => {
+            wx.hideLoading();
+            if (d && d.ok) {
+              app.toast('交易已取消');
+              this.setData({ tradeStatus: '' });
+            } else {
+              app.toast((d && d.error) || '操作失败');
+            }
+          }).catch(() => {
+            wx.hideLoading();
+            app.toast('网络错误');
+          });
+        }
+      }
+    });
+  },
+
+  receiveGoods() {
+    const p = this.data.product;
+    const user = this.data.user;
+    if (!p || !user) return;
+
+    wx.showModal({
+      title: '确认收货',
+      content: '确认已收到商品？',
+      success: res => {
+        if (res.confirm) {
+          wx.showLoading({ title: '处理中...' });
+          app.request('/api/marketplace/trade/buyer-confirm', 'POST', {
+            product_id: p.id,
+            buyer_id: user.student_id,
+          }).then(d => {
+            wx.hideLoading();
+            if (d && d.ok) {
+              app.toast('已确认收货', 'success');
+              this.setData({ tradeStatus: 'completed' });
+              // Signal index page to refresh
+              app.globalData._needRefresh = true;
+            } else {
+              app.toast((d && d.error) || '操作失败');
+            }
+          }).catch(() => {
+            wx.hideLoading();
+            app.toast('网络错误');
+          });
+        }
+      }
+    });
+  },
+
+  // ─── Navigation ───
+  goBack() {
+    try {
+      wx.navigateBack({ delta: 1 });
+    } catch (e) {
+      wx.switchTab({ url: '/pages/index/index' });
+    }
+  },
+
+  goChatWithBuyer() {
+    const p = this.data.product;
+    if (!p || !p.trade_buyer_id) return;
+    wx.navigateTo({
+      url: '/pages/chat/chat?pid=' + p.id + '&sid=' + p.trade_buyer_id + '&name=' + encodeURIComponent('买家')
+    });
+  },
+});
+
+========================================
+ FILE: pages/detail/detail.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/detail/detail.wxml
+========================================
+<view class="page">
+  <!-- ── Loading State ── -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <text class="loading-text">加载中...</text>
+  </view>
+
+  <!-- ── Error State ── -->
+  <view class="error-state" wx:if="{{!loading && error}}">
+    <text class="error-text">加载失败</text>
+    <button class="retry-btn" bindtap="onPullDownRefresh">重试</button>
+  </view>
+
+  <!-- ── Product Detail ── -->
+  <block wx:if="{{!loading && !error && product}}">
+    <!-- Custom Header -->
+    <view class="detail-header">
+      <view class="dh-back" bindtap="goBack">
+        <text class="dh-arrow">‹</text>
+        <text class="dh-text">返回</text>
+      </view>
+      <text class="dh-title">商品详情</text>
+      <view class="dh-spacer"></view>
+    </view>
+
+    <!-- Image Carousel -->
+    <view class="swiper-wrap" wx:if="{{images.length > 0}}">
+      <swiper class="img-swiper" circular autoplay="{{false}}" indicator-dots="{{images.length > 1}}" indicator-color="rgba(255,255,255,.4)" indicator-active-color="#fff" bindchange="onSwiperChange">
+        <swiper-item wx:for="{{images}}" wx:key="*this">
+          <image class="swiper-img" src="{{item}}" mode="aspectFill" />
+        </swiper-item>
+      </swiper>
+      <view class="swiper-count" wx:if="{{images.length > 1}}">
+        <text>{{currentSwiper + 1}}/{{images.length}}</text>
+      </view>
+    </view>
+    <view class="no-img" wx:else>
+      <text class="no-img-text">暂无图片</text>
+    </view>
+
+    <!-- Product Info -->
+    <view class="info-section">
+      <view class="price-row">
+        <text wx:if="{{product.item_type === 'rent' && product.rent_price}}" class="price">¥{{product.rent_price}}<text class="price-unit">/天</text></text>
+        <text wx:else class="price">¥{{product.price}}</text>
+        <view class="info-tags">
+          <text class="info-tag type-tag">{{product.item_type === 'rent' ? '租赁' : product.item_type === 'buy' ? '求购' : '出售'}}</text>
+          <text class="info-tag quality-tag" wx:if="{{product.quality}}">{{product.quality}}</text>
+        </view>
+      </view>
+      <text class="info-title">{{product.title}}</text>
+      <view class="info-meta">
+        <text class="info-cat" wx:if="{{product.categoryName || product.category}}">{{product.categoryName || product.category}}</text>
+        <text class="info-date">{{dateStr}}</text>
+      </view>
+    </view>
+
+    <!-- Seller Info -->
+    <view class="seller-section" bindtap="contactSeller">
+      <view class="seller-avatar">
+        <image class="s-avatar" src="{{product.ownerAvatar || '/images/tab-me.png'}}" mode="aspectFill" />
+      </view>
+      <view class="seller-info">
+        <text class="seller-name">{{product.ownerName || product.owner_nickname || '卖家'}}</text>
+        <text class="seller-tip">联系卖家 ›</text>
+      </view>
+    </view>
+
+    <!-- Trade Status Bar -->
+    <view class="trade-section" wx:if="{{tradeStatus && tradeRole}}">
+      <!-- Buyer: waiting for seller -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'trading' && tradeRole === 'buyer'}}">
+        <text class="trade-icon">⏳</text>
+        <view class="trade-info">
+          <text class="trade-label">等待卖家确认交易</text>
+        </view>
+        <button class="trade-btn cancel" bindtap="cancelTrade">取消</button>
+      </view>
+
+      <!-- Seller: buyer requested -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'trading' && tradeRole === 'seller'}}">
+        <text class="trade-icon">📦</text>
+        <view class="trade-info">
+          <text class="trade-label">买家已下单，请确认</text>
+          <text class="trade-name" wx:if="{{tradeBuyer}}">{{tradeBuyer.name || '买家'}}</text>
+        </view>
+        <view class="trade-actions">
+          <button class="trade-btn cancel" bindtap="cancelTrade">拒绝</button>
+          <button class="trade-btn confirm" bindtap="confirmTrade">确认</button>
+        </view>
+      </view>
+
+      <!-- Buyer: seller confirmed, waiting for receipt -->
+      <view class="trade-bar" wx:if="{{tradeStatus === 'awaiting_buyer' && tradeRole === 'buyer'}}">
+        <text class="trade-icon">✅</text>
+        <view class="trade-info">
+          <text class="trade-label">卖家已确认交易</text>
+          <text class="trade-tip">请确认收货</text>
+        </view>
+        <view class="trade-actions">
+          <button class="trade-btn cancel" bindtap="cancelTrade">取消</button>
+          <button class="trade-btn confirm" bindtap="receiveGoods">收货</button>
+        </view>
+      </view>
+
+      <!-- Seller: waiting for buyer receipt -->
+      <view class="trade-bar info" wx:if="{{tradeStatus === 'awaiting_buyer' && tradeRole === 'seller'}}">
+        <text class="trade-icon">✅</text>
+        <view class="trade-info">
+          <text class="trade-label">已确认交易，等待买家收货</text>
+          <text class="trade-name" wx:if="{{tradeBuyer}}">{{tradeBuyer.name || '买家'}}</text>
+        </view>
+        <button class="trade-btn chat" bindtap="goChatWithBuyer">联系买家</button>
+      </view>
+
+      <!-- Completed -->
+      <view class="trade-bar completed" wx:if="{{tradeStatus === 'completed'}}">
+        <text class="trade-icon">🎉</text>
+        <view class="trade-info">
+          <text class="trade-label">交易已完成</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Available to buy (no active trade) -->
+    <view class="buy-section" wx:if="{{!tradeStatus && user && tradeRole !== 'seller'}}">
+      <button class="buy-btn" bindtap="buyNow">立即购买</button>
+      <button class="contact-btn" bindtap="contactSeller">联系卖家</button>
+    </view>
+
+    <!-- Login prompt -->
+    <view class="login-section" wx:if="{{!user}}">
+      <button class="login-tip-btn" bindtap="contactSeller">登录后联系卖家</button>
+    </view>
+
+    <!-- Description -->
+    <view class="desc-section">
+      <view class="desc-header" bindtap="toggleDesc">
+        <text class="desc-title">商品描述</text>
+        <text class="desc-toggle {{showDesc ? 'up' : ''}}">▾</text>
+      </view>
+      <view class="desc-body {{showDesc ? 'show' : ''}}">
+        <text class="desc-text">{{product.description || '暂无描述'}}</text>
+      </view>
+    </view>
+  </block>
+</view>
+
+========================================
+ FILE: pages/detail/detail.wxss
+========================================
+/* ── Page Base ── */
+.page {
+  padding: 0 0 32px;
+  background: #f7f3ea;
+  min-height: 100vh;
+}
+
+/* ── Loading / Error ── */
+.loading-state, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
+}
+.loading-text, .error-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+  margin-bottom: 16px;
+}
+.retry-btn {
+  padding: 8px 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+
+/* ── Header ── */
+.detail-header {
+  display: flex;
+  align-items: center;
+  padding: 44px 12px 6px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.dh-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+.dh-back:active {
+  opacity: .5;
+}
+.dh-arrow {
+  font-size: 22px;
+  color: #4e9e80;
+  font-weight: 300;
+  line-height: 1;
+}
+.dh-text {
+  font-size: 15px;
+  color: #4e9e80;
+}
+.dh-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+.dh-spacer {
+  width: 50px;
+  flex-shrink: 0;
+}
+
+/* ── Image Carousel ── */
+.swiper-wrap {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #f0ede4;
+}
+.img-swiper {
+  width: 100%;
+  height: 100%;
+}
+.swiper-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.swiper-count {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0,0,0,.4);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.no-img {
+  width: 100%;
+  height: 200px;
+  background: #f0ede4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.no-img-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.15);
+}
+
+/* ── Info Section ── */
+.info-section {
+  background: #fff;
+  padding: 16px;
+  margin: 0 0 8px;
+}
+.price-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.price {
+  font-size: 24px;
+  font-weight: 700;
+  color: #e74c3c;
+}
+.price-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(231,76,60,.6);
+}
+.info-tags {
+  display: flex;
+  gap: 6px;
+}
+.info-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.type-tag {
+  background: rgba(78,158,128,.1);
+  color: #4e9e80;
+}
+.quality-tag {
+  background: #f5f2eb;
+  color: rgba(0,0,0,.35);
+}
+.info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  display: block;
+}
+.info-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.info-cat {
+  font-size: 12px;
+  color: rgba(0,0,0,.3);
+  background: #f5f2eb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.info-date {
+  font-size: 12px;
+  color: rgba(0,0,0,.2);
+}
+
+/* ── Seller Section ── */
+.seller-section {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+  gap: 12px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.seller-section:active {
+  background: #faf8f4;
+}
+.seller-avatar {
+  flex-shrink: 0;
+}
+.s-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(78,158,128,.15);
+  display: block;
+}
+.seller-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.seller-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.seller-tip {
+  font-size: 13px;
+  color: #4e9e80;
+}
+
+/* ── Trade Section ── */
+.trade-section {
+  margin: 0 0 8px;
+}
+.trade-bar {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  gap: 12px;
+}
+.trade-bar.info {
+  background: #f0faf5;
+}
+.trade-bar.completed {
+  background: #f0faf5;
+}
+.trade-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.trade-info {
+  flex: 1;
+  min-width: 0;
+}
+.trade-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  display: block;
+}
+.trade-tip {
+  font-size: 12px;
+  color: rgba(0,0,0,.35);
+  display: block;
+  margin-top: 2px;
+}
+.trade-name {
+  font-size: 12px;
+  color: #4e9e80;
+  display: block;
+  margin-top: 2px;
+}
+.trade-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.trade-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.trade-btn.confirm {
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+}
+.trade-btn.cancel {
+  background: #f5f2eb;
+  color: rgba(0,0,0,.45);
+}
+.trade-btn.chat {
+  background: rgba(78,158,128,.1);
+  color: #4e9e80;
+}
+
+/* ── Buy Section ── */
+.buy-section {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+}
+.buy-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 12px rgba(78,158,128,.25);
+}
+.contact-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  color: #4e9e80;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid rgba(78,158,128,.2);
+}
+
+/* ── Login Section ── */
+.login-section {
+  padding: 12px 16px;
+  background: #fff;
+  margin: 0 0 8px;
+}
+.login-tip-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+}
+
+/* ── Description ── */
+.desc-section {
+  background: #fff;
+  margin: 0 0 8px;
+}
+.desc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+.desc-header:active {
+  opacity: .7;
+}
+.desc-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+.desc-toggle {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+  transition: transform .2s;
+}
+.desc-toggle.up {
+  transform: rotate(180deg);
+}
+.desc-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.desc-body.show {
+  max-height: 600px;
+}
+.desc-text {
+  display: block;
+  padding: 0 16px 16px;
+  font-size: 14px;
+  color: rgba(0,0,0,.55);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+========================================
+ FILE: pages/index/index.js
+========================================
+const app = getApp();
+const SCHOOLS = [
+  { code: 'gxny', name: '广西农业职业技术大学' },
+  { code: 'hnkj', name: '海南科技职业大学' },
+  { code: 'gdcj', name: '广东财经大学' },
+  { code: 'lztd', name: '柳州铁道职业技术学院' },
+  { code: 'beta',  name: '🛠 内测服' },
+];
+const PAGE_SIZE = 10;
+const SORT_VALS = ['', 'oldest', 'price_asc', 'price_desc'];
+
+Page({
+  data: {
+    // Products
+    list: [],
+    page: 0,
+    hasMore: true,
+    total: 0,
+    totalPages: 0,
+    pages: [],
+    resultLabel: '加载中...',
+
+    // Categories
+    cats: [],
+    selCat: '',
+
+    // Item type
+    itemType: 'sell',
+    itemTypeLabels: { sell: '出售', buy: '求购', rent: '租赁' },
+    itemTypeIcons: { sell: '🛒', buy: '📋', rent: '📦' },
+
+    // Search
+    search: '',
+
+    // User & School
+    user: null,
+    schools: SCHOOLS,
+    schoolCode: '',
+    schoolName: '全部学校',
+    showSchool: false,
+
+    // Announcements
+    announcements: [],
+    annText: '',
+    annLink: '',
+    annShow: false,
+
+    // Sort & Filter
+    sortOpts: ['最新', '最旧', '价格从低到高', '价格从高到低'],
+    sortIdx: 0,
+    sortVal: '',
+    priceMin: '',
+    priceMax: '',
+    showFilter: false,
+  },
+
+  onLoad() {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    this.setUserSchool(user);
+    this.loadCats();
+    this.loadData();
+    this.loadAnnouncements();
+  },
+
+  onShow() {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    const prevUser = this.data.user;
+    const userChanged = (user && prevUser && user.student_id !== prevUser.student_id) || (!user && prevUser) || (user && !prevUser);
+    if (userChanged) {
+      this.setUserSchool(user);
+    }
+    if (app.globalData._needRefresh) {
+      app.globalData._needRefresh = false;
+      this.setData({ page: 0, list: [], hasMore: true, pages: [], resultLabel: '加载中...' });
+      this.loadData();
+    }
+    this.loadAnnouncements();
+  },
+
+  // ───── Categories ─────
+  loadCats() {
+    app.request('/api/marketplace/categories').then(res => {
+      const arr = (res && (res.data || res)) || [];
+      if (Array.isArray(arr)) {
+        this.setData({ cats: arr });
+      }
+    }).catch(() => {});
+  },
+
+  // ───── Products ─────
+  loadData() {
+    const { page, hasMore, list } = this.data;
+    if (!hasMore && page > 0) return;
+
+    wx.showLoading({ title: '加载中...', mask: true });
+
+    const params = {
+      page,
+      size: PAGE_SIZE,
+      itemType: this.data.itemType,
+    };
+
+    // Apply category filter
+    const cat = this.data.selCat;
+    if (cat === '__my__') {
+      const user = this.data.user;
+      if (user) params.owner = user.student_id;
+    } else if (cat === '__fav__') {
+      params.favorite = 'true';
+    } else if (cat) {
+      params.category = cat;
+    }
+
+    // Apply school filter
+    if (this.data.schoolCode) {
+      params.schoolCode = this.data.schoolCode;
+    }
+
+    // Apply search
+    if (this.data.search) {
+      params.search = this.data.search;
+    }
+
+    // Apply sort
+    if (this.data.sortVal) {
+      params.sort = this.data.sortVal;
+    }
+
+    // Apply price range
+    if (this.data.priceMin) {
+      params.priceMin = this.data.priceMin;
+    }
+    if (this.data.priceMax) {
+      params.priceMax = this.data.priceMax;
+    }
+
+    // Build query string
+    const qs = Object.keys(params).map(k => k + '=' + encodeURIComponent(params[k])).join('&');
+
+    app.request('/api/marketplace/products?' + qs).then(res => {
+      wx.hideLoading();
+      wx.stopPullDownRefresh();
+
+      if (!res) {
+        this.setData({ resultLabel: '暂无商品', hasMore: false });
+        return;
+      }
+
+      // Handle various response shapes
+      let records = null;
+      let total = 0;
+      if (res.data && Array.isArray(res.data.records)) {
+        records = res.data.records;
+        total = res.data.total || res.data.totalElements || records.length;
+      } else if (res.data && Array.isArray(res.data.content)) {
+        records = res.data.content;
+        total = res.data.total || res.data.totalElements || records.length;
+      } else if (Array.isArray(res.data)) {
+        records = res.data;
+        total = res.data.length;
+      } else if (Array.isArray(res)) {
+        records = res;
+        total = res.length;
+      }
+
+      if (records) {
+        // Pre-process dates for WXML (no .substring allowed)
+        records = records.map(function(r) {
+          var img = '';
+          if (r.images && r.images.length) img = r.images[0];
+          else if (r.image) img = r.image;
+          return { ...r, _dateStr: (r.created_at || '').substring(0, 10), _firstImg: img };
+        });
+        const newList = page === 0 ? records : list.concat(records);
+        const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+        const more = page + 1 < totalPages;
+        const label = total > 0 ? '共 ' + total + ' 件商品' : '暂无商品';
+
+        this.setData({
+          list: newList,
+          total,
+          totalPages,
+          hasMore: more,
+          resultLabel: label,
+        });
+      } else {
+        this.setData({ resultLabel: '暂无商品', hasMore: false });
+      }
+    }).catch(err => {
+      wx.hideLoading();
+      wx.stopPullDownRefresh();
+      this.setData({ resultLabel: '加载失败，下拉刷新重试' });
+      console.error(err);
+    });
+  },
+
+  // ───── Announcements ─────
+  loadAnnouncements() {
+    app.request('/api/marketplace/announcements').then(res => {
+      const arr = (res && (res.data || res)) || [];
+      if (Array.isArray(arr) && arr.length > 0) {
+        const texts = arr.map(a => a.title || a.content || '').filter(Boolean);
+        this.setData({
+          announcements: arr,
+          annText: texts.join('  ·  '),
+          annLink: arr[0].link || '',
+          annShow: true,
+        });
+      } else {
+        this.setData({ annShow: false });
+      }
+    }).catch(() => {});
+  },
+
+  // ───── School Filter ─────
+  toggleSchool() {
+    if (this.data.user) return;
+    this.setData({ showSchool: !this.data.showSchool });
+  },
+
+  getUserSchool(user) {
+    if (user && user.school) {
+      const school = SCHOOLS.find(s => s.code === user.school);
+      return { code: user.school, name: school ? school.name : '' };
+    }
+    const saved = wx.getStorageSync('visitorSchool');
+    if (saved) {
+      const school = SCHOOLS.find(s => s.code === saved);
+      if (school) return { code: school.code, name: school.name };
+    }
+    return { code: '', name: '全部学校' };
+  },
+
+  setUserSchool(user) {
+    const { code, name } = this.getUserSchool(user);
+    this.setData({ user, schoolCode: code, schoolName: name });
+  },
+
+  pickSchool(e) {
+    const code = e.currentTarget.dataset.code;
+    if (code === undefined && code === null) return;
+    const school = SCHOOLS.find(s => s.code === code);
+    wx.setStorageSync('visitorSchool', code);
+    this.setData({
+      schoolCode: code,
+      schoolName: school ? school.name : '全部学校',
+      showSchool: false,
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Category Selection ─────
+  setCat(e) {
+    let cat = e.currentTarget.dataset.cat;
+    if (cat === 'my') {
+      if (!this.data.user) {
+        wx.navigateTo({ url: '/pages/login/login' });
+        return;
+      }
+      cat = '__my__';
+    } else if (cat === 'fav') {
+      if (!this.data.user) {
+        wx.navigateTo({ url: '/pages/login/login' });
+        return;
+      }
+      cat = '__fav__';
+    }
+    const newCat = this.data.selCat === cat ? '' : cat;
+    this.setData({
+      selCat: newCat,
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Search ─────
+  onSearch(e) {
+    const val = (e.detail.value || '').trim();
+    this.setData({
+      search: val,
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  clearSearch() {
+    this.setData({
+      search: '',
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Sort ─────
+  onSort(e) {
+    const idx = parseInt(e.detail.value, 10);
+    this.setData({
+      sortIdx: idx,
+      sortVal: SORT_VALS[idx] || '',
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Price Filter ─────
+  onPriceMin(e) { this.setData({ priceMin: e.detail.value }); },
+  onPriceMax(e) { this.setData({ priceMax: e.detail.value }); },
+
+  applyFilter() {
+    this.setData({
+      showFilter: false,
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Item Type Toggle ─────
+  toggleItemType() {
+    const types = ['sell', 'buy', 'rent'];
+    const curIdx = types.indexOf(this.data.itemType);
+    const next = types[(curIdx + 1) % types.length];
+    this.setData({
+      itemType: next,
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+  },
+
+  // ───── Navigation ─────
+  goDetail(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: '/pages/detail/detail?id=' + id });
+  },
+
+  goProfile() {
+    if (this.data.user) {
+      wx.switchTab({ url: '/pages/profile/profile' });
+    } else {
+      wx.navigateTo({ url: '/pages/login/login' });
+    }
+  },
+
+  goAnnouncement() {
+    const link = this.data.annLink;
+    if (link) {
+      wx.setClipboardData({ data: link });
+    }
+  },
+
+  goLogin() {
+    wx.navigateTo({ url: '/pages/login/login' });
+  },
+
+  // ───── Pagination ─────
+  onReachBottom() {
+    if (!this.data.hasMore) return;
+    const nextPage = this.data.page + 1;
+    if (nextPage < this.data.totalPages) {
+      this.setData({ page: nextPage }, () => { this.loadData(); });
+    }
+  },
+
+  // ───── Pull to Refresh ─────
+  onPullDownRefresh() {
+    this.setData({
+      page: 0,
+      list: [],
+      hasMore: true,
+      pages: [],
+      resultLabel: '加载中...',
+    });
+    this.loadData();
+    this.loadAnnouncements();
+  },
+
+  // ───── Filter Popup ─────
+  toggleFilter() {
+    this.setData({ showFilter: !this.data.showFilter });
+  },
+});
+
+========================================
+ FILE: pages/index/index.json
+========================================
+{ "usingComponents": {}, "navigationBarTitleText": "首页" }
+
+========================================
+ FILE: pages/index/index.wxml
+========================================
+<view class="page">
+  <!-- ── Top Bar ── -->
+  <view class="top-bar">
+    <image class="logo" src="/images/logo.jpg" mode="aspectFit" />
+    <view class="school-selector {{user ? 'fixed' : ''}}" bindtap="toggleSchool">
+      <text class="school-name">{{schoolName}}</text>
+      <text class="arrow {{showSchool ? 'up' : 'down'}}">▼</text>
+    </view>
+    <view class="user-area">
+      <block wx:if="{{user}}">
+        <image class="top-avatar" src="{{user.avatar || '/images/tab-me.png'}}" bindtap="goProfile" mode="aspectFill" />
+      </block>
+      <block wx:else>
+        <button class="login-btn" bindtap="goLogin">登录</button>
+      </block>
+    </view>
+  </view>
+
+  <!-- ── School Dropdown (visitor only) ── -->
+  <view class="school-mask {{showSchool ? 'show' : ''}}" bindtap="toggleSchool"></view>
+  <view class="school-dropdown {{showSchool ? 'show' : ''}}">
+    <view class="school-item {{schoolCode === '' ? 'active' : ''}}" bindtap="pickSchool" data-code="">
+      <text>全部学校</text>
+      <text class="check" wx:if="{{schoolCode === ''}}">✓</text>
+    </view>
+    <view wx:for="{{schools}}" wx:key="code" class="school-item {{schoolCode === item.code ? 'active' : ''}}" bindtap="pickSchool" data-code="{{item.code}}">
+      <text>{{item.name}}</text>
+      <text class="check" wx:if="{{schoolCode === item.code}}">✓</text>
+    </view>
+  </view>
+
+  <!-- ── Announcement Bar ── -->
+  <view class="ann-bar {{annShow ? '' : 'hidden'}}" bindtap="goAnnouncement">
+    <text class="ann-icon">📢</text>
+    <view class="ann-scroll">
+      <text class="ann-text">{{annText}}</text>
+    </view>
+    <text class="ann-go">›</text>
+  </view>
+
+  <!-- ── Category Bar ── -->
+  <scroll-view class="cat-bar" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="cat-item {{selCat === '' ? 'active' : ''}}" bindtap="setCat" data-cat="">
+      <text>全部</text>
+    </view>
+    <view class="cat-item {{selCat === '__my__' ? 'active' : ''}}" bindtap="setCat" data-cat="my">
+      <text>我的</text>
+    </view>
+    <view class="cat-item {{selCat === '__fav__' ? 'active' : ''}}" bindtap="setCat" data-cat="fav">
+      <text>收藏</text>
+    </view>
+    <view wx:for="{{cats}}" wx:key="id" class="cat-item {{selCat === (item.code || item.id) ? 'active' : ''}}" bindtap="setCat" data-cat="{{item.code || item.id}}">
+      <text>{{item.name}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- ── Search Bar ── -->
+  <view class="search-bar">
+    <view class="search-wrap">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜索商品名称..." value="{{search}}" bindconfirm="onSearch" confirm-type="search" />
+      <text class="search-clear {{search ? 'show' : ''}}" bindtap="clearSearch">✕</text>
+    </view>
+    <button class="search-btn" bindtap="onSearch">搜索</button>
+  </view>
+
+  <!-- ── Sort / Filter Row ── -->
+  <view class="filter-row">
+    <picker class="sort-picker" range="{{sortOpts}}" value="{{sortIdx}}" bindchange="onSort">
+      <view class="sort-display">
+        <text class="sort-label">{{sortOpts[sortIdx]}}</text>
+        <text class="sort-arrow">▾</text>
+      </view>
+    </picker>
+
+    <view class="type-tabs">
+      <view class="type-tab {{itemType === 'sell' ? 'active' : ''}}" bindtap="toggleItemType" data-type="sell">
+        <text>🛒 出售</text>
+      </view>
+      <view class="type-tab {{itemType === 'buy' ? 'active' : ''}}" bindtap="toggleItemType" data-type="buy">
+        <text>📋 求购</text>
+      </view>
+      <view class="type-tab {{itemType === 'rent' ? 'active' : ''}}" bindtap="toggleItemType" data-type="rent">
+        <text>📦 租赁</text>
+      </view>
+    </view>
+
+    <view class="filter-btn" bindtap="toggleFilter">
+      <text>筛选 ▾</text>
+    </view>
+  </view>
+
+  <!-- ── Filter Popup ── -->
+  <view class="filter-mask {{showFilter ? 'show' : ''}}" bindtap="toggleFilter"></view>
+  <view class="filter-panel {{showFilter ? 'show' : ''}}">
+    <view class="filter-header">
+      <text class="filter-title">价格区间</text>
+      <text class="filter-close" bindtap="toggleFilter">✕</text>
+    </view>
+    <view class="price-row">
+      <input class="price-input" placeholder="最低价" value="{{priceMin}}" bindinput="onPriceMin" type="digit" />
+      <text class="price-sep">—</text>
+      <input class="price-input" placeholder="最高价" value="{{priceMax}}" bindinput="onPriceMax" type="digit" />
+    </view>
+    <button class="filter-apply" bindtap="applyFilter">确定筛选</button>
+  </view>
+
+  <!-- ── Product Grid ── -->
+  <view class="product-grid" wx:if="{{list.length > 0}}">
+    <view wx:for="{{list}}" wx:key="id" class="product-card" bindtap="goDetail" data-id="{{item.id}}">
+      <image class="card-img" src="{{item._firstImg}}" mode="aspectFill" />
+      <view class="card-info">
+        <text class="card-title">{{item.title}}</text>
+        <view class="card-price-row">
+          <text wx:if="{{item.item_type === 'rent' && item.rent_price}}" class="card-price">¥{{item.rent_price}}<text class="card-unit">/天</text></text>
+          <text wx:else class="card-price">¥{{item.price}}</text>
+          <text wx:if="{{item.quality}}" class="card-quality">{{item.quality}}</text>
+        </view>
+        <view class="card-meta">
+          <text class="card-school" wx:if="{{item.schoolName}}">{{item.schoolName}}</text>
+          <text class="card-time">{{item._dateStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ── Load More ── -->
+  <view class="load-more" wx:if="{{list.length > 0}}">
+    <text wx:if="{{hasMore}}" class="loading-text">上拉加载更多</text>
+    <text wx:else class="end-text">— 已经到底了 —</text>
+  </view>
+
+  <!-- ── Empty State ── -->
+  <view class="empty-state" wx:if="{{list.length === 0 && resultLabel !== '加载中...'}}">
+    <image class="empty-img" src="/images/tab-home.png" mode="aspectFit" />
+    <text class="empty-text">{{resultLabel}}</text>
+    <view class="empty-actions">
+      <button class="empty-btn" bindtap="onPullDownRefresh">刷新试试</button>
+    </view>
+  </view>
+
+  <!-- ── Initial Loading ── -->
+  <view class="init-loading" wx:if="{{list.length === 0 && resultLabel === '加载中...'}}">
+    <text class="init-text">加载中...</text>
+  </view>
+</view>
+
+========================================
+ FILE: pages/index/index.wxss
+========================================
+/* ── Page Base ── */
+.page {
+  padding: 0 0 96px;
+  background: #f7f3ea;
+  min-height: 100vh;
+}
+
+/* ── Top Bar ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  padding: 48px 16px 8px;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.school-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f5f2eb;
+  transition: background .2s;
+}
+.school-selector:active {
+  background: #ede8dd;
+}
+.school-selector.fixed {
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+.school-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.arrow {
+  font-size: 10px;
+  color: rgba(0,0,0,.25);
+  transition: transform .2s;
+}
+.arrow.up {
+  transform: rotate(180deg);
+}
+.user-area {
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.top-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(78,158,128,.2);
+}
+.login-btn {
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  line-height: 1.4;
+}
+
+/* ── School Dropdown ── */
+.school-mask {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  background: rgba(0,0,0,.3);
+}
+.school-mask.show {
+  display: block;
+}
+.school-dropdown {
+  display: none;
+  position: fixed;
+  top: 88px;
+  left: 16px;
+  right: 16px;
+  z-index: 31;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.1);
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.school-dropdown.show {
+  display: block;
+}
+.school-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  font-size: 14px;
+  color: #333;
+  transition: background .15s;
+}
+.school-item:active {
+  background: #f5f2eb;
+}
+.school-item.active {
+  color: #4e9e80;
+  font-weight: 600;
+}
+.school-item .check {
+  color: #4e9e80;
+  font-weight: 700;
+}
+
+/* ── Announcement Bar ── */
+.ann-bar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #fff8e1;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  gap: 8px;
+}
+.ann-bar.hidden {
+  display: none;
+}
+.ann-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ann-scroll {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ann-text {
+  font-size: 13px;
+  color: #b8860b;
+  display: inline-block;
+  animation: marquee 15s linear infinite;
+}
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  10% { transform: translateX(0); }
+  90% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+.ann-go {
+  font-size: 16px;
+  color: rgba(0,0,0,.2);
+  flex-shrink: 0;
+}
+
+/* ── Category Bar ── */
+.cat-bar {
+  display: flex;
+  white-space: nowrap;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.cat-item {
+  display: inline-flex;
+  padding: 6px 14px;
+  margin-right: 8px;
+  border-radius: 16px;
+  font-size: 13px;
+  color: rgba(0,0,0,.45);
+  background: #f5f2eb;
+  font-weight: 500;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.cat-item:active {
+  opacity: .7;
+}
+.cat-item.active {
+  color: #fff;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  font-weight: 600;
+}
+
+/* ── Search Bar ── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: #fff;
+  gap: 8px;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.search-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  border-radius: 18px;
+  background: #f5f2eb;
+  padding: 0 12px;
+  gap: 6px;
+}
+.search-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.search-input {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  height: 100%;
+  background: transparent;
+}
+.search-input::placeholder {
+  color: rgba(0,0,0,.2);
+}
+.search-clear {
+  display: none;
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+  padding: 2px 4px;
+}
+.search-clear.show {
+  display: block;
+}
+.search-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  line-height: 1.4;
+}
+
+/* ── Sort / Filter Row ── */
+.filter-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+  gap: 8px;
+}
+.sort-picker {
+  flex-shrink: 0;
+}
+.sort-display {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #f5f2eb;
+}
+.sort-label {
+  font-size: 12px;
+  color: rgba(0,0,0,.45);
+}
+.sort-arrow {
+  font-size: 10px;
+  color: rgba(0,0,0,.2);
+}
+.type-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.type-tab {
+  flex: 1;
+  text-align: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,.35);
+  background: #f5f2eb;
+  font-weight: 500;
+  transition: all .2s;
+}
+.type-tab:active {
+  opacity: .7;
+}
+.type-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+}
+.filter-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,.45);
+  background: #f5f2eb;
+}
+.filter-btn:active {
+  opacity: .7;
+}
+
+/* ── Filter Popup ── */
+.filter-mask {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: rgba(0,0,0,.3);
+}
+.filter-mask.show {
+  display: block;
+}
+.filter-panel {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 41;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px 20px 32px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+  animation: slideUp .3s ease;
+}
+.filter-panel.show {
+  display: block;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.filter-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+.filter-close {
+  font-size: 18px;
+  color: rgba(0,0,0,.2);
+  padding: 4px;
+}
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.price-input {
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,.06);
+  background: #f5f2eb;
+  padding: 0 12px;
+  font-size: 15px;
+  color: #333;
+  text-align: center;
+}
+.price-input::placeholder {
+  color: rgba(0,0,0,.2);
+}
+.price-sep {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+}
+.filter-apply {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  line-height: 44px;
+  box-shadow: 0 4px 12px rgba(78,158,128,.25);
+}
+
+/* ── Product Grid ── */
+.product-grid {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 8px 8px 0;
+  gap: 8px;
+}
+.product-card {
+  width: calc(50% - 4px);
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  transition: transform .15s, box-shadow .15s;
+}
+.product-card:active {
+  transform: scale(.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+.card-img {
+  width: 100%;
+  height: 160px;
+  display: block;
+  background: #f0ede4;
+}
+.card-info {
+  padding: 10px 12px 12px;
+}
+.card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+.card-price-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.card-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e74c3c;
+}
+.card-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(231,76,60,.6);
+}
+.card-quality {
+  font-size: 11px;
+  color: rgba(0,0,0,.3);
+  background: #f5f2eb;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-school {
+  font-size: 11px;
+  color: rgba(0,0,0,.3);
+}
+.card-time {
+  font-size: 11px;
+  color: rgba(0,0,0,.2);
+}
+
+/* ── Load More ── */
+.load-more {
+  text-align: center;
+  padding: 20px 0 12px;
+}
+.loading-text {
+  font-size: 13px;
+  color: rgba(0,0,0,.2);
+}
+.end-text {
+  font-size: 13px;
+  color: rgba(0,0,0,.15);
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px 40px;
+}
+.empty-img {
+  width: 80px;
+  height: 80px;
+  opacity: .3;
+  margin-bottom: 16px;
+}
+.empty-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.25);
+  margin-bottom: 20px;
+}
+.empty-actions {
+  display: flex;
+  gap: 12px;
+}
+.empty-btn {
+  padding: 8px 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+
+/* ── Initial Loading ── */
+.init-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 0;
+}
+.init-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+}
+
+========================================
+ FILE: pages/login/login.js
+========================================
+const app = getApp();
+const SCHOOLS = [
+  { code: '', name: '选择学校' },
+  { code: 'gxny', name: '广西农业职业技术大学' },
+  { code: 'hnkj', name: '海南科技职业大学' },
+  { code: 'gdcj', name: '广东财经大学' },
+  { code: 'lztd', name: '柳州铁道职业技术学院' },
+  
+];
+
+Page({
+  data: {
+    mode: 'login',
+    // Login fields
+    student_id: '', phone: '',
+    // Register fields
+    regName: '', regSid: '', regPhone: '', regGender: '', regNick: '', regSchool: '',
+    cardImg: '',
+    // Shared
+    showSchoolPicker: false, schools: SCHOOLS, schoolNames: SCHOOLS.map(s => s.name),
+    // Beta
+    showBeta: false, betaPwd: '', betaMode: false, betaName: '', betaLoginPwd: '',
+  },
+  switchMode(e) { this.setData({ mode: e.currentTarget.dataset.mode }); },
+
+  // === Beta entrance ===
+  toggleBeta() { this.setData({ showBeta: !this.data.showBeta, betaPwd: '' }); },
+  onBetaPwd(e) { this.setData({ betaPwd: e.detail.value }); },
+  onBetaName(e) { this.setData({ betaName: e.detail.value }); },
+  onBetaLoginPwd(e) { this.setData({ betaLoginPwd: e.detail.value }); },
+  doBetaLoginSubmit() {
+    var n = this.data.betaName.trim();
+    var p = this.data.betaLoginPwd.trim();
+    if (!n || !p) return app.toast("请输入用户名和密码");
+    wx.showLoading({ title: "登录中" });
+    app.request("/api/marketplace/beta-login", "POST", { name: n, password: p })
+      .then(d => { wx.hideLoading();
+        if (d.ok && d.user) {
+          this.loginSuccess(d);
+        } else app.toast(d.error || "登录失败");
+      })
+      .catch(() => { wx.hideLoading(); app.toast("网络错误"); });
+  },
+  doBetaLogin() {
+    var pwd = this.data.betaPwd;
+    if (!pwd) return app.toast('请输入内测密码');
+    wx.showLoading({ title: '验证中' });
+    app.request('/api/marketplace/beta-check', 'POST', { password: pwd })
+      .then(d => { wx.hideLoading();
+        if (d.ok && d.beta) this.setData({ betaMode: true, showBeta: false, mode: 'login' });
+        else if (d.ok && !d.beta) app.toast('内测未开放');
+        else app.toast(d.msg || '内测密码错误');
+      })
+      .catch(() => { wx.hideLoading(); app.toast('网络错误'); });
+  },
+
+  // === Login mode ===
+  onIdInput(e) { this.setData({ student_id: e.detail.value }); },
+  onPhoneInput(e) { this.setData({ phone: e.detail.value }); },
+
+  doLogin() {
+    const { student_id, phone } = this.data;
+    if (!student_id || phone.length !== 11) return app.toast('请填写正确的学号和11位手机号');
+    wx.showLoading({ title: '登录中' });
+    app.request('/api/marketplace/login', 'POST', { student_id, phone })
+      .then(d => { wx.hideLoading();
+        if (d.ok && d.user) this.loginSuccess(d);
+        else if (d.msg) app.toast(d.msg);
+        else app.toast("账号不存在，请联系管理员添加");
+      })
+      .catch(() => { wx.hideLoading(); app.toast("网络错误"); });
+  },
+  phoneLogin(student_id, phone) {
+    wx.showLoading({ title: '注册中' });
+    app.request('/api/marketplace/phone-login', 'POST', { phone })
+      .then(d => { wx.hideLoading();
+        if (d.ok && d.user) { d.user.student_id = student_id; this.loginSuccess(d); }
+        else app.toast('登录失败');
+      })
+      .catch(() => { wx.hideLoading(); app.toast('网络错误'); });
+  },
+
+  // === Register mode ===
+  onRegName(e) { this.setData({ regName: e.detail.value }); },
+  onRegSid(e) { this.setData({ regSid: e.detail.value }); },
+  onRegPhone(e) { this.setData({ regPhone: e.detail.value }); },
+  onRegNick(e) { this.setData({ regNick: e.detail.value }); },
+  
+  pickGender(e) { this.setData({ regGender: e.currentTarget.dataset.val }); },
+  onRegSchool(e) {
+    const s = SCHOOLS[e.detail.value];
+    this.setData({ regSchool: s ? s.name : '' });
+  },
+  compressAndRead(path, cb) {
+    wx.compressImage({ src: path, quality: 60,
+      success: cp => {
+        wx.getFileSystemManager().readFile({
+          filePath: cp.tempFilePath, encoding: 'base64',
+          success: r => cb('data:image/jpeg;base64,' + r.data),
+          fail: () => { wx.getFileSystemManager().readFile({ filePath: path, encoding: 'base64', success: r => cb('data:image/jpeg;base64,' + r.data) }); }
+        });
+      },
+      fail: () => {
+        wx.getFileSystemManager().readFile({ filePath: path, encoding: 'base64', success: r => cb('data:image/jpeg;base64,' + r.data) });
+      }
+    });
+  },
+  uploadCard() {
+    wx.chooseImage({ count: 1, sizeType: ['compressed'],
+      success: res => this.compressAndRead(res.tempFilePaths[0], b64 => this.setData({ cardImg: b64 }))
+    });
+  },
+  clearCard() { this.setData({ cardImg: '' }); },
+  doRegister() {
+    const d = this.data;
+    if (!d.regName) return app.toast('请填写真实姓名');
+    if (!d.regSid) return app.toast('请填写学号');
+    if (d.regPhone.length !== 11) return app.toast('请输入11位手机号');
+    if (!d.regGender) return app.toast('请选择性别');
+    if (!d.cardImg) return app.toast('请上传学生证照片');
+
+      const schoolCode = SCHOOLS.find(s => s.name === d.regSchool)?.code;
+      if (!schoolCode) return app.toast('请选择学校');
+      wx.showLoading({ title: '提交中' });
+      app.request('/api/marketplace/login', 'POST', {
+        name: d.regName, student_id: d.regSid, phone: d.regPhone,
+        gender: d.regGender, nickname: d.regNick || '', school: schoolCode,
+        image: d.cardImg || ''
+      }).then(r => {
+        wx.hideLoading();
+        if (r.ok && r.user) {
+          this.loginSuccess(r);
+        } else if (r.ok) {
+          app.toast(r.msg || '注册成功，等待审核', 'success');
+          setTimeout(() => wx.navigateBack(), 1500);
+        } else {
+          app.toast(r.error || r.msg || '注册失败');
+        }
+      }).catch(() => { wx.hideLoading(); app.toast('网络错误'); });
+  },
+
+  // === Shared: login success → check school ===
+  loginSuccess(d) {
+    const u = d.user;
+    // Beta entrance → auto-set school to 内测服
+    if (this.data.betaMode || (this.data.showBeta && this.data.betaPwd)) {
+      u.school = 'beta';
+      app.globalData.user = u;
+      app.globalData.token = d.token;
+      wx.setStorageSync('user', u);
+      wx.setStorageSync('token', d.token);
+      wx.setStorageSync('userSchool', 'beta');
+      app.connectWS();
+      app.toast('登录成功', 'success');
+      return wx.switchTab({ url: "/pages/index/index" });
+    }
+    const saved = wx.getStorageSync('userSchool') || '';
+    u.school = u.school || saved || '';
+    app.globalData.user = u;
+    wx.setStorageSync('user', u);
+    app.connectWS();
+    if (u.school) {
+      wx.setStorageSync('userSchool', u.school);
+      app.toast('登录成功', 'success');
+      wx.navigateBack();
+    } else {
+      this.setData({ showSchoolPicker: true });
+    }
+  },
+  hidePicker() { this.setData({ showSchoolPicker: false }); },
+  pickSchool(e) {
+    const code = e.currentTarget.dataset.code;
+    if (!code) return;
+    const u = app.globalData.user;
+    u.school = code;
+    app.globalData.user = u;
+    wx.setStorageSync('user', u);
+    wx.setStorageSync('userSchool', code);
+    this.setData({ showSchoolPicker: false });
+    app.toast('登录成功', 'success');
+    wx.navigateBack();
+  }
+});
+
+========================================
+ FILE: pages/login/login.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/login/login.wxml
+========================================
+<view class="page">
+  <image class="logo-img" src="https://paywall-server.onrender.com/logo.jpg" mode="aspectFill"></image>
+  <view class="logo">二豆</view>
+  <view class="subtitle">校园严选 · 二手集市</view>
+
+  <!-- Mode switch -->
+  <view class="mode-bar">
+    <view class="mode {{mode==='register'?'active':''}}" bindtap="switchMode" data-mode="register">注册</view>
+    <view class="mode {{mode==='login'?'active':''}}" bindtap="switchMode" data-mode="login">登录</view>
+  </view>
+
+  <!-- ====== 注册模式 ====== -->
+  <view class="form" wx:if="{{mode==='login' && betaMode}}">
+    <view class="beta-badge">🔒 内测服</view>
+    <input class="ipt" placeholder="用户名" value="{{betaName}}" bindinput="onBetaName" />
+    <input class="ipt" placeholder="密码" password="{{true}}" value="{{betaLoginPwd}}" bindinput="onBetaLoginPwd" />
+    <button class="btn btn-beta" bindtap="doBetaLoginSubmit">进入内测服</button>
+  </view>
+
+  <view class="form" wx:if="{{mode==='register' && !betaMode}}">
+    <view class="field">
+      <text class="label">真实姓名 *</text>
+      <input class="ipt" placeholder="请输入真实姓名" value="{{regName}}" bindinput="onRegName" />
+    </view>
+    <view class="field">
+      <text class="label">学号 *</text>
+      <input class="ipt" placeholder="请输入学号" value="{{regSid}}" bindinput="onRegSid" />
+    </view>
+    <view class="field">
+      <text class="label">手机号 *</text>
+      <input class="ipt" placeholder="11位手机号" type="number" maxlength="11" value="{{regPhone}}" bindinput="onRegPhone" />
+    </view>
+    <view class="field-row">
+      <view class="field half">
+        <text class="label">性别 *</text>
+        <view class="gender-bar">
+          <view class="gender {{regGender==='male'?'active':''}}" bindtap="pickGender" data-val="male">男</view>
+          <view class="gender {{regGender==='female'?'active':''}}" bindtap="pickGender" data-val="female">女</view>
+        </view>
+      </view>
+      <view class="field half">
+        <text class="label">学校 *</text>
+        <view class="picker-wrap">
+          <picker mode="selector" range="{{schoolNames}}" bindchange="onRegSchool">
+            <view class="picker-val {{regSchool?'':'ph'}}">{{regSchool||'选择学校'}}</view>
+          </picker>
+          <text class="picker-arrow">∨</text>
+        </view>
+      </view>
+    </view>
+    <view class="field">
+      <text class="label">匿名昵称（选填）</text>
+      <input class="ipt" placeholder="如 山山来迟" value="{{regNick}}" bindinput="onRegNick" />
+    </view>
+    <view class="field">
+      <text class="label">学生证照片 *</text>
+      <view class="upload-row">
+        <view class="upload-box" bindtap="uploadCard">
+          <text wx:if="{{!cardImg}}" class="upload-plus">+</text>
+          <image wx:else class="upload-preview" src="{{cardImg}}"></image>
+        </view>
+        <text class="upload-tip" wx:if="{{cardImg}}" bindtap="clearCard">✕ 清除</text>
+      </view>
+    </view>
+    <button class="btn" bindtap="doRegister">提交注册</button>
+  </view>
+
+  <!-- ====== 登录模式 ====== -->
+  <view class="form" wx:if="{{mode==='login' && !betaMode}}">
+    <input class="ipt" placeholder="学号" value="{{student_id}}" bindinput="onIdInput" />
+    <input class="ipt" placeholder="手机号" type="number" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" />
+    <button class="btn" bindtap="doLogin">登录</button>
+    <view class="tip">首次使用请切换到"注册"</view>
+
+    <view wx:if="{{!betaMode}}">
+      <view class="beta-entrance" bindtap="toggleBeta">
+        <text class="beta-link">{{showBeta?'收起':'🔒 内测入口'}}</text>
+      </view>
+      <view class="beta-box" wx:if="{{showBeta}}">
+        <input class="ipt" placeholder="输入内测密码" password="{{true}}" value="{{betaPwd}}" bindinput="onBetaPwd" />
+        <button class="btn btn-beta" bindtap="doBetaLogin">进入内测服</button>
+        <view class="beta-hint">内测人员请输入管理员提供的内测密码</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- School picker modal (after login if no school) -->
+  <view class="modal-overlay" wx:if="{{showSchoolPicker}}" bindtap="hidePicker"></view>
+  <view class="modal" wx:if="{{showSchoolPicker}}">
+    <view class="modal-title">选择学校</view>
+    <view class="modal-sub">请选择你的学校</view>
+    <view wx:for="{{schools}}" wx:key="code" class="modal-item" bindtap="pickSchool" data-code="{{item.code}}">{{item.name}}</view>
+  </view>
+</view>
+
+========================================
+ FILE: pages/login/login.wxss
+========================================
+.page{padding:0 24px 48px;background:#f7f3ea;min-height:100vh}.logo-img{width:72px;height:72px;border-radius:50%;display:block;margin:0 auto 8px}.logo{text-align:center;font-size:28px;font-weight:700;color:#4e9e80;letter-spacing:2px;margin-top:32px}.subtitle{text-align:center;font-size:12px;color:rgba(0,0,0,.25);margin-top:4px;margin-bottom:28px}.mode-bar{display:flex;border-radius:10px;overflow:hidden;border:1px solid rgba(78,158,128,.15);margin-bottom:20px}.mode{flex:1;padding:8px;text-align:center;font-size:14px;font-weight:500;color:rgba(0,0,0,.25);background:#fff}.mode.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600}.form{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}.field{margin-bottom:14px}.field:last-child{margin-bottom:0}.label{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:4px;display:block}.ipt{width:100%;height:42px;padding:0 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:15px;color:#333;box-sizing:border-box}.ipt::placeholder{color:rgba(0,0,0,.2)}.btn{width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#4e9e80,#3d8a6e);color:#fff;font-size:15px;font-weight:600;border:none;margin-top:12px}.btn-beta{background:linear-gradient(135deg,#6c5ce7,#5a4bd1)}.tip{text-align:center;font-size:12px;color:rgba(0,0,0,.2);margin-top:12px}.beta-entrance{margin-top:16px;text-align:center}.beta-link{font-size:12px;color:rgba(0,0,0,.25)}.beta-badge{text-align:center;font-size:13px;color:#6c5ce7;font-weight:600;margin-bottom:12px}.beta-box{margin-top:10px;padding:12px;border-radius:10px;background:rgba(108,92,231,.04);border:1px solid rgba(108,92,231,.1)}.beta-hint{font-size:11px;color:rgba(0,0,0,.2);text-align:center;margin-top:8px}.field-row{display:flex;gap:10px}.field-row .half{flex:1}.gender-bar{display:flex;gap:6px}.gender{flex:1;padding:9px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:13px;font-weight:500;text-align:center;color:rgba(0,0,0,.25)}.gender.active{background:rgba(78,158,128,.08);color:#4e9e80;border-color:rgba(78,158,128,.2)}.picker-wrap{display:flex;align-items:center;height:42px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;padding:0 12px}.picker-val{font-size:15px;color:#333;flex:1}.picker-val.ph{color:rgba(0,0,0,.2)}.picker-arrow{font-size:12px;color:rgba(0,0,0,.12)}.upload-row{display:flex;align-items:center;gap:10px}.upload-box{width:72px;height:72px;border-radius:12px;border:1.5px dashed rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}.upload-plus{font-size:24px;color:rgba(0,0,0,.15)}.upload-preview{width:72px;height:72px;border-radius:12px}.upload-tip{font-size:12px;color:rgba(0,0,0,.25)}.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:99}.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:20px;width:280px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.1)}.modal-title{font-size:16px;font-weight:700;color:#333;text-align:center;margin-bottom:4px}.modal-sub{font-size:12px;color:rgba(0,0,0,.25);text-align:center;margin-bottom:14px}.modal-item{padding:12px 14px;border-radius:8px;font-size:14px;color:#555;text-align:center}.modal-item:active{background:rgba(78,158,128,.06);color:#4e9e80}
+
+========================================
+ FILE: pages/message/message.js
+========================================
+const app = getApp();
+
+Page({
+  data: {
+    contacts: [],
+    user: null,
+    loading: true,
+  },
+
+  onLoad() {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    this.setData({ user });
+    if (user) {
+      this.loadContacts();
+    } else {
+      this.setData({ loading: false });
+    }
+  },
+
+  onShow() {
+    const user = app.globalData.user || wx.getStorageSync('user') || null;
+    const prev = this.data.user;
+    const changed = (user && prev && user.student_id !== prev.student_id) || (!user && prev) || (user && !prev);
+    if (changed) {
+      this.setData({ user });
+      if (user) {
+        this.loadContacts();
+      } else {
+        this.setData({ contacts: [], loading: false });
+      }
+    } else if (user) {
+      this.loadContacts();
+    }
+  },
+
+  loadContacts() {
+    if (!this.data.user) return;
+    this.setData({ loading: true });
+
+    app.request('/api/marketplace/contacts').then(res => {
+      const arr = (res && (res.data || res)) || [];
+      const contacts = Array.isArray(arr) ? arr.map(c => ({
+        ...c,
+        lastTime: this.formatTime(c.last_time || c.last_message_time || c.updated_at || ''),
+        _hasUnread: c.unread > 0,
+      })) : [];
+      this.setData({ contacts, loading: false });
+      wx.stopPullDownRefresh();
+    }).catch(() => {
+      this.setData({ loading: false });
+      wx.stopPullDownRefresh();
+    });
+  },
+
+  formatTime(timeStr) {
+    if (!timeStr) return '';
+    try {
+      const d = new Date(timeStr);
+      if (isNaN(d.getTime())) return timeStr.substring(0, 10) || '';
+      const now = new Date();
+      const diff = now - d;
+      const oneDay = 86400000;
+      if (diff < oneDay && d.getDate() === now.getDate()) {
+        return timeStr.substring(11, 16);
+      }
+      if (diff < 2 * oneDay && d.getDate() === now.getDate() - 1) {
+        return '昨天';
+      }
+      if (diff < 7 * oneDay) {
+        const days = ['周日','周一','周二','周三','周四','周五','周六'];
+        return days[d.getDay()];
+      }
+      return timeStr.substring(0, 10);
+    } catch (e) {
+      return timeStr.substring(0, 10) || '';
+    }
+  },
+
+  goChat(e) {
+    const user = this.data.user;
+    if (!user) {
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+    const c = e.currentTarget.dataset.contact;
+    if (!c || !c.student_id) return;
+    wx.navigateTo({
+      url: '/pages/chat/chat?pid=' + (c.product_id || 0) + '&sid=' + c.student_id + '&name=' + encodeURIComponent(c.name || '')
+    });
+  },
+
+  onPullDownRefresh() {
+    if (this.data.user) {
+      this.loadContacts();
+    } else {
+      wx.stopPullDownRefresh();
+    }
+  },
+});
+
+========================================
+ FILE: pages/message/message.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/message/message.wxml
+========================================
+<view class="page">
+  <!-- ── Header ── -->
+  <view class="msg-header">
+    <text class="msg-title">消息</text>
+    <view class="msg-spacer"></view>
+  </view>
+
+  <!-- ── Not logged in ── -->
+  <view class="login-prompt" wx:if="{{!user && !loading}}">
+    <image class="prompt-img" src="/images/tab-msg.png" mode="aspectFit" />
+    <text class="prompt-text">登录后查看消息</text>
+    <button class="prompt-btn" bindtap="goChat" data-contact="">去登录</button>
+  </view>
+
+  <!-- ── Loading ── -->
+  <view class="msg-loading" wx:if="{{loading}}">
+    <text class="msg-loading-text">加载中...</text>
+  </view>
+
+  <!-- ── Empty ── -->
+  <view class="msg-empty" wx:if="{{!loading && user && contacts.length === 0}}">
+    <image class="empty-img" src="/images/tab-msg.png" mode="aspectFit" />
+    <text class="empty-text">暂无消息</text>
+  </view>
+
+  <!-- ── Contact List ── -->
+  <view class="contact-list" wx:if="{{contacts.length > 0}}">
+    <view wx:for="{{contacts}}" wx:key="student_id" class="contact-item" bindtap="goChat" data-contact="{{item}}">
+      <view class="contact-avatar-wrap">
+        <image class="contact-avatar" src="{{item.avatar || '/images/tab-me.png'}}" mode="aspectFill" />
+        <view class="unread-badge" wx:if="{{item.unread > 0}}">
+          <text class="unread-num">{{item.unread > 99 ? '99+' : item.unread}}</text>
+        </view>
+      </view>
+      <view class="contact-info">
+        <view class="contact-top">
+          <text class="contact-name">{{item.name || item.nickname || '未知用户'}}</text>
+          <text class="contact-time">{{item.lastTime}}</text>
+        </view>
+        <text class="contact-msg">{{item.last_message || item.lastMessage || ''}}</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+========================================
+ FILE: pages/message/message.wxss
+========================================
+/* ── Page Base ── */
+.page {
+  padding: 0 0 96px;
+  background: #f7f3ea;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.msg-header {
+  display: flex;
+  align-items: center;
+  padding: 48px 16px 10px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+.msg-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  flex: 1;
+}
+.msg-spacer {
+  width: 40px;
+}
+
+/* ── Login Prompt ── */
+.login-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+.prompt-img {
+  width: 64px;
+  height: 64px;
+  opacity: .3;
+  margin-bottom: 16px;
+}
+.prompt-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.25);
+  margin-bottom: 20px;
+}
+.prompt-btn {
+  padding: 10px 32px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4e9e80, #3d8a6e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+}
+
+/* ── Loading ── */
+.msg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+}
+.msg-loading-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.2);
+}
+
+/* ── Empty State ── */
+.msg-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+}
+.empty-img {
+  width: 64px;
+  height: 64px;
+  opacity: .3;
+  margin-bottom: 16px;
+}
+.empty-text {
+  font-size: 14px;
+  color: rgba(0,0,0,.25);
+}
+
+/* ── Contact List ── */
+.contact-list {
+  padding: 0;
+}
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,.03);
+  transition: background .15s;
+  cursor: pointer;
+}
+.contact-item:active {
+  background: #faf8f4;
+}
+.contact-item:last-child {
+  border-bottom: none;
+}
+.contact-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  margin-right: 12px;
+}
+.contact-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: block;
+  background: #f0ede4;
+  border: 2px solid rgba(78,158,128,.1);
+}
+.unread-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #e74c3c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 1px 3px rgba(231,76,60,.3);
+}
+.unread-num {
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+}
+.contact-info {
+  flex: 1;
+  min-width: 0;
+}
+.contact-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.contact-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.contact-time {
+  font-size: 12px;
+  color: rgba(0,0,0,.2);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.contact-msg {
+  display: block;
+  font-size: 13px;
+  color: rgba(0,0,0,.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+========================================
+ FILE: pages/profile/profile.js
+========================================
+const app = getApp();
+const SCHOOLS = [
+  { code: 'gxny', name: '广西农业职业技术大学' },
+  { code: 'hnkj', name: '海南科技职业大学' },
+  { code: 'gdcj', name: '广东财经大学' },
+  { code: 'lztd', name: '柳州铁道职业技术学院' },
+  { code: 'beta', name: '🛠 内测服' },
+];
+
+Page({
+  data: { user: null, schoolName: '', avatarLetter: '?', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80 },
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ active: 3 });
+    }
+    const user = app.globalData.user || wx.getStorageSync('user');
+    if (user) {
+      const s = SCHOOLS.find(s => s.code === user.school);
+      this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] });
+      // Load credit score
+      var self = this;
+      app.request('/api/marketplace/reviews?student_id=' + user.student_id).then(function(d) {
+        if (d && d.credit_score) self.setData({ creditScore: d.credit_score });
+      });
+    }
+    this.setData({ soundOn: app._soundEnabled !== false });
+  },
+  toggleSound() {
+    var on = !app._soundEnabled;
+    if (on) {
+      try { // 开启时响一声
+        var ctx = wx.createInnerAudioContext();
+        ctx.obeyMuteSwitch = false;
+        ctx.src = '/sounds/notif.wav';
+        ctx.play();
+      } catch(e) {}
+    }
+    app._soundEnabled = on;
+    this.setData({ soundOn: on });
+    app.toast(on ? '提示音已开启' : '提示音已关闭');
+  },
+  onPullDownRefresh() {
+    const user = app.globalData.user || wx.getStorageSync('user');
+    if (user) { const s = SCHOOLS.find(s => s.code === user.school); this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] }); }
+    wx.stopPullDownRefresh();
+  },
+  showSchoolPicker() { this.setData({ showPicker: true }); },
+  hideSchoolPicker() { this.setData({ showPicker: false }); },
+  pickSchool(e) {
+    const code = e.currentTarget.dataset.code;
+    const user = this.data.user;
+    if (user.school === 'beta' && code !== 'beta') return app.toast('内测账号不可切换学校');
+    const s = SCHOOLS.find(s => s.code === code);
+    user.school = code;
+    app.globalData.user = user;
+    wx.setStorageSync('user', user);
+    wx.setStorageSync('userSchool', code);
+    this.setData({ user, schoolName: s ? s.name : '', showPicker: false });
+    app.globalData._needRefresh = true;
+    app.toast('学校已设置');
+  },
+  goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
+  doLogout() {
+    wx.showModal({
+      title: '提示',
+      content: '确定退出登录？',
+      success: res => {
+        if (res.confirm) {
+          app.globalData.user = null;
+          app.globalData.token = null;
+          app.disconnectWS();
+          wx.removeStorageSync('user');
+          this.setData({ user: null, schoolName: '' });
+          app.toast('已退出');
+        }
+      }
+    });
+  },
+  goMyProducts() {
+    if (!this.data.user) return app.toast('请先登录');
+    app.globalData.tabIntent = 'mine';
+    wx.switchTab({ url: '/pages/index/index' });
+  },
+  goMyFavs() {
+    if (!this.data.user) return app.toast('请先登录');
+    app.globalData.tabIntent = 'fav';
+    wx.switchTab({ url: '/pages/index/index' });
+  },
+  goMyPurchases() {
+    if (!this.data.user) return app.toast('请先登录');
+    app.globalData.tabIntent = 'bought';
+    wx.switchTab({ url: '/pages/index/index' });
+  }
+});
+
+========================================
+ FILE: pages/profile/profile.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/profile/profile.wxml
+========================================
+<view class="page">
+  <view class="profile-header">
+    <view class="avatar">{{avatarLetter||'?'}}</view>
+    <view class="info">
+      <text class="name">{{user.name||'未登录'}}</text>
+      <text class="school" wx:if="{{schoolName}}">{{schoolName}}</text>
+      <text class="school none" wx:else>未设置学校</text>
+    </view>
+    <view class="logout" bindtap="doLogout" wx:if="{{user}}">退出</view>
+  </view>
+  <view class="credit-card" wx:if="{{user}}">
+    <text class="cc-label">信用分</text>
+    <text class="cc-score">{{creditScore}}</text>
+  </view>
+  <view class="menu">
+    <view class="item" wx:if="{{user && !schoolName}}" bindtap="showSchoolPicker">🏫 选择学校</view>
+    <view class="item" bindtap="goMyProducts">📦 我的商品</view>
+    <view class="item" bindtap="goMyPurchases">🛒 我的购买</view>
+    <view class="item" bindtap="goMyFavs">❤️ 我的收藏</view>
+    <view class="item">🔔 声音提醒<switch class="sw" color="#4e9e80" checked="{{soundOn}}" bindchange="toggleSound" /></view>
+  </view>
+  <view class="menu" wx:if="{{!user}}">
+    <view class="item center" bindtap="goLogin">登录/注册</view>
+  </view>
+  <view class="modal-overlay" wx:if="{{showPicker}}" bindtap="hideSchoolPicker"></view>
+  <view class="modal" wx:if="{{showPicker}}">
+    <view class="modal-title">选择学校</view>
+    <view wx:for="{{schools}}" wx:key="code" class="modal-item" bindtap="pickSchool" data-code="{{item.code}}">{{item.name}}</view>
+  </view>
+</view>
+
+========================================
+ FILE: pages/profile/profile.wxss
+========================================
+.page{padding-bottom:24px;background:#f7f3ea;min-height:100vh}.profile-header{display:flex;align-items:center;gap:14px;padding:44px 16px 16px;background:linear-gradient(135deg,#4e9e80,#3d8a6e);color:#fff}.avatar{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;flex-shrink:0}.info{flex:1}.name{font-size:16px;font-weight:600;display:block}.school{font-size:12px;opacity:.7;margin-top:2px;display:block}.school.none{opacity:.4}.logout{font-size:12px;opacity:.7;padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.3)}.credit-card{display:flex;align-items:center;justify-content:space-between;margin:12px 16px;padding:14px 16px;background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.04)}.cc-label{font-size:13px;color:rgba(0,0,0,.45)}.cc-score{font-size:24px;font-weight:700;color:#4e9e80}.menu{background:#fff;border-radius:14px;margin:0 16px 12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04)}.item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;font-size:14px;color:#555;border-bottom:1px solid rgba(0,0,0,.04)}.item:last-child{border-bottom:none}.item:active{background:rgba(78,158,128,.04)}.item.center{justify-content:center;color:#4e9e80;font-weight:600}.sw{transform:scale(.7);transform-origin:right center}.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:99}.modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:20px;width:280px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.1)}.modal-title{font-size:16px;font-weight:700;color:#333;text-align:center;margin-bottom:14px}.modal-item{padding:12px 14px;border-radius:8px;font-size:14px;color:#555;text-align:center}.modal-item:active{background:rgba(78,158,128,.06);color:#4e9e80}
+
+========================================
+ FILE: pages/publish/publish.js
+========================================
+const app = getApp();
+var QUALITIES = ['全新', '99新', '95新', '9成新', '8成新', '7成新', '6成新及以下'];
+var PERIODS = [{v:'day',l:'/天'},{v:'week',l:'/周'},{v:'month',l:'/月'}];
+Page({
+  data: {
+    isEdit: false, editId: 0, wasRejected: false,
+    itemType: 'sell', images: [], title: '', desc: '', catSel: '', catNames: [],
+    price: '', deposit: '', rentPeriod: 'day', rentLabel: '天',
+    negotiable: true, genderPref: 'all', quality: '',
+    qualities: QUALITIES, periods: PERIODS, cats: []
+  },
+  onLoad(opt) {
+    if (opt.id) {
+      this.setData({ isEdit: true, editId: parseInt(opt.id) });
+      app.request('/api/marketplace/products/' + opt.id).then(p => {
+        if (!p) return;
+        this.setData({
+          title: p.title || '', desc: p.desc || '', price: String(p.price || ''),
+          deposit: String(p.deposit || ''), rentPeriod: p.rent_period || 'day',
+          negotiable: p.negotiable !== false, genderPref: p.gender_pref || 'all',
+          quality: p.quality || '', catSel: p.category || '', itemType: p.item_type || 'sell',
+          images: p.images || [], wasRejected: p.status === 'rejected'
+        });
+        var rl = {day:'天',week:'周',month:'月'};
+        this.setData({ rentLabel: rl[p.rent_period] || '天' });
+      });
+    }
+    this.loadCats();
+  },
+  loadCats() {
+    app.request('/api/marketplace/categories').then(d => {
+      var arr = Array.isArray(d) ? d : [];
+      var names = arr.map(function(c) { return typeof c === 'string' ? c : c.name || ''; }).filter(Boolean);
+      this.setData({ cats: arr, catNames: names });
+    });
+  },
+  setType(e) {
+    var t = e.currentTarget.dataset.type;
+    this.setData({ itemType: t });
+    if (t === 'rent') this.setData({ genderPref: 'all' });
+  },
+  onTitle(e) { this.setData({ title: e.detail.value }); },
+  onDesc(e) { this.setData({ desc: e.detail.value }); },
+  onPrice(e) { this.setData({ price: e.detail.value }); },
+  onDeposit(e) { this.setData({ deposit: e.detail.value }); },
+  onCat(e) { this.setData({ catSel: this.data.catNames[e.detail.value] || '' }); },
+  onPeriod(e) {
+    var v = e.currentTarget.dataset.val;
+    var rl = {day:'天',week:'周',month:'月'};
+    this.setData({ rentPeriod: v, rentLabel: rl[v] || '天' });
+  },
+  onNegotiable(e) { this.setData({ negotiable: e.detail.value }); },
+  pickGenderPref(e) { this.setData({ genderPref: e.currentTarget.dataset.val }); },
+  pickQuality(e) { this.setData({ quality: e.currentTarget.dataset.val }); },
+  pickImage() {
+    wx.chooseImage({ count: 4 - this.data.images.length, sizeType: ['compressed'],
+      success: res => {
+        var imgs = this.data.images.slice();
+        res.tempFilePaths.forEach(p => {
+          try {
+            var b64 = wx.getFileSystemManager().readFileSync(p, 'base64');
+            imgs.push('data:image/jpeg;base64,' + b64);
+          } catch(e) {}
+        });
+        this.setData({ images: imgs });
+      }
+    });
+  },
+  delImage(e) {
+    var imgs = this.data.images.slice();
+    imgs.splice(e.currentTarget.dataset.index, 1);
+    this.setData({ images: imgs });
+  },
+  validate() {
+    var d = this.data;
+    if (!d.title.trim()) return app.toast('请输入物品名称');
+    if (!d.catSel) return app.toast('请选择分类');
+    if (d.itemType === 'sell' && !d.price) return app.toast('请输入售价');
+    if (d.itemType === 'rent' && !d.price) return app.toast('请输入租金');
+    if (!d.quality) return app.toast('请选择新旧程度');
+    return true;
+  },
+  publish() {
+    if (this.validate() !== true) return;
+    wx.showLoading({ title: '发布中' });
+    var d = this.data;
+    var method = d.isEdit ? 'PATCH' : 'POST';
+    var url = d.isEdit ? '/api/marketplace/products/' + d.editId + '/owner-edit' : '/api/marketplace/products';
+    var u = app.globalData.user || wx.getStorageSync('user');
+    var body = {
+      title: d.title.trim(), desc: d.desc.trim(), category: d.catSel,
+      price: parseFloat(d.price) || 0, item_type: d.itemType,
+      quality: d.quality, negotiable: d.negotiable,
+      gender_pref: d.genderPref, images: d.images
+    };
+    if (d.isEdit) {
+      delete body.item_type;
+    } else {
+      body.owner_student_id = u.student_id;
+      body.owner_name = u.name || '';
+      body.school = u.school || '';
+    }
+    if (d.itemType === 'rent') {
+      body.rent_price = parseFloat(d.price) || 0;
+      body.deposit = parseFloat(d.deposit) || 0;
+      body.rent_period = d.rentPeriod;
+      body.price = 0;
+    }
+    app.request(url, method, body).then(r => {
+      wx.hideLoading();
+      if (r && r.ok) {
+        app.toast(d.isEdit ? '保存成功' : '发布成功', 'success');
+        setTimeout(() => wx.navigateBack(), 1000);
+      } else {
+        app.toast(r.error || r.msg || '操作失败');
+      }
+    }).catch(() => { wx.hideLoading(); app.toast('网络错误'); });
+  },
+  saveOnly() { this.publish(); },
+  saveAndSubmit() {
+    if (this.validate() !== true) return;
+    wx.showLoading({ title: '提交中' });
+    var d = this.data;
+    app.request('/api/marketplace/products/' + d.editId + '/resubmit', 'POST', {}).then(r => {
+      wx.hideLoading();
+      if (r && r.ok) { app.toast('已重新提交审核', 'success'); setTimeout(() => wx.navigateBack(), 1000); }
+      else app.toast(r.error || '提交失败');
+    }).catch(() => { wx.hideLoading(); app.toast('网络错误'); });
+  },
+  goBack() { wx.navigateBack(); }
+});
+
+========================================
+ FILE: pages/publish/publish.json
+========================================
+{ "usingComponents": {} }
+
+========================================
+ FILE: pages/publish/publish.wxml
+========================================
+<view class="page">
+  <view class="custom-header">
+    <view class="ch-back" wx:if="{{isEdit}}" bindtap="goBack">
+      <text class="ch-arrow">‹</text>
+      <text class="ch-text">返回</text>
+    </view>
+    <view class="ch-spacer" wx:else></view>
+    <text class="ch-title">{{isEdit?'编辑商品':'发布商品'}}</text>
+    <view class="ch-spacer"></view>
+  </view>
+  <view class="type-bar">
+    <view class="type {{itemType==='sell'?'active':''}}" bindtap="setType" data-type="sell">
+      <image class="t-icon" src="/images/pub-sell{{itemType==='sell'?'':'-gray'}}.png"></image>
+      <text>出售</text>
+    </view>
+    <view class="type {{itemType==='rent'?'active':''}}" bindtap="setType" data-type="rent">
+      <image class="t-icon" src="/images/pub-rent{{itemType==='rent'?'':'-gray'}}.png"></image>
+      <text>出租</text>
+    </view>
+  </view>
+  <view class="card">
+    <view class="card-title"><image class="c-icon" src="/images/pub-cam.png"></image><text>商品图片</text></view>
+    <view class="imgs">
+      <view wx:for="{{images}}" wx:key="*this" class="img-item">
+        <image class="img-preview" src="{{item}}"></image>
+        <view class="img-del" bindtap="delImage" data-index="{{idx}}">✕</view>
+      </view>
+      <view class="img-add" bindtap="pickImage" wx:if="{{images.length<4}}">
+        <text class="img-plus">+</text>
+        <text class="img-tip">添加照片</text>
+      </view>
+    </view>
+  </view>
+  <view class="card">
+    <view class="card-title"><image class="c-icon" src="/images/pub-clip.png"></image><text>基本信息</text></view>
+    <view class="field">
+      <text class="label">物品名称 *</text>
+      <input class="ipt" placeholder="请输入物品名称" value="{{title}}" bindinput="onTitle" />
+    </view>
+    <view class="field">
+      <text class="label">物品描述</text>
+      <textarea class="ipt area" placeholder="描述物品的新旧、使用情况..." value="{{desc}}" bindinput="onDesc" />
+    </view>
+    <view class="field">
+      <text class="label">分类 *</text>
+      <view class="picker-wrap">
+        <picker mode="selector" range="{{catNames}}" bindchange="onCat">
+          <view class="picker-inner">
+            <view class="picker-val {{catSel?'':'placeholder'}}">{{catSel||'选择分类'}}</view>
+            <text class="picker-arrow">∨</text>
+          </view>
+        </picker>
+      </view>
+    </view>
+  </view>
+  <view class="card">
+    <view class="card-title"><image class="c-icon" src="/images/pub-tagp.png"></image><text>价格</text></view>
+    <view class="field" wx:if="{{itemType==='sell'}}">
+      <text class="label">售价（元）</text>
+      <input class="ipt ipt-price" placeholder="¥ 0.00" type="digit" value="{{price}}" bindinput="onPrice" />
+    </view>
+    <view class="field" wx:if="{{itemType==='rent'}}">
+      <text class="label">租金（元/{{rentLabel}}）</text>
+      <input class="ipt ipt-price" placeholder="¥ 0" type="digit" value="{{price}}" bindinput="onPrice" />
+    </view>
+    <view class="field" wx:if="{{itemType==='rent'}}">
+      <text class="label">押金（元）</text>
+      <input class="ipt ipt-price" placeholder="¥ 0" type="digit" value="{{deposit}}" bindinput="onDeposit" />
+    </view>
+    <view class="field" wx:if="{{itemType==='rent'}}">
+      <text class="label">租期单位</text>
+      <view class="period-bar">
+        <view wx:for="{{periods}}" wx:key="v" class="period {{rentPeriod===item.v?'active':''}}" bindtap="onPeriod" data-val="{{item.v}}">{{item.l}}</view>
+      </view>
+    </view>
+    <view class="field row">
+      <text class="label">可议价</text>
+      <switch class="switch" color="#4e9e80" checked="{{negotiable}}" bindchange="onNegotiable" />
+    </view>
+    <view class="field">
+      <text class="label">可见范围</text>
+      <view class="gender-bar">
+        <view class="gender {{genderPref==='all'?'active':''}}" bindtap="pickGenderPref" data-val="all">全部可见</view>
+        <view class="gender {{genderPref==='male'?'active':''}}" bindtap="pickGenderPref" data-val="male">仅男生</view>
+        <view class="gender {{genderPref==='female'?'active':''}}" bindtap="pickGenderPref" data-val="female">仅女生</view>
+      </view>
+    </view>
+  </view>
+  <view class="card">
+    <view class="card-title"><image class="c-icon" src="/images/pub-tagq.png"></image><text>新旧程度</text></view>
+    <view class="quality-list">
+      <view wx:for="{{qualities}}" wx:key="*this" class="quality {{quality===item?'active':''}}" bindtap="pickQuality" data-val="{{item}}">{{item}}</view>
+    </view>
+  </view>
+  <view wx:if="{{isEdit && wasRejected}}" class="dual-btn">
+    <button class="btn half" bindtap="saveOnly">保存修改</button>
+    <button class="btn half primary" bindtap="saveAndSubmit">保存修改并提交</button>
+  </view>
+  <button class="btn" wx:else bindtap="publish">
+    <image class="btn-icon" src="/images/pub-up.png"></image>
+    <text>{{isEdit?'保存修改':'发布商品'}}</text>
+  </button>
+</view>
+
+========================================
+ FILE: pages/publish/publish.wxss
+========================================
+.page{padding:0 16px 96px;background:#f7f3ea;min-height:100vh;box-sizing:border-box}
+.custom-header{display:flex;align-items:center;padding:44px 12px 6px;background:#fff;border-bottom:1px solid rgba(0,0,0,.04);min-height:44px;margin:0 -16px 12px}
+.ch-back{display:inline-flex;align-items:center;gap:2px;cursor:pointer;padding:4px 0;flex-shrink:0}
+.ch-back:active{opacity:.5}
+.ch-arrow{font-size:22px;color:#4e9e80;font-weight:300;line-height:1}
+.ch-text{font-size:15px;color:#4e9e80}
+.ch-title{font-size:16px;font-weight:600;color:#333;flex:1;text-align:center}
+.ch-spacer{width:40px;flex-shrink:0}
+
+/* 类型切换 */
+.type-bar{display:flex;gap:8px;margin-bottom:16px}
+.type{flex:1;padding:10px;border-radius:12px;text-align:center;font-size:14px;font-weight:500;background:#fff;color:rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.04);display:flex;align-items:center;justify-content:center;gap:5px}
+.type.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+.t-icon{width:18px;height:18px;flex-shrink:0}
+
+/* 卡片 */
+.card{background:#fff;border-radius:14px;padding:14px 14px 12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.02)}
+.card-title{font-size:14px;font-weight:600;color:#333;margin-bottom:10px;display:flex;align-items:center;gap:5px}
+.c-icon{width:16px;height:16px;flex-shrink:0}
+
+/* 图片选择 */
+.imgs{display:flex;gap:8px;flex-wrap:wrap}
+.img-add{width:72px;height:72px;border-radius:12px;border:1.5px dashed rgba(0,0,0,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.img-plus{font-size:24px;color:rgba(0,0,0,.15);line-height:1}
+.img-tip{font-size:10px;color:rgba(0,0,0,.15)}
+.img-item{position:relative;width:72px;height:72px;border-radius:12px;overflow:hidden}
+.img-preview{width:72px;height:72px;border-radius:12px;background:rgba(0,0,0,.03)}
+.img-del{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.4);color:#fff;font-size:12px;text-align:center;line-height:20px}
+
+/* 字段 */
+.field{margin-bottom:10px}
+.field:last-child{margin-bottom:0}
+.field.row{display:flex;align-items:center;justify-content:space-between}
+.label{display:block;font-size:13px;font-weight:500;color:rgba(0,0,0,.45);margin-bottom:5px}
+
+/* 输入框 */
+.ipt{display:block;width:100%;height:42px;padding:0 12px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:15px;color:#333;line-height:42px;box-sizing:border-box}
+.ipt::placeholder{color:rgba(0,0,0,.2)}
+.area{height:auto;min-height:80px;padding:10px 12px;line-height:1.5}
+
+/* 价格输入框 */
+.ipt-price{font-size:16px;font-weight:600;color:#4e9e80}
+.ipt-price::placeholder{color:rgba(78,158,128,.3);font-weight:400}
+
+/* 分类选择器 */
+.picker-wrap{display:flex;align-items:center;height:42px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;padding:0 8px 0 0}
+.picker-wrap picker{flex:1;height:42px;display:block}
+.picker-inner{display:flex;align-items:center;justify-content:space-between;height:42px;padding:0 12px}
+.picker-val{font-size:15px;color:#333;flex:1}
+.picker-val.placeholder{color:rgba(0,0,0,.2)}
+.picker-arrow{font-size:12px;color:rgba(0,0,0,.12);line-height:1}
+
+/* 租期单位 */
+.period-bar{display:flex;gap:6px}
+.period{padding:7px 14px;border-radius:8px;font-size:13px;background:#f5f2eb;color:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.04);font-weight:500}
+.period.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 可见范围 */
+.gender-bar{display:flex;gap:6px}
+.gender{flex:1;padding:9px;border-radius:8px;border:1px solid rgba(0,0,0,.06);background:#f5f2eb;font-size:13px;font-weight:500;text-align:center;color:rgba(0,0,0,.25)}
+.gender.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 开关 */
+.switch{transform:scale(.75);transform-origin:right center}
+
+/* 新旧程度 */
+.quality-list{display:flex;gap:6px;flex-wrap:wrap}
+.quality{padding:7px 14px;border-radius:8px;font-size:13px;background:#f5f2eb;color:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.04);font-weight:500}
+.quality.active{background:rgba(78,158,128,.08);color:#4e9e80;font-weight:600;border-color:rgba(78,158,128,.2)}
+
+/* 提交按钮 */
+.btn{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#4e9e80,#3d8a6e);color:#fff;font-size:16px;font-weight:600;border:none;margin-top:4px;box-shadow:0 4px 12px rgba(78,158,128,.25);display:flex;align-items:center;justify-content:center;gap:6px}
+.dual-btn{display:flex;gap:8px;margin-top:4px}
+.dual-btn .btn{margin-top:0}
+.dual-btn .half.primary{background:linear-gradient(135deg,#4e9e80,#3d8a6e)}
+.dual-btn .half:not(.primary){background:#fff;color:#4e9e80;border:2px solid rgba(78,158,128,.2);box-shadow:none}
+.btn-icon{width:18px;height:18px;flex-shrink:0}
+
+========================================
+ FILE: sitemap.json
+========================================
+{
+  "rules": [{ "action": "allow", "page": "*" }]
+}
