@@ -1,0 +1,99 @@
+<view class="page">
+  <!-- Back button -->
+  <view class="chat-back">
+    <view class="back-hit" bindtap="goBack">
+      <text class="back-arrow">‹</text>
+      <text class="back-text">返回</text>
+    </view>
+    <text class="chat-title">{{name}}</text>
+    <view class="ch-spacer"></view>
+  </view>
+
+  <!-- Trade product selector -->
+  <view class="trade-picker" wx:if="{{tradePicker.length>=1}}" bindtap="showTradePicker">
+    <view class="tp-val">{{tradeIdx>=0 ? tradePicker[tradeIdx] : '选择交易商品'}}</view>
+    <text class="tp-arrow">∨</text>
+  </view>
+
+  <!-- Product info header -->
+  <view class="product-header" wx:if="{{product && tradeIdx>=0 && tradeStatus!=='completed'}}" data-id="{{product.id}}" bindtap="goDetail">
+    <text class="ph-icon">📦</text>
+    <view class="ph-info">
+      <text class="ph-title">{{product.title}}</text>
+      <text class="ph-price" wx:if="{{product.item_type==='rent'}}">¥{{product.rent_price}}/天</text>
+      <text class="ph-price" wx:else>¥{{product.price}}</text>
+    </view>
+    <text class="ph-arrow">›</text>
+  </view>
+
+  <!-- Trade status bar -->
+  <view class="trade-bar" wx:if="{{tradeStatus && tradeRole && otherNick}}">
+    <view wx:if="{{tradeStatus==='trading' && tradeRole==='seller'}}" class="trade-actions">
+      <text class="trade-tip">买家已下单，等待你确认</text>
+      <view class="trade-btns">
+        <button class="trade-btn cancel" bindtap="cancelTrade">取消交易</button>
+        <button class="trade-btn confirm" bindtap="confirmTrade">确认交易</button>
+      </view>
+    </view>
+    <view wx:elif="{{tradeStatus==='awaiting_buyer' && tradeRole==='buyer'}}" class="trade-actions">
+      <text class="trade-tip">{{otherNick}} {{otherGender}} 已确认交易，请确认收货</text>
+      <button class="trade-btn confirm" bindtap="receiveGoods">确认收货</button>
+    </view>
+    <view wx:elif="{{tradeStatus==='awaiting_buyer' && tradeRole==='seller'}}" class="trade-info">
+      <text class="trade-tip">✅ 已确认交易，等待 {{otherNick}} {{otherGender}} 收货</text>
+    </view>
+    <view wx:elif="{{tradeStatus==='trading' && tradeRole==='buyer'}}" class="trade-info">
+      <text class="trade-tip">⏳ 等待卖家确认中</text>
+    </view>
+    <view wx:elif="{{tradeStatus==='completed'}}" class="trade-info">
+      <text class="trade-tip">✅ 与 {{otherNick}} {{otherGender}} 交易完成</text>
+    </view>
+  </view>
+
+  <!-- Messages -->
+  <scroll-view class="msgs" scroll-y scroll-into-view="msg_{{msgTopId}}" scroll-with-animation="{{false}}">
+    <view wx:for="{{msgs}}" wx:key="id" id="msg_{{item.id}}" class="msg {{item.from_student_id===user.student_id?'mine':'other'}}">
+      <view wx:if="{{!item._hasImg}}" class="bubble">{{item.content}}</view>
+      <view wx:else class="bubble">
+        <block wx:for="{{item._parts}}" wx:key="idx">
+          <image wx:if="{{item._parts[idx].isImg}}" src="{{item._parts[idx].val}}" mode="widthFix" style="max-width:180px;min-width:60px;min-height:60px;border-radius:6px;margin:2px 0;background:rgba(0,0,0,.04)"></image>
+          <text wx:else>{{item._parts[idx].val}}</text>
+        </block>
+      </view>
+      <view class="time">{{item.time}}</view>
+    </view>
+  </scroll-view>
+
+  <!-- Image preview -->
+  <view class="img-preview" wx:if="{{pendingImg}}">
+    <image class="img-preview-src" src="{{pendingImg}}" mode="aspectFill"></image>
+    <text class="img-preview-del" bindtap="clearPendingImg">✕</text>
+  </view>
+  <!-- Input -->
+  <view class="input-row">
+    <view class="img-btn" bindtap="pickChatImg">📷</view>
+    <input class="ipt" placeholder="输入消息..." bindinput="onInput" value="{{input}}" />
+    <button class="send" bindtap="sendMsg">{{pendingImg?'发送':'发送'}}</button>
+  </view>
+
+  <!-- Review modal -->
+  <view class="modal-overlay" wx:if="{{showReview}}" bindtap="closeReview"></view>
+  <view class="review-modal" wx:if="{{showReview}}">
+    <view class="rev-title">评价本次交易</view>
+    <view class="rev-tags">
+      <view wx:for="{{reviewTags}}" wx:key="*this" class="rev-tag {{reviewSel.indexOf(item)>=0?'active':''}}" bindtap="toggleReviewTag" data-tag="{{item}}">{{item}}</view>
+    </view>
+    <textarea class="rev-text" placeholder="请填写评价理由（必填）" value="{{reviewText}}" bindinput="onReviewText" />
+    <view class="rev-imgs">
+      <view wx:for="{{reviewImgs}}" wx:key="*this" class="rev-img">
+        <image class="rev-img-src" src="{{item}}"></image>
+        <text class="rev-img-del" bindtap="delReviewImg" data-index="{{idx}}">✕</text>
+      </view>
+      <view class="rev-img-add" wx:if="{{reviewImgs.length<3}}" bindtap="pickReviewImg">+</view>
+    </view>
+    <view class="rev-btns">
+      <view class="rev-btn cancel" bindtap="closeReview">关闭</view>
+      <view class="rev-btn primary" bindtap="submitReview">提交评价</view>
+    </view>
+  </view>
+</view>
