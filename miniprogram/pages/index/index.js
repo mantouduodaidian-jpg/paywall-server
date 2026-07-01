@@ -165,7 +165,12 @@ Page({
 
       if (records) {
         // Pre-process dates for WXML (no .substring allowed)
-        records = records.map(function(r) { return { ...r, _dateStr: (r.created_at || '').substring(0, 10) }; });
+        records = records.map(function(r) {
+          var img = '';
+          if (r.images && r.images.length) img = r.images[0];
+          else if (r.image) img = r.image;
+          return { ...r, _dateStr: (r.created_at || '').substring(0, 10), _firstImg: img };
+        });
         const newList = page === 0 ? records : list.concat(records);
         const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
         const more = page + 1 < totalPages;

@@ -108,7 +108,7 @@
   <!-- ── Product Grid ── -->
   <view class="product-grid" wx:if="{{list.length > 0}}">
     <view wx:for="{{list}}" wx:key="id" class="product-card" bindtap="goDetail" data-id="{{item.id}}">
-      <image class="card-img" src="{{item.images && item.images[0] || item.image || ''}}" mode="aspectFill" />
+      <image class="card-img" src="{{item._firstImg}}" mode="aspectFill" />
       <view class="card-info">
         <text class="card-title">{{item.title}}</text>
         <view class="card-price-row">

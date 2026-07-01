@@ -8,7 +8,7 @@ const SCHOOLS = [
 ];
 
 Page({
-  data: { user: null, schoolName: '', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80 },
+  data: { user: null, schoolName: '', avatarLetter: '?', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80 },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ active: 3 });
@@ -16,7 +16,7 @@ Page({
     const user = app.globalData.user || wx.getStorageSync('user');
     if (user) {
       const s = SCHOOLS.find(s => s.code === user.school);
-      this.setData({ user, schoolName: s ? s.name : '' });
+      this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] });
       // Load credit score
       var self = this;
       app.request('/api/marketplace/reviews?student_id=' + user.student_id).then(function(d) {
@@ -41,7 +41,7 @@ Page({
   },
   onPullDownRefresh() {
     const user = app.globalData.user || wx.getStorageSync('user');
-    if (user) { const s = SCHOOLS.find(s => s.code === user.school); this.setData({ user, schoolName: s ? s.name : '' }); }
+    if (user) { const s = SCHOOLS.find(s => s.code === user.school); this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] }); }
     wx.stopPullDownRefresh();
   },
   showSchoolPicker() { this.setData({ showPicker: true }); },

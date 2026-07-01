@@ -1,6 +1,6 @@
 <view class="page">
   <view class="profile-header">
-    <view class="avatar">{{(user.name||'?')[0]}}</view>
+    <view class="avatar">{{avatarLetter||'?'}}</view>
     <view class="info">
       <text class="name">{{user.name||'未登录'}}</text>
       <text class="school" wx:if="{{schoolName}}">{{schoolName}}</text>
