@@ -62,7 +62,67 @@ app.use((req, res, next) => {
 });
 app.use(express.static(join(__dirname, 'public')));
 
+const UPLOAD_DIR = join(__dirname, 'public', 'uploads');
+if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true });
+
+function mimeToExt(mime) {
+  var map = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/bmp': 'bmp',
+    'image/heic': 'heic',
+    'image/heif': 'heif'
+  };
+  return map[String(mime || '').toLowerCase()] || 'jpg';
+}
+
+function parseMultipartFile(buffer, boundary) {
+  if (!buffer || !boundary) return null;
+  var headerStart = buffer.indexOf(Buffer.from('Content-Disposition: form-data; name="file"'));
+  if (headerStart < 0) return null;
+  var headerEnd = buffer.indexOf(Buffer.from('\r\n\r\n'), headerStart);
+  if (headerEnd < 0) return null;
+  var headerText = buffer.slice(headerStart, headerEnd).toString('utf8');
+  var nameMatch = headerText.match(/filename="([^"]*)"/i);
+  var typeMatch = headerText.match(/Content-Type:\s*([^\r\n]+)/i);
+  var nextBoundary = buffer.indexOf(Buffer.from('\r\n--' + boundary), headerEnd + 4);
+  var fileBuf = nextBoundary >= 0 ? buffer.slice(headerEnd + 4, nextBoundary) : buffer.slice(headerEnd + 4);
+  if (!fileBuf || !fileBuf.length) return null;
+  return {
+    filename: nameMatch && nameMatch[1] ? nameMatch[1] : '',
+    mime: typeMatch && typeMatch[1] ? typeMatch[1].trim() : 'image/jpeg',
+    buffer: fileBuf
+  };
+}
+
 // ==================== 产品 API ====================
+app.post('/api/upload', async (req, res) => {
+  try {
+    var contentType = String(req.headers['content-type'] || '');
+    var boundaryMatch = contentType.match(/boundary=([^;]+)/i);
+    if (!boundaryMatch) return res.status(400).json({ error: '缺少上传边界' });
+    var boundary = boundaryMatch[1];
+    var chunks = [];
+    for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    var body = Buffer.concat(chunks);
+    var file = parseMultipartFile(body, boundary);
+    if (!file || !file.buffer || !file.buffer.length) return res.status(400).json({ error: '未找到文件' });
+
+    var ext = mimeToExt(file.mime);
+    var safeName = Date.now() + '_' + randomBytes(6).toString('hex') + '.' + ext;
+    var savePath = join(UPLOAD_DIR, safeName);
+    writeFileSync(savePath, file.buffer);
+
+    var publicUrl = '/uploads/' + safeName;
+    res.json({ ok: true, url: publicUrl });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/products', (req, res) => {
   res.json(q('SELECT * FROM products'));
 });
@@ -303,6 +363,63 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const SB = (path) => SUPABASE_URL + '/rest/v1/' + path;
 const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 const SB_HEADERS2 = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+function getMonthKey(dateLike) {
+  var d = new Date(dateLike || Date.now());
+  if (isNaN(d.getTime())) d = new Date();
+  return d.toISOString().slice(0, 7);
+}
+
+async function listMarketplaceProductsForNumbering() {
+  const r = await fetch(SB('products?select=id,created_at,global_no,month_no,month_key&order=created_at.asc,id.asc'), { headers: SB_HEADERS });
+  const data = await r.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function assignProductNumbers(createdAt) {
+  const created = createdAt || new Date().toISOString();
+  const monthKey = getMonthKey(created);
+  const products = await listMarketplaceProductsForNumbering();
+  var maxGlobal = 0;
+  var maxMonth = 0;
+  products.forEach(function(p) {
+    var g = parseInt(p.global_no, 10) || 0;
+    var mk = p.month_key || getMonthKey(p.created_at);
+    var mn = parseInt(p.month_no, 10) || 0;
+    if (g > maxGlobal) maxGlobal = g;
+    if (mk === monthKey && mn > maxMonth) maxMonth = mn;
+  });
+  if (maxMonth >= 100) {
+    const err = new Error('当前月份商品月编号已达到100，无法继续发布');
+    err.code = 'MONTH_NO_LIMIT';
+    throw err;
+  }
+  return { created_at: created, month_key: monthKey, global_no: maxGlobal + 1, month_no: maxMonth + 1 };
+}
+
+async function backfillProductNumbers() {
+  const products = await listMarketplaceProductsForNumbering();
+  if (!products.length) return { updated: 0, total: 0 };
+  var monthCounters = {};
+  var updates = [];
+  products.forEach(function(p, index) {
+    var monthKey = p.month_key || getMonthKey(p.created_at);
+    monthCounters[monthKey] = (monthCounters[monthKey] || 0) + 1;
+    var monthNo = monthCounters[monthKey];
+    var globalNo = index + 1;
+    if (p.global_no !== globalNo || p.month_no !== monthNo || p.month_key !== monthKey) {
+      updates.push({ id: p.id, global_no: globalNo, month_no: monthNo, month_key: monthKey });
+    }
+  });
+  for (const item of updates) {
+    await fetch(SB('products?id=eq.' + item.id), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ global_no: item.global_no, month_no: item.month_no, month_key: item.month_key })
+    });
+  }
+  return { updated: updates.length, total: products.length };
+}
 
 async function trackAI(model, tokens) {
   try {
@@ -615,6 +732,27 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
       method: 'PATCH', headers: SB_HEADERS2,
       body: JSON.stringify(fields)
     });
+    // Pinned notification
+    if (pinned === true || pinned === 'true' || pinned === 1 || pinned === '1') {
+      try {
+        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+        const prodD = await prodR.json();
+        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
+        if (prod && prod.owner_student_id) {
+          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已被置顶展示');
+        }
+      } catch(e) {}
+    }
+    if (pinned === false || pinned === 'false' || pinned === 0 || pinned === '0') {
+      try {
+        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+        const prodD = await prodR.json();
+        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
+        if (prod && prod.owner_student_id) {
+          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已取消置顶展示');
+        }
+      } catch(e) {}
+    }
     // Send notification on approve/reject
     if (status === 'approved' || status === 'rejected') {
       try {
@@ -627,8 +765,6 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
         }
       } catch(e) {}
     }
-    // Delist notification (seller's product taken down)
-    if (listed === false && status === undefined) {
       try {
         const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
         const prodD = await prodR.json();
@@ -1335,6 +1471,19 @@ app.post('/api/marketplace/announcements', schoolScope, express.json(), async (r
     });
     const t = await r.json();
     addLog('announcement_create', 'announcement', t.id, title);
+    try {
+      const targetR = await fetch(SB('verifications?select=student_id,school&status=eq.approved' + (school ? '&school=eq.'+encodeURIComponent(school) : '')), { headers: SB_HEADERS });
+      const targetD = await targetR.json();
+      const targets = Array.isArray(targetD) ? targetD : [];
+      const msg = '📣 公告：' + title + (content ? ' - ' + content : '');
+      await Promise.all(targets.map(function(v) {
+        if (!v.student_id) return Promise.resolve();
+        return fetch(SB('messages'), {
+          method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: v.student_id, content: msg, created_at: new Date().toISOString(), read: false })
+        }).catch(() => {});
+      }));
+    } catch(e) {}
     res.json(t);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1581,6 +1730,15 @@ function validateStudentIdBySchool(studentId, school) {
   return '';
 }
 
+app.post('/api/marketplace/products/backfill-nos', anyAdmin, async (req, res) => {
+  try {
+    const result = await backfillProductNumbers();
+    res.json({ ok: true, updated: result.updated, total: result.total });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (req, res) => {
   try {
     const { title, price, category, desc, images, contact, quality, item_type, rent_price } = req.body;
@@ -1599,16 +1757,47 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
       if (found.length) return res.status(400).json({ error: '包含违规词: ' + found.join(', ') });
     } catch(e) {}
 
+    const numbering = await assignProductNumbers();
+    const payload = {
+      title,
+      price: parseFloat(price),
+      category: category||'其他',
+      desc: desc||'',
+      images: images||[],
+      contact: contact||'',
+      quality: quality||'八成新',
+      verified: false,
+      status: 'pending',
+      listed: true,
+      sold: false,
+      owner_student_id: req.body.owner_student_id||'',
+      owner_name: req.body.owner_name||'',
+      gender_pref: req.body.gender_pref||'all',
+      item_type: req.body.item_type||'sell',
+      rent_price: parseFloat(req.body.rent_price)||0,
+      rent_period: req.body.rent_period||'day',
+      deposit: parseFloat(req.body.deposit)||0,
+      school: req.body.school||'',
+      negotiable: req.body.negotiable||false,
+      created_at: numbering.created_at,
+      global_no: numbering.global_no,
+      month_no: numbering.month_no,
+      month_key: numbering.month_key
+    };
+
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0, school: req.body.school||'', negotiable: req.body.negotiable||false })
+      body: JSON.stringify(payload)
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
         notifyAdmin('new_product', { id: t?.id, title, item_type: req.body.item_type||'sell' });
     res.json(t ? JSON.parse(JSON.stringify(t)) : { ok: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    if (e && e.code === 'MONTH_NO_LIMIT') return res.status(400).json({ error: e.message });
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get('/api/marketplace/products', async (req, res) => {
@@ -1695,6 +1884,7 @@ app.get('/api/marketplace/products', async (req, res) => {
     }
     // Strip images from list (performance — base64 too large), keep first as proxy URL for thumb
     if (Array.isArray(data)) data.forEach(function(p){
+      if (!p.month_key) p.month_key = getMonthKey(p.created_at);
       if (p.images && p.images.length) {
         if (req.query.admin) p.images = p.images.map(function(img, idx){ return '/api/product-image/'+p.id+'/'+idx; });
         else p.images = ['/api/product-image/'+p.id+'/0'];
@@ -1709,6 +1899,7 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
     const data = await r.json();
     var p = data[0] || null;
+    if (p) p.month_key = p.month_key || getMonthKey(p.created_at);
     if (p && p.owner_student_id) {
       try {
         var nr = await fetch(SB("verifications?status=eq.approved&select=student_id,nickname,gender&student_id=eq."+encodeURIComponent(p.owner_student_id)), { headers: SB_HEADERS });
@@ -1859,7 +2050,6 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         seen[otherId].product_id = m.product_id;
       }
       if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
-      // Try to improve name from any message (skip for kefu)
       if (!isKefu(otherId)) {
         var nameCandidate = m.from_student_id === student_id ? m.to_name : m.from_name;
         if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
@@ -1873,8 +2063,14 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     if (isKefu(student_id)) {
       contacts = contacts.filter(function(c) { return !isKefu(c.student_id); });
     } else {
-      contacts = contacts.filter(function(c) { return c.student_id !== student_id && !isKefu(c.student_id); });
-      // Look up user's school to add their school's kefu
+      contacts = contacts.filter(function(c) {
+        if (c.student_id === student_id) return false;
+        if (isKefu(c.student_id)) return false;
+        if (c.name === '系统通知') return false;
+        if (String(c.student_id || '') === 'system') return false;
+        if (String(c.student_id || '').indexOf('sys_') === 0) return false;
+        return true;
+      });
       try {
         var uR = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=school"), { headers: SB_HEADERS });
         var uData = await uR.json();
@@ -1897,7 +2093,6 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         }
       } catch(e) {}
     }
-    // Filter by school if requested
     if (school && contacts.length) {
       try {
         var ids = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).join(',');
@@ -1913,6 +2108,46 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+app.delete('/api/marketplace/notifications/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id } = req.query;
+    if (!id || !student_id) return res.status(400).json({ error: 'missing fields' });
+    const msgR = await fetch(SB('messages?id=eq.'+id+'&select=id,to_student_id,from_student_id,from_name'), { headers: SB_HEADERS });
+    const msgD = await msgR.json();
+    const msg = Array.isArray(msgD) ? msgD[0] : null;
+    if (!msg) return res.status(404).json({ error: 'not found' });
+    const fromId = String(msg.from_student_id || '');
+    const fromName = String(msg.from_name || '');
+    if (msg.to_student_id !== student_id) return res.status(403).json({ error: 'forbidden' });
+    if (!(fromName === '系统通知' || fromId === 'system' || fromId.indexOf('sys_') === 0)) return res.status(403).json({ error: 'not notification' });
+    await fetch(SB('messages?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/marketplace/notifications', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    const fields = 'id,from_student_id,from_name,to_student_id';
+    const url = SB("messages?to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.desc&select="+fields);
+    const r = await fetch(url, { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    const ids = arr.filter(function(m) {
+      const fromId = String(m.from_student_id || '');
+      const fromName = String(m.from_name || '');
+      return m.to_student_id === student_id && (fromName === '系统通知' || fromId === 'system' || fromId.indexOf('sys_') === 0);
+    }).map(function(m) { return m.id; });
+    await Promise.all(ids.map(function(id) {
+      return fetch(SB('messages?id=eq.'+id), { method: 'DELETE', headers: SB_HEADERS }).catch(() => {});
+    }));
+    res.json({ ok: true, count: ids.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 app.post('/api/marketplace/messages', express.json(), async (req, res) => {
   try {

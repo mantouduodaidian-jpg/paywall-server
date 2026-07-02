@@ -1020,7 +1020,7 @@ async function loadOverview() {
     document.getElementById('recentList').innerHTML = !arr.length ? '<div class="empty">暂无商品</div>' :
       '<div style="display:grid;gap:4px">' + arr.slice(0,5).map(p =>
         '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(0,0,0,.02);border-radius:6px;font-size:11px">' +
-        '<span>' + esc(p.title) + '</span>' +
+        '<span>' + (p.global_no ? '<span style="color:#4e9e80;font-weight:700;margin-right:6px">#'+p.global_no+'</span>' : '') + esc(p.title) + '</span>' +
         '<span style="display:flex;gap:6px;align-items:center"><span style="color:#34d399;font-weight:600">¥' + parseFloat(p.price).toFixed(0) + '</span>' +
         '<span class="badge ' + (p.status==='approved'?'badge-green':p.status==='rejected'?'badge-red':'badge-yellow') + '">' + (p.status||'pending') + '</span></span></div>'
       ).join('') + '</div>';
@@ -1186,7 +1186,7 @@ async function loadProds() {
       var prodImgs = p.images && p.images.length ? p.images : [];
       var imgIdx = _prodImgArr.push(prodImgs) - 1;
       var prodImg = prodImgs.length ? prodImgs.map(function(img,i){ return '<img src="'+esc(img)+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;margin:1px" onclick="showProdImgFromArr('+imgIdx+','+i+')">'; }).join('') : '<span style="color:#ccc;font-size:10px">-</span>';
-      return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
+      return '<tr><td><input type="checkbox" class="prodCb" value="'+p.id+'"></td><td style="color:#ccc"><div>#'+(p.global_no||'-')+'</div><div style="font-size:9px;color:#bbb">ID '+p.id+'</div><div style="font-size:9px;color:#4e9e80">月#'+(p.month_no||'-')+'</div></td>'+
         '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.title)+'</td>'+
         '<td>'+prodImg+'</td>'+
         '<td style="color:#34d399;font-weight:600">¥'+parseFloat(p.price).toFixed(2)+'</td>'+
@@ -1301,7 +1301,7 @@ async function loadRentals() {
       var rentImgs = p.images && p.images.length ? p.images : [];
       var rImgIdx = _prodImgArr.push(rentImgs) - 1;
       var rentImg = rentImgs.length ? rentImgs.map(function(img,i){ return '<img src="'+esc(img)+'" style="width:36px;height:36px;border-radius:6px;object-fit:cover;cursor:pointer;margin:1px" onclick="showProdImgFromArr('+rImgIdx+','+i+')">'; }).join('') : '<span style="color:#ccc;font-size:10px">-</span>';
-      return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc">'+p.id+'</td>'+
+      return '<tr><td><input type="checkbox" class="rentCb" value="'+p.id+'"></td><td style="color:#ccc"><div>#'+(p.global_no||'-')+'</div><div style="font-size:9px;color:#bbb">ID '+p.id+'</div><div style="font-size:9px;color:#4e9e80">月#'+(p.month_no||'-')+'</div></td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(p.title)+'</td>'+
         '<td>'+rentImg+'</td>'+
         '<td style="color:#fbbf24;font-weight:600">¥'+parseFloat(p.rent_price||0).toFixed(2)+'</td>'+
