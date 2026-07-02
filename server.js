@@ -817,6 +817,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
       }
 
       if (status === 'approved' && (!beforeProd || beforeProd.status !== 'approved')) {
+        await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ published_at: new Date().toISOString() }) });
         sendNotify(ownerId, ownerName, school, '✅ 你的商品「'+prodTitle+'」已通过审核，现在可以在集市上看到了');
       }
       if (status === 'approved' && beforeProd && beforeProd.pending_edit_status === 'pending') {
@@ -842,7 +843,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
         delete liveFields.reject_reason;
         delete liveFields.pending_edit_status;
         delete liveFields.pending_edit_reason;
-        await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(Object.assign({}, liveFields, clearPendingProductFields(), { status: 'approved', listed: true })) });
+        await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(Object.assign({}, liveFields, clearPendingProductFields(), { status: 'approved', listed: true, published_at: new Date().toISOString() })) });
         sendNotify(ownerId, ownerName, school, '✅ 你对商品「'+prodTitle+'」的修改已通过审核，新的商品信息已生效');
       }
       if (status === 'rejected' && (!beforeProd || beforeProd.status !== 'rejected')) {
@@ -1921,6 +1922,7 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
       status: 'pending',
       listed: true,
       sold: false,
+      published_at: null,
       owner_student_id: req.body.owner_student_id||'',
       owner_name: req.body.owner_name||'',
       gender_pref: req.body.gender_pref||'all',
