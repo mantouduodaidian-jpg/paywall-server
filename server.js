@@ -1010,9 +1010,6 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
       return res.json({ ok: true, msg: '✅ 认证已提交，等待管理员审核' });
     }
 
-    const sidErr = validateStudentIdBySchool(student_id, req.body.school);
-    if (sidErr) return res.status(400).json({ error: sidErr });
-
     // Login with student_id + phone
     if (student_id && phone) {
       const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&phone=eq."+encodeURIComponent(phone)+"&select=*"), { headers: SB_HEADERS });
