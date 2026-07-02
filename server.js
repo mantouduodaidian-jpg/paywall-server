@@ -790,7 +790,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
     if (contact !== undefined) fields.contact = contact;
     if (!Object.keys(fields).length) return res.status(400).json({ error: 'no fields to update' });
 
-    const beforeR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school,status,listed,reject_reason,pinned'), { headers: SB_HEADERS });
+    const beforeR = await fetch(SB('products?id=eq.'+id+'&select=*'), { headers: SB_HEADERS });
     const beforeD = await beforeR.json();
     const beforeProd = Array.isArray(beforeD) ? beforeD[0] : beforeD;
 
@@ -799,7 +799,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
       body: JSON.stringify(fields)
     });
 
-    const afterR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school,status,listed,reject_reason,pinned'), { headers: SB_HEADERS });
+    const afterR = await fetch(SB('products?id=eq.'+id+'&select=*'), { headers: SB_HEADERS });
     const afterD = await afterR.json();
     const prod = Array.isArray(afterD) ? afterD[0] : afterD;
 
@@ -1922,7 +1922,6 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
       status: 'pending',
       listed: true,
       sold: false,
-      published_at: null,
       owner_student_id: req.body.owner_student_id||'',
       owner_name: req.body.owner_name||'',
       gender_pref: req.body.gender_pref||'all',
