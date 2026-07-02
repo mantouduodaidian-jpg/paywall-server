@@ -1776,7 +1776,7 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2238,6 +2238,25 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     contacts = Object.keys(seen).map(function(k) {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id, products: seen[k].products };
     });
+    if (contacts.length) {
+      try {
+        var pids = contacts.map(function(c) { return c.product_id; }).filter(Boolean).filter(function(v, idx, arr) { return arr.indexOf(v) === idx; });
+        if (pids.length) {
+          var pr = await fetch(SB('products?id=in.(' + pids.map(encodeURIComponent).join(',') + ')&select=id,trade_status,payment_status,item_type,trade_buyer_id,trade_buyer_name,owner_student_id'), { headers: SB_HEADERS });
+          var pd = await pr.json();
+          var pmap = {};
+          (Array.isArray(pd) ? pd : []).forEach(function(p) { pmap[p.id] = p; });
+          contacts = contacts.map(function(c) {
+            var prod = pmap[c.product_id] || null;
+            return Object.assign({}, c, {
+              trade_status: prod ? (prod.trade_status || '') : '',
+              payment_status: prod ? (prod.payment_status || '') : '',
+              item_type: prod ? (prod.item_type || 'sell') : 'sell'
+            });
+          });
+        }
+      } catch(e) {}
+    }
     if (isKefu(student_id)) {
       contacts = contacts.filter(function(c) { return !isKefu(c.student_id); });
     } else {
