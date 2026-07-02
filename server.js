@@ -986,6 +986,9 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
   try {
     const { student_id, phone, name } = req.body;
 
+    const sidErr = validateStudentIdBySchool(student_id, req.body.school);
+    if (sidErr) return res.status(400).json({ error: sidErr });
+
     // Register first (has name) - avoid collision with login
     if (name && student_id && phone) {
       const chk = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id.trim())+"&select=id,status"), { headers: SB_HEADERS });
@@ -1006,6 +1009,9 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
         notifyAdmin('new_verification', { student_id, name });
       return res.json({ ok: true, msg: '✅ 认证已提交，等待管理员审核' });
     }
+
+    const sidErr = validateStudentIdBySchool(student_id, req.body.school);
+    if (sidErr) return res.status(400).json({ error: sidErr });
 
     // Login with student_id + phone
     if (student_id && phone) {
@@ -1552,7 +1558,32 @@ app.get('/api/verify/payment-qr/:id', schoolScope, async (req, res) => {
   } catch(e) { res.json({ payment_qr: null }); }
 });
 
-// ====== Marketplace API ======
+const STUDENT_RULES = {
+  gxny: { min: 12, max: 13 },
+  hnkj: { min: 13, max: 13 },
+  gdcj: { min: 11, max: 11 },
+  lztd: { min: 11, max: 11 }
+};
+
+function normalizeSchoolCode(school) {
+  if (!school) return '';
+  if (school === '广西农业职业技术大学' || school === 'gxny') return 'gxny';
+  if (school === '海南科技职业大学' || school === 'hnkj') return 'hnkj';
+  if (school === '广东财经大学' || school === 'gdcj') return 'gdcj';
+  if (school === '柳州铁道职业技术学院' || school === 'lztd') return 'lztd';
+  return String(school).trim();
+}
+
+function validateStudentIdBySchool(studentId, school) {
+  var sid = String(studentId || '').trim();
+  var code = normalizeSchoolCode(school);
+  var rule = STUDENT_RULES[code];
+  if (!sid) return '学号不能为空';
+  if (!/^\d+$/.test(sid)) return '学号必须是纯数字';
+  if (rule && (sid.length < rule.min || sid.length > rule.max)) return '学号长度不符合该学校规则';
+  return '';
+}
+
 app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (req, res) => {
   try {
     const { title, price, category, desc, images, contact, quality, item_type, rent_price } = req.body;
@@ -1893,19 +1924,20 @@ app.post('/api/marketplace/messages', express.json(), async (req, res) => {
     }
     const r = await fetch(SB('messages'), {
       method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', to_name: to_name||'', content, read: false })
+      body: JSON.stringify({ product_id, from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', to_name: to_name||'', content, read: false, created_at: new Date().toISOString() })
     });
     const t = await r.json();
+    const saved = Array.isArray(t) ? t[0] : t;
     // Broadcast via WebSocket for instant delivery
     try {
-      var msgData = JSON.stringify({ type: 'chat', data: { id: t.id, product_id, from_student_id: from_student_id, from_name: from_name||'', to_student_id: to_student_id||'', content: content, created_at: t.created_at||new Date().toISOString() } });
+      var msgData = JSON.stringify({ type: 'chat', data: { id: saved.id, product_id: saved.product_id, from_student_id: saved.from_student_id, from_name: saved.from_name, to_student_id: saved.to_student_id, to_name: saved.to_name, content: saved.content, created_at: saved.created_at } });
       wss.clients.forEach(function(ws) {
         if (ws.readyState === 1) {
           try { ws.send(msgData); } catch(e) {}
         }
       });
     } catch(e) {}
-    res.json(t);
+    res.json(saved);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
