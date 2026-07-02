@@ -2127,6 +2127,24 @@ app.delete('/api/marketplace/notifications/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/marketplace/notifications', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    const fields = 'id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at';
+    const url = SB('messages?to_student_id=eq.' + encodeURIComponent(student_id) + '&order=created_at.desc&select=' + fields);
+    const r = await fetch(url, { headers: SB_HEADERS });
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    const list = arr.filter(function(m) {
+      const fromId = String(m.from_student_id || '');
+      const fromName = String(m.from_name || '');
+      return m.to_student_id === student_id && (fromName === '系统通知' || fromId === 'system' || fromId.indexOf('sys_') === 0);
+    });
+    res.json(list);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/marketplace/notifications', async (req, res) => {
   try {
     const { student_id } = req.query;
