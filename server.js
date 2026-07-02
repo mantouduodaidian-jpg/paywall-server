@@ -765,6 +765,7 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
         }
       } catch(e) {}
     }
+    if (listed === false || reject_reason === 'manual_offline') {
       try {
         const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
         const prodD = await prodR.json();
@@ -775,7 +776,6 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
       } catch(e) {}
     }
     addLog('product_update', 'product', id, JSON.stringify(fields));
-    notifyAdmin('product_update', { id, fields });
     onlineUsers.forEach(function(ws) {
       try { ws.send(JSON.stringify({ type: 'product_update', data: { id, fields } })); } catch(e) {}
     });
