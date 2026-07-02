@@ -1810,8 +1810,17 @@ app.get('/api/marketplace/messages', async (req, res) => {
       var urlB = SB("messages?from_student_id=eq."+encodeURIComponent(other_student_id)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
       var [rA,rB] = await Promise.all([fetch(urlA,{headers:SB_HEADERS}), fetch(urlB,{headers:SB_HEADERS})]);
       var [dA,dB] = await Promise.all([rA.json(), rB.json()]);
-      var msgs = (Array.isArray(dA)?dA:[]).concat(Array.isArray(dB)?dB:[]);
-      msgs.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
+      var merged = (Array.isArray(dA)?dA:[]).concat(Array.isArray(dB)?dB:[]);
+      var seenMsgIds = new Set();
+      var msgs = merged.filter(function(m) {
+        if (!m || !m.id || seenMsgIds.has(m.id)) return false;
+        seenMsgIds.add(m.id);
+        return true;
+      });
+      msgs.sort(function(a,b){
+        if (a.id !== b.id) return a.id - b.id;
+        return new Date(a.created_at) - new Date(b.created_at);
+      });
       return res.json(msgs);
     }
     var s = student_id || other_student_id;
