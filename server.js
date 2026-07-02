@@ -54,6 +54,67 @@ function q(sql, params = []) {
 function qOne(sql, params = []) { const rows = q(sql, params); return rows.length ? rows[0] : null; }
 
 const app = express();
+
+function pickProductPendingFields(row) {
+  row = row || {};
+  return {
+    title: row.pending_title,
+    price: row.pending_price,
+    category: row.pending_category,
+    quality: row.pending_quality,
+    desc: row.pending_desc,
+    gender_pref: row.pending_gender_pref,
+    negotiable: row.pending_negotiable,
+    images: row.pending_images,
+    rent_price: row.pending_rent_price,
+    rent_period: row.pending_rent_period,
+    rent_unit: row.pending_rent_unit,
+    deposit: row.pending_deposit,
+    item_type: row.pending_item_type,
+    trade_type: row.pending_trade_type,
+  };
+}
+
+function clearPendingProductFields() {
+  return {
+    pending_edit_status: 'none',
+    pending_edit_reason: '',
+    pending_title: null,
+    pending_price: null,
+    pending_category: null,
+    pending_quality: null,
+    pending_desc: null,
+    pending_gender_pref: null,
+    pending_negotiable: null,
+    pending_images: null,
+    pending_rent_price: null,
+    pending_rent_period: null,
+    pending_rent_unit: null,
+    pending_deposit: null,
+    pending_item_type: null,
+    pending_trade_type: null,
+  };
+}
+
+function applyPendingProductFields(row) {
+  row = row || {};
+  const next = Object.assign({}, row);
+  if (row.pending_title !== undefined && row.pending_title !== null) next.title = row.pending_title;
+  if (row.pending_price !== undefined && row.pending_price !== null) next.price = row.pending_price;
+  if (row.pending_category !== undefined && row.pending_category !== null) next.category = row.pending_category;
+  if (row.pending_quality !== undefined && row.pending_quality !== null) next.quality = row.pending_quality;
+  if (row.pending_desc !== undefined && row.pending_desc !== null) next.desc = row.pending_desc;
+  if (row.pending_gender_pref !== undefined && row.pending_gender_pref !== null) next.gender_pref = row.pending_gender_pref;
+  if (row.pending_negotiable !== undefined && row.pending_negotiable !== null) next.negotiable = row.pending_negotiable;
+  if (row.pending_images !== undefined && row.pending_images !== null) next.images = row.pending_images;
+  if (row.pending_rent_price !== undefined && row.pending_rent_price !== null) next.rent_price = row.pending_rent_price;
+  if (row.pending_rent_period !== undefined && row.pending_rent_period !== null) next.rent_period = row.pending_rent_period;
+  if (row.pending_rent_unit !== undefined && row.pending_rent_unit !== null) next.rent_unit = row.pending_rent_unit;
+  if (row.pending_deposit !== undefined && row.pending_deposit !== null) next.deposit = row.pending_deposit;
+  if (row.pending_item_type !== undefined && row.pending_item_type !== null) next.item_type = row.pending_item_type;
+  if (row.pending_trade_type !== undefined && row.pending_trade_type !== null) next.trade_type = row.pending_trade_type;
+  return next;
+}
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use((req, res, next) => {
@@ -728,53 +789,76 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
     if (quality !== undefined) fields.quality = quality;
     if (contact !== undefined) fields.contact = contact;
     if (!Object.keys(fields).length) return res.status(400).json({ error: 'no fields to update' });
+
+    const beforeR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school,status,listed,reject_reason,pinned'), { headers: SB_HEADERS });
+    const beforeD = await beforeR.json();
+    const beforeProd = Array.isArray(beforeD) ? beforeD[0] : beforeD;
+
     await fetch(SB('products?id=eq.'+id), {
       method: 'PATCH', headers: SB_HEADERS2,
       body: JSON.stringify(fields)
     });
-    // Pinned notification
-    if (pinned === true || pinned === 'true' || pinned === 1 || pinned === '1') {
-      try {
-        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
-        const prodD = await prodR.json();
-        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
-        if (prod && prod.owner_student_id) {
-          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已被置顶展示');
-        }
-      } catch(e) {}
+
+    const afterR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school,status,listed,reject_reason,pinned'), { headers: SB_HEADERS });
+    const afterD = await afterR.json();
+    const prod = Array.isArray(afterD) ? afterD[0] : afterD;
+
+    if (prod && prod.owner_student_id) {
+      var ownerId = prod.owner_student_id;
+      var ownerName = prod.owner_name || '';
+      var school = prod.school || '';
+      var prodTitle = prod.title || '';
+
+      if ((pinned === true || pinned === 'true' || pinned === 1 || pinned === '1') && (!beforeProd || beforeProd.pinned !== true)) {
+        sendNotify(ownerId, ownerName, school, '📌 你的商品「'+prodTitle+'」已被置顶展示');
+      }
+      if ((pinned === false || pinned === 'false' || pinned === 0 || pinned === '0') && beforeProd && beforeProd.pinned !== false) {
+        sendNotify(ownerId, ownerName, school, '📌 你的商品「'+prodTitle+'」已取消置顶展示');
+      }
+
+      if (status === 'approved' && (!beforeProd || beforeProd.status !== 'approved')) {
+        sendNotify(ownerId, ownerName, school, '✅ 你的商品「'+prodTitle+'」已通过审核，现在可以在集市上看到了');
+      }
+      if (status === 'approved' && beforeProd && beforeProd.pending_edit_status === 'pending') {
+        var liveFields = applyPendingProductFields(prod);
+        liveFields.pending_edit_status = 'none';
+        liveFields.pending_edit_reason = '';
+        Object.assign(liveFields, clearPendingProductFields());
+        delete liveFields.id;
+        delete liveFields.owner_student_id;
+        delete liveFields.owner_name;
+        delete liveFields.school;
+        delete liveFields.status;
+        delete liveFields.listed;
+        delete liveFields.sold;
+        delete liveFields.trade_status;
+        delete liveFields.trade_buyer_id;
+        delete liveFields.trade_buyer_name;
+        delete liveFields.created_at;
+        delete liveFields.month_key;
+        delete liveFields.month_no;
+        delete liveFields.global_no;
+        delete liveFields.pinned;
+        delete liveFields.reject_reason;
+        delete liveFields.pending_edit_status;
+        delete liveFields.pending_edit_reason;
+        await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(Object.assign({}, liveFields, clearPendingProductFields(), { status: 'approved', listed: true })) });
+        sendNotify(ownerId, ownerName, school, '✅ 你对商品「'+prodTitle+'」的修改已通过审核，新的商品信息已生效');
+      }
+      if (status === 'rejected' && (!beforeProd || beforeProd.status !== 'rejected')) {
+        sendNotify(ownerId, ownerName, school, '✕ 你的商品「'+prodTitle+'」未通过审核' + (reject_reason ? '，原因：'+reject_reason : ''));
+      }
+      if (status === 'rejected' && beforeProd && beforeProd.pending_edit_status === 'pending') {
+        await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ pending_edit_status: 'rejected', pending_edit_reason: reject_reason || '' }) });
+        sendNotify(ownerId, ownerName, school, '✕ 你对商品「'+prodTitle+'」的修改未通过审核' + (reject_reason ? '，原因：'+reject_reason : ''));
+      }
+
+      var adminOffline = listed === false && beforeProd && beforeProd.listed !== false && reject_reason === 'manual_offline';
+      if (adminOffline) {
+        sendNotify(ownerId, ownerName, school, '📌 你的商品「'+prodTitle+'」已被管理员下架');
+      }
     }
-    if (pinned === false || pinned === 'false' || pinned === 0 || pinned === '0') {
-      try {
-        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
-        const prodD = await prodR.json();
-        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
-        if (prod && prod.owner_student_id) {
-          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已取消置顶展示');
-        }
-      } catch(e) {}
-    }
-    // Send notification on approve/reject
-    if (status === 'approved' || status === 'rejected') {
-      try {
-        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
-        const prodD = await prodR.json();
-        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
-        if (prod && prod.owner_student_id) {
-          var nMsg = status === 'approved' ? '✅ 你的商品「'+prod.title+'」已通过审核，现在可以在集市上看到了' : '✕ 你的商品「'+prod.title+'」未通过审核' + (reject_reason ? '，原因：'+reject_reason : '');
-          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', nMsg);
-        }
-      } catch(e) {}
-    }
-    if (listed === false || reject_reason === 'manual_offline') {
-      try {
-        const prodR = await fetch(SB('products?id=eq.'+id+'&select=title,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
-        const prodD = await prodR.json();
-        const prod = Array.isArray(prodD) ? prodD[0] : prodD;
-        if (prod && prod.owner_student_id) {
-          sendNotify(prod.owner_student_id, prod.owner_name||'', prod.school||'', '📌 你的商品「'+prod.title+'」已被管理员下架');
-        }
-      } catch(e) {}
-    }
+
     addLog('product_update', 'product', id, JSON.stringify(fields));
     onlineUsers.forEach(function(ws) {
       try { ws.send(JSON.stringify({ type: 'product_update', data: { id, fields } })); } catch(e) {}
@@ -813,14 +897,15 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
     const id = parseInt(req.params.id);
     const { student_id } = req.body;
     if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
-    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,reject_reason,status'), { headers: SB_HEADERS });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,reject_reason,status,sold,trade_status,title,owner_name,school'), { headers: SB_HEADERS });
     const d = await r.json();
     const p = Array.isArray(d) ? d[0] : null;
     if (!p) return res.status(404).json({ error: '商品不存在' });
     if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
     if (p.reject_reason !== 'owner_delisted') return res.status(400).json({ error: '此商品不可自行上架' });
-    if (p.status !== 'approved') return res.status(400).json({ error: '仅已通过商品可上架' });
-    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ listed: true, reject_reason: '' }) });
+    if (p.sold || p.trade_status) return res.status(400).json({ error: '交易中或已售出的商品不可上架' });
+    await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ status: 'pending', listed: false, reject_reason: '' }) });
+    sendNotify(p.owner_student_id, p.owner_name||'', p.school||'', '✅ 你的商品「'+(p.title||'')+'」已提交重新上架审核，审核通过后会恢复展示');
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -828,28 +913,49 @@ app.patch('/api/marketplace/products/:id/owner-relist', express.json(), async (r
 app.patch('/api/marketplace/products/:id/owner-edit', express.json({ limit: '20mb' }), async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { student_id, title, price, category, quality, desc, gender_pref, negotiable, images, rent_price, rent_period, deposit } = req.body;
+    const { student_id, title, price, category, quality, desc, gender_pref, negotiable, images, rent_price, rent_period, rent_unit, deposit, item_type, trade_type } = req.body;
     if (!id || !student_id) return res.status(400).json({ error: '参数错误' });
-    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id'), { headers: SB_HEADERS });
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,status,listed,sold,trade_status,reject_reason,pending_edit_status,title,owner_name,school'), { headers: SB_HEADERS });
     const d = await r.json();
     const p = Array.isArray(d) ? d[0] : null;
     if (!p) return res.status(404).json({ error: '商品不存在' });
     if (p.owner_student_id !== student_id) return res.status(403).json({ error: '无权操作' });
-    var fields = {};
-    if (title !== undefined) fields.title = title;
-    if (price !== undefined) fields.price = parseFloat(price);
-    if (category !== undefined) fields.category = category;
-    if (quality !== undefined) fields.quality = quality;
-    if (desc !== undefined) fields.desc = desc;
-    if (gender_pref !== undefined) fields.gender_pref = gender_pref;
-    if (negotiable !== undefined) fields.negotiable = negotiable;
-    if (images !== undefined) fields.images = images;
-    if (rent_price !== undefined) fields.rent_price = parseFloat(rent_price);
-    if (rent_period !== undefined) fields.rent_period = rent_period;
-    if (deposit !== undefined) fields.deposit = parseFloat(deposit);
-    if (!Object.keys(fields).length) return res.status(400).json({ error: '没有要修改的字段' });
+    const ownerDelisted = p.listed === false && p.reject_reason === 'owner_delisted';
+    const rejectedProduct = p.status === 'rejected';
+    const canEdit = !p.sold && !p.trade_status && ((p.listed !== false && p.status === 'approved') || ownerDelisted || rejectedProduct);
+    if (!canEdit) return res.status(400).json({ error: '仅上架中、你自己下架后的商品，或未通过审核的商品可编辑' });
+    if (p.pending_edit_status === 'pending') return res.status(400).json({ error: '已有修改在审核中' });
+    var fields = {
+      pending_edit_status: 'pending',
+      pending_edit_reason: ''
+    };
+    if (title !== undefined) fields.pending_title = title;
+    if (price !== undefined) fields.pending_price = parseFloat(price);
+    if (category !== undefined) fields.pending_category = category;
+    if (quality !== undefined) fields.pending_quality = quality;
+    if (desc !== undefined) fields.pending_desc = desc;
+    if (gender_pref !== undefined) fields.pending_gender_pref = gender_pref;
+    if (negotiable !== undefined) fields.pending_negotiable = negotiable;
+    if (images !== undefined) fields.pending_images = images;
+    if (rent_price !== undefined) fields.pending_rent_price = parseFloat(rent_price);
+    if (rent_period !== undefined) fields.pending_rent_period = rent_period;
+    if (rent_unit !== undefined) fields.pending_rent_unit = rent_unit;
+    if (deposit !== undefined) fields.pending_deposit = parseFloat(deposit);
+    if (item_type !== undefined) fields.pending_item_type = item_type;
+    if (trade_type !== undefined) fields.pending_trade_type = trade_type;
+    if (Object.keys(fields).length <= 2) return res.status(400).json({ error: '没有要修改的字段' });
     await fetch(SB('products?id=eq.'+id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify(fields) });
-    res.json({ ok: true });
+    if (rejectedProduct) {
+      await fetch(SB('products?id=eq.'+id), {
+        method: 'PATCH',
+        headers: SB_HEADERS2,
+        body: JSON.stringify({ status: 'pending', reject_reason: '' })
+      });
+      sendNotify(p.owner_student_id, p.owner_name||'', p.school||'', '✅ 你对商品「'+(p.title||'')+'」的修改已重新提交审核');
+      return res.json({ ok: true, status: 'pending' });
+    }
+    sendNotify(p.owner_student_id, p.owner_name||'', p.school||'', '✅ 你对商品「'+(p.title||'')+'」的修改已提交审核，审核前对外仍展示原内容');
+    res.json({ ok: true, status: 'pending_edit_review' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 // Owner resubmit for review (delisted/rejected → pending)
@@ -1847,7 +1953,7 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max } = req.query;
+    const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max, ids } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
     var orderBy = 'pinned.desc,created_at.desc';
@@ -1856,6 +1962,13 @@ app.get('/api/marketplace/products', async (req, res) => {
       var pf = item_type === 'rent' ? 'rent_price' : 'price';
       orderBy = 'pinned.desc,'+pf+'.'+(sort === 'price_asc' ? 'asc' : 'desc');
     }
+    let idList = String(ids || '').split(',').map(function(v){ return String(v || '').trim(); }).filter(Boolean);
+    if (idList.length) {
+      idList = idList.filter(function(v, idx, arr){ return arr.indexOf(v) === idx; });
+    }
+    const hasIdsFilter = idList.length > 0;
+    var idFilter = '';
+    if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
     // Get total count first
     let countUrl = SB('products?select=id');
     const allowBetaPending = school === 'beta' && !admin;
@@ -1881,6 +1994,10 @@ app.get('/api/marketplace/products', async (req, res) => {
       countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
       if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
     }
+    if (!hasIdsFilter && ids !== undefined) {
+      return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
+    }
+    if (idFilter) countUrl += idFilter;
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
@@ -1909,6 +2026,7 @@ app.get('/api/marketplace/products', async (req, res) => {
       if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
     }
     if (orderBy !== 'pinned.desc,created_at.desc') url = url.replace(/pinned\.desc,created_at\.desc/g, orderBy);
+    if (idFilter) url += idFilter;
     var priceField = item_type === 'rent' ? 'rent_price' : 'price';
     if (price_min) { url += '&'+priceField+'=gte.'+price_min; countUrl += '&'+priceField+'=gte.'+price_min; }
     if (price_max) { url += '&'+priceField+'=lte.'+price_max; countUrl += '&'+priceField+'=lte.'+price_max; }
@@ -2036,6 +2154,20 @@ app.get('/api/admin/reviews', anyAdmin, async (req, res) => {
 // ====== Messages API ======
 function kefuId(school) { return 'kefu_' + (school || 'admin'); }
 function isKefu(id) { return id && id.startsWith('kefu_'); }
+function summarizeMessage(content) {
+  var text = String(content || '');
+  if (!text) return '';
+  if (text.indexOf('[img]') === 0 && text.indexOf('data:image') === 0) return '[图片]';
+  var hasImage = text.indexOf('[img]') >= 0 || text.indexOf('data:image') === 0;
+  var normalized = text.replace(/^\[img\]/g, '').trim();
+  if (normalized.indexOf('data:image') === 0) normalized = '';
+  var parts = normalized.split('[img]').map(function(part) { return String(part || '').trim(); }).filter(function(part) {
+    return part && part.indexOf('data:image') !== 0;
+  });
+  if (hasImage && !parts.length) return '[图片]';
+  if (hasImage) return parts.join(' ') + ' [图片]';
+  return text;
+}
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
     const { product_id, student_id, other_student_id, since_id } = req.query;
@@ -2086,12 +2218,12 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
       if (!otherId) return;
       if (!seen[otherId]) {
-        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content, products: [] };
+        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: summarizeMessage(m.content), products: [] };
       }
       if (m.product_id && !seen[otherId].products.includes(m.product_id)) seen[otherId].products.push(m.product_id);
       if (new Date(m.created_at) > new Date(seen[otherId].last_time)) {
         seen[otherId].last_time = m.created_at;
-        seen[otherId].last_message = m.content;
+        seen[otherId].last_message = summarizeMessage(m.content);
         seen[otherId].product_id = m.product_id;
       }
       if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
@@ -2108,9 +2240,13 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     if (isKefu(student_id)) {
       contacts = contacts.filter(function(c) { return !isKefu(c.student_id); });
     } else {
+      var userKefuId = '';
       contacts = contacts.filter(function(c) {
         if (c.student_id === student_id) return false;
-        if (isKefu(c.student_id)) return false;
+        if (isKefu(c.student_id)) {
+          userKefuId = c.student_id;
+          return false;
+        }
         if (c.name === '系统通知') return false;
         if (String(c.student_id || '') === 'system') return false;
         if (String(c.student_id || '').indexOf('sys_') === 0) return false;
@@ -2121,20 +2257,28 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         var uData = await uR.json();
         var uSchool = (Array.isArray(uData) && uData[0]) ? uData[0].school : (school || '');
         if (uSchool) { var kName = uSchool; SCHOOL_ADMINS.forEach(function(sa) { if (sa.code === uSchool) kName = sa.name; });
-          var ku = kefuId(uSchool);
+          var ku = userKefuId || kefuId(uSchool);
           var kn = kName + '二豆客服';
-          var kunread = 0, kmsg = '你好，有什么可以帮你的？';
-          try {
-            var kr = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.desc&limit=1"), { headers: SB_HEADERS });
-            var kd = await kr.json();
-            if (Array.isArray(kd) && kd.length) { kmsg = kd[0].content||kmsg; }
-          } catch(e) {}
-          try {
-            var kr2 = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&read=eq.false&select=id"), { headers: SB_HEADERS });
-            var kd2 = await kr2.json();
-            kunread = Array.isArray(kd2) ? kd2.length : 0;
-          } catch(e) {}
-          contacts.unshift({ student_id: ku, name: kn, unread: kunread, last_message: kmsg, last_time: null, product_id: 0 });
+          var existingKefu = userKefuId ? seen[userKefuId] : null;
+          var kunread = existingKefu ? (existingKefu.unread || 0) : 0;
+          var kmsg = existingKefu ? (existingKefu.last_message || '你好，有什么可以帮你的？') : '你好，有什么可以帮你的？';
+          var ktime = existingKefu ? (existingKefu.last_time || null) : null;
+          if (!existingKefu) {
+            try {
+              var kr = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&order=created_at.desc&limit=1&select=content,created_at"), { headers: SB_HEADERS });
+              var kd = await kr.json();
+              if (Array.isArray(kd) && kd.length) {
+                kmsg = summarizeMessage(kd[0].content) || kmsg;
+                ktime = kd[0].created_at || null;
+              }
+            } catch(e) {}
+            try {
+              var kr2 = await fetch(SB("messages?from_student_id=eq."+encodeURIComponent(ku)+"&to_student_id=eq."+encodeURIComponent(student_id)+"&read=eq.false&select=id"), { headers: SB_HEADERS });
+              var kd2 = await kr2.json();
+              kunread = Array.isArray(kd2) ? kd2.length : 0;
+            } catch(e) {}
+          }
+          contacts.unshift({ student_id: ku, name: kn, unread: kunread, last_message: kmsg, last_time: ktime, product_id: 0 });
         }
       } catch(e) {}
     }
