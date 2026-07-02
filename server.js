@@ -687,7 +687,14 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    var url = 'verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score';
+    if (req.adminSchool) {
+      var schoolValues = schoolValuesForFilter(req.adminSchool);
+      if (schoolValues.length) {
+        url += '&or=(' + schoolValues.map(function (value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
+      }
+    }
+    const r = await fetch(SB(url), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1776,7 +1783,14 @@ app.post('/api/verify/apply', express.json({ limit:'10mb' }), async (req, res) =
 
 app.get('/api/verify/list', schoolScope, async (req, res) => {
   try {
-    const r = await fetch(SB('verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score' + (req.adminSchool ? '&school=eq.'+req.adminSchool : '')), { headers: SB_HEADERS2 });
+    var url = 'verifications?order=created_at.desc&select=id,name,student_id,phone,status,created_at,reject_reason,nickname,gender,school,credit_score';
+    if (req.adminSchool) {
+      var schoolValues = schoolValuesForFilter(req.adminSchool);
+      if (schoolValues.length) {
+        url += '&or=(' + schoolValues.map(function (value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
+      }
+    }
+    const r = await fetch(SB(url), { headers: SB_HEADERS2 });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1870,6 +1884,17 @@ function normalizeSchoolCode(school) {
   if (school === '广东财经大学' || school === 'gdcj') return 'gdcj';
   if (school === '柳州铁道职业技术学院' || school === 'lztd') return 'lztd';
   return String(school).trim();
+}
+
+function schoolValuesForFilter(school) {
+  var code = normalizeSchoolCode(school);
+  if (!code) return [];
+  if (code === 'gxny') return ['gxny', '广西农业职业技术大学'];
+  if (code === 'hnkj') return ['hnkj', '海南科技职业大学'];
+  if (code === 'gdcj') return ['gdcj', '广东财经大学'];
+  if (code === 'lztd') return ['lztd', '柳州铁道职业技术学院'];
+  if (code === 'beta') return ['beta', '内测服'];
+  return [code];
 }
 
 function validateStudentIdBySchool(studentId, school) {
