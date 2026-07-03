@@ -1095,13 +1095,19 @@ app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, re
   try {
     const { student_id, delta, reason } = req.body;
     if (!student_id || !delta) return res.status(400).json({ error: "参数不足" });
-    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,credit_score"), { headers: SB_HEADERS });
+    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,credit_score,name,school"), { headers: SB_HEADERS });
     const d = await r.json();
     const v = Array.isArray(d) ? d[0] : null;
     if (!v) return res.status(404).json({ error: "用户不存在" });
     var newScore = Math.max(0, Math.min(100, (v.credit_score||80) + delta));
     await fetch(SB("verifications?id=eq."+v.id), { method: "PATCH", headers: SB_HEADERS2, body: JSON.stringify({ credit_score: newScore }) });
     addLog("credit_update", "verification", student_id, (delta>0?"+":"")+delta+" 原因:"+(reason||""));
+    try {
+      if (v.student_id) {
+        var toneMsg = delta > 0 ? '✅ 你的信用分已调整，再接再厉。' : '⚠️ 你的信用分已调整，谨言慎行。';
+        sendNotify(v.student_id, v.name || '', v.school || '', toneMsg);
+      }
+    } catch(e) {}
     res.json({ ok: true, credit_score: newScore });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
