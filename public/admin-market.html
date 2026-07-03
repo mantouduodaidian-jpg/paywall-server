@@ -1627,7 +1627,8 @@ async function confirmCreditAdjust() {
 }
 
 async function lookupCreditTarget() {
-  var sid = (document.getElementById('creditTargetId').value || '').trim();
+  var rawSid = (document.getElementById('creditTargetId').value || '').trim();
+  var sid = rawSid;
   var statusEl = document.getElementById('creditTargetStatus');
   var bar = document.getElementById('creditActionBar');
   var card = document.getElementById('creditTargetCard');
@@ -1641,14 +1642,20 @@ async function lookupCreditTarget() {
   statusEl.style.color = '#999';
   bar.style.display = 'none';
   try {
-    const r = await apiFetch('/api/marketplace/credit?student_id=' + encodeURIComponent(sid));
-    const d = await r.json();
+    var r = await apiFetch('/api/marketplace/credit?student_id=' + encodeURIComponent(sid));
+    var d = await r.json();
+    if ((!d || !d.student_id) && rawSid && !/^beta_/i.test(rawSid) && /^[a-zA-Z][\w.-]*$/.test(rawSid)) {
+      sid = 'beta_' + rawSid;
+      r = await apiFetch('/api/marketplace/credit?student_id=' + encodeURIComponent(sid));
+      d = await r.json();
+    }
     if (!d || !d.student_id) {
       statusEl.textContent = '无当前学号';
       statusEl.style.color = '#cf5f76';
       bar.style.display = 'none';
       return;
     }
+    document.getElementById('creditTargetId').value = sid;
     statusEl.textContent = '已找到';
     statusEl.style.color = '#60b88e';
     card.textContent = '学号：' + sid + ' · 当前信用分：' + (d.credit_score || 80);
