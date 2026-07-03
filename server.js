@@ -175,10 +175,11 @@ app.post('/api/upload', async (req, res) => {
     var ext = mimeToExt(file.mime);
     var safeName = Date.now() + '_' + randomBytes(6).toString('hex') + '.' + ext;
     var savePath = join(UPLOAD_DIR, safeName);
-    writeFileSync(savePath, file.buffer);
+    try { writeFileSync(savePath, file.buffer); } catch(e) {}
 
-    var publicUrl = '/uploads/' + safeName;
-    res.json({ ok: true, url: publicUrl });
+    var mime = file.mime || ('image/' + ext);
+    var dataUrl = 'data:' + mime + ';base64,' + file.buffer.toString('base64');
+    res.json({ ok: true, url: dataUrl, path: '/uploads/' + safeName });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
