@@ -607,6 +607,14 @@ tr:hover td{background:#f8fcf9}
   </div>
 </div>
 
+<!-- Credit Log Modal -->
+<div class="modal-overlay" id="creditLogModal" onclick="if(event.target===this)closeCreditLog()">
+  <div class="modal" style="max-width:500px"><h2 id="creditLogTitle">💳 信用分记录</h2>
+    <div id="creditLogBody" style="max-height:400px;overflow-y:auto"></div>
+    <div class="btns"><button class="btn-ghost" onclick="closeCreditLog()">关闭</button></div>
+  </div>
+</div>
+
 <!-- Reject Product Modal -->
 <div class="modal-overlay" id="rejectProdModal" onclick="if(event.target===this)closeRejectProd()">
   <div class="modal"><h2>✕ 拒绝理由</h2>
@@ -800,6 +808,10 @@ function showLoginGate() {
 
 function login() {
   _loginGateShown = false;
+  localStorage.removeItem('schoolList');
+  localStorage.removeItem('schoolList_admin');
+  localStorage.removeItem('schoolList_school_admin');
+  localStorage.removeItem('adminAllowBeta');
   var pwd = document.getElementById('loginPwd').value;
   fetch('/api/admin/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pwd})})
     .then(function(r) { return r.json(); })
@@ -807,7 +819,10 @@ function login() {
       if (d.ok && d.token) {
         token = d.token; localStorage.setItem('marketAdminToken', d.token);
         if (d.role) { role = d.role; localStorage.setItem('marketAdminRole', d.role); }
+        if (typeof d.allowBeta !== 'undefined') localStorage.setItem('adminAllowBeta', d.allowBeta ? '1' : '0');
         if (d.school) { localStorage.setItem('adminSchool', d.school); localStorage.setItem('adminSchoolName', d.schoolName || ''); }
+        if (d.role) { localStorage.setItem('adminDebugRole', d.role); }
+        if (d.school) { localStorage.setItem('adminDebugBoundSchool', d.school); }
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin only
@@ -850,6 +865,12 @@ function applyRole() {
 function logout() {
   localStorage.removeItem('marketAdminToken');
   localStorage.removeItem('marketAdminRole');
+  localStorage.removeItem('adminSchool');
+  localStorage.removeItem('adminSchoolName');
+  localStorage.removeItem('adminAllowBeta');
+  localStorage.removeItem('schoolList');
+  localStorage.removeItem('schoolList_admin');
+  localStorage.removeItem('schoolList_school_admin');
   role = null;
   document.getElementById('app').classList.remove('show');
   document.getElementById('loginGate').style.display = 'flex';
@@ -880,12 +901,15 @@ function switchSchool(code) {
 async function autoLogin() {
   if (!token) return;
   role = localStorage.getItem('marketAdminRole');
+  var allowBeta = localStorage.getItem('adminAllowBeta') === '1';
   localStorage.removeItem('schoolList'); // cleanup old generic key
   var listKey = 'schoolList_' + (role || 'admin');
   try { var sl = localStorage.getItem(listKey); if (sl) SCHOOL_LIST = JSON.parse(sl); } catch(e) { SCHOOL_LIST = []; }
   var curSchool = localStorage.getItem('adminSchool') || '';
   var sn = localStorage.getItem('adminSchoolName') || '';
-  document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
+  var debugRole = localStorage.getItem('adminDebugRole') || '';
+  var debugBoundSchool = localStorage.getItem('adminDebugBoundSchool') || '';
+  document.getElementById('headerSchool').textContent = sn ? '- ' + sn + (debugRole ? ' · ' + debugRole + (debugBoundSchool ? '(' + debugBoundSchool + ')' : '') : '') : '';
   document.getElementById('loginGate').style.display = 'none';
   document.getElementById('app').classList.add('show');
   // Restore school selector — role-aware
@@ -895,9 +919,9 @@ async function autoLogin() {
       sel.style.display = 'inline-block';
       sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
-  } else if (role === 'school_admin' && SCHOOL_LIST.length > 1) {
+  } else if (role === 'school_admin') {
     if (sel) {
-      sel.style.display = 'inline-block';
+      sel.style.display = (SCHOOL_LIST.length > 1 && allowBeta) ? 'inline-block' : 'none';
       sel.innerHTML = SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   } else {
@@ -1548,6 +1572,11 @@ async function loadReviews() {
         '<div style="margin-bottom:4px">'+tags+'</div>' +
         '<div style="font-size:12px;color:rgba(0,0,0,.45);margin-bottom:2px">买家: '+esc(rv.buyer_id)+' → 卖家: '+esc(rv.seller_id)+'</div>' +
         '<div style="font-size:13px;color:#333">'+esc(rv.reason)+'</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+
+          '<button class="btn btn-green btn-sm" onclick="updateCredit(\''+esc(rv.seller_id)+'\',2)">卖家 +2</button>'+
+          '<button class="btn btn-green btn-sm" onclick="showCreditLog(\''+esc(rv.seller_id)+'\',\''+esc(rv.seller_id)+'\')">卖家记录</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="showCreditLog(\''+esc(rv.buyer_id)+'\',\''+esc(rv.buyer_id)+'\')">买家记录</button>'+
+        '</div>'+
         imgs + '</div>';
     }).join('');
   } catch(e) { document.getElementById('reviewList').innerHTML = '<div class="empty">加载失败</div>'; }
@@ -1989,6 +2018,34 @@ function viewReviews(sid, name) {
   }).catch(function(){ document.getElementById("reviewListBody").innerHTML = '<div class="empty">加载失败</div>'; });
 }
 function closeReviewList() { document.getElementById("reviewListModal").classList.remove("show"); }
+async function showCreditLog(sid, name) {
+  document.getElementById("creditLogTitle").textContent = "💳 " + (name || sid) + " 的信用分记录";
+  document.getElementById("creditLogBody").innerHTML = '<div class="empty">加载中...</div>';
+  document.getElementById("creditLogModal").classList.add("show");
+  try {
+    const r = await apiFetch('/api/marketplace/logs?limit=20&action=' + encodeURIComponent('credit_update') + '&target_id=' + encodeURIComponent(sid));
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data : [];
+    if (!arr.length) { document.getElementById("creditLogBody").innerHTML = '<div class="empty">暂无信用分变动记录</div>'; return; }
+    document.getElementById("creditLogBody").innerHTML = arr.map(function(item) {
+      var detail = String(item.detail || '');
+      var deltaMatch = detail.match(/^([+-]\d+)/);
+      var deltaText = deltaMatch ? deltaMatch[1] : '0';
+      var reason = detail.replace(/^([+-]\d+)\s*原因:/, '').trim() || '管理员调整';
+      var color = deltaText.indexOf('-') === 0 ? '#cf5f76' : '#60b88e';
+      return '<div style="padding:12px;border-bottom:1px solid rgba(0,0,0,.04)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+        '<span style="font-size:15px;font-weight:700;color:'+color+'">'+esc(deltaText)+'</span>' +
+        '<span style="font-size:10px;color:#ccc">'+fmtDate(item.created_at)+'</span>'+
+        '</div>' +
+        '<div style="margin-top:6px;font-size:12px;line-height:1.6;color:rgba(0,0,0,.52)">'+esc(reason)+'</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById("creditLogBody").innerHTML = '<div class="empty">加载失败</div>';
+  }
+}
+function closeCreditLog() { document.getElementById("creditLogModal").classList.remove("show"); }
 
 function filterSeller(sid, name) {
   switchTab('products');
