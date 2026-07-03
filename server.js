@@ -1979,6 +1979,25 @@ app.post('/api/marketplace/products', express.json({ limit: '20mb' }), async (re
   }
 });
 
+
+app.post('/api/marketplace/products/backfill-published-at', anyAdmin, async (req, res) => {
+  try {
+    const r = await fetch(SB('products?status=eq.approved&published_at=is.null&select=id,created_at'), { headers: SB_HEADERS });
+    const arr = await r.json();
+    const rows = Array.isArray(arr) ? arr : [];
+    for (const item of rows) {
+      await fetch(SB('products?id=eq.' + item.id), {
+        method: 'PATCH',
+        headers: SB_HEADERS2,
+        body: JSON.stringify({ published_at: item.created_at || new Date().toISOString() })
+      });
+    }
+    res.json({ ok: true, updated: rows.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/marketplace/products', async (req, res) => {
   try {
     const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max, ids } = req.query;
