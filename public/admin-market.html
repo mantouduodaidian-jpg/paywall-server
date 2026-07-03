@@ -559,7 +559,8 @@ tr:hover td{background:#f8fcf9}
     <div class="section">
       <h3>📋 交易评价 <span class="badge" id="reviewCount">0</span></h3>
       <div class="toolbar" style="margin-top:12px">
-        <input type="text" id="creditTargetId" placeholder="输入学号查看信用记录 / 调分" style="max-width:220px">
+        <button class="btn btn-ghost" onclick="prefillCreditTargetFromSchool()">先切当前学校</button>
+        <input type="text" id="creditTargetId" placeholder="再输入学号查看信用记录 / 调分" style="max-width:220px">
         <button class="btn btn-green" onclick="updateCreditByToolbar(2)">+ 加分</button>
         <button class="btn btn-red" onclick="updateCreditByToolbar(-2)">- 扣分</button>
         <button class="btn btn-ghost" onclick="openCreditLogFromToolbar()">信用记录</button>
@@ -676,12 +677,12 @@ tr:hover td{background:#f8fcf9}
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="confirmModal" onclick="if(event.target===this)_confirmCb(false)" style="z-index:200">
-  <div class="modal" id="confirmBox" style="max-width:400px;text-align:center">
-    <div id="confirmIcon" style="font-size:32px;margin-bottom:8px">🤔</div>
-    <div id="confirmMsg" style="font-size:13px;color:#555;margin-bottom:16px;line-height:1.6"></div>
-    <div class="btns">
-      <button id="confirmCancelBtn" class="btn-ghost" onclick="_confirmCb(false)" style="flex:1">取消</button>
-      <button id="confirmOkBtn" class="btn-red" onclick="_confirmCb(true)" style="flex:1;font-weight:700">确认</button>
+  <div class="modal" id="confirmBox" style="max-width:420px;text-align:center;border-radius:22px;padding:30px 26px;box-shadow:0 18px 50px rgba(0,0,0,.16)">
+    <div id="confirmIcon" style="font-size:42px;margin-bottom:10px">🤔</div>
+    <div id="confirmMsg" style="font-size:14px;color:#4a4a4a;margin-bottom:18px;line-height:1.7"></div>
+    <div class="btns" style="gap:10px">
+      <button id="confirmCancelBtn" class="btn-ghost" onclick="_confirmCb(false)" style="flex:1;border-radius:14px;padding:12px 0;font-size:13px">取消</button>
+      <button id="confirmOkBtn" class="btn-red" onclick="_confirmCb(true)" style="flex:1;border-radius:14px;padding:12px 0;font-size:13px;font-weight:700">确认</button>
     </div>
   </div>
 </div>
@@ -698,6 +699,14 @@ function showConfirm(msg) {
   return new Promise(function(resolve) {
     _confirmResolve = resolve;
   });
+}
+function prefillCreditTargetFromSchool() {
+  var school = localStorage.getItem('adminSchool') || '';
+  var input = document.getElementById('creditTargetId');
+  if (!input) return;
+  input.value = '';
+  input.focus();
+  toast(school ? ('当前已切换到 ' + schoolName(school) + '，请继续输入该校学号') : '当前是全部学校视角，请先切学校再输入学号');
 }
 function _confirmCb(ok) { document.getElementById('confirmModal').classList.remove('show'); if (_confirmResolve) _confirmResolve(ok); }
 
