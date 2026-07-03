@@ -2360,7 +2360,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
           contacts = contacts.filter(function(c) {
             if (c.student_id === kefuId(school)) return true;
             var contactSchool = schoolMap[c.student_id] || '';
-            return schoolValues.indexOf(contactSchool) >= 0;
+            return !contactSchool || schoolValues.indexOf(contactSchool) >= 0;
           });
         }
       } catch(e) {}
