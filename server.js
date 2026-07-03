@@ -1673,11 +1673,13 @@ app.delete('/api/marketplace/announcements/:id', anyAdmin, async (req, res) => {
 // ====== Logs API ======
 app.get('/api/marketplace/logs', schoolScope, async (req, res) => {
   try {
-    const { limit: lmt } = req.query;
-    let url = SB('logs?order=created_at.desc&select=*');
-    if (lmt) url = SB('logs?order=created_at.desc&select=*&limit='+lmt);
-    else url = SB('logs?order=created_at.desc&select=*&limit=200');
-    const r = await fetch(url, { headers: SB_HEADERS });
+    const { limit: lmt, action, target_id } = req.query;
+    let url = 'logs?order=created_at.desc&select=*';
+    if (action) url += '&action=eq.' + encodeURIComponent(action);
+    if (target_id) url += '&target_id=eq.' + encodeURIComponent(String(target_id));
+    if (lmt) url += '&limit=' + lmt;
+    else url += '&limit=200';
+    const r = await fetch(SB(url), { headers: SB_HEADERS });
     res.json(await r.json());
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -2334,8 +2336,13 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         var vData = await vR.json();
         if (Array.isArray(vData)) {
           var schoolMap = {};
-          vData.forEach(function(v) { schoolMap[v.student_id] = v.school; });
-          contacts = contacts.filter(function(c) { return c.student_id === kefuId(school) || schoolMap[c.student_id] === school; });
+          var schoolValues = schoolValuesForFilter(school).map(function (value) { return normalizeSchoolCode(value); });
+          vData.forEach(function(v) { schoolMap[v.student_id] = normalizeSchoolCode(v.school); });
+          contacts = contacts.filter(function(c) {
+            if (c.student_id === kefuId(school)) return true;
+            var contactSchool = schoolMap[c.student_id] || '';
+            return schoolValues.indexOf(contactSchool) >= 0;
+          });
         }
       } catch(e) {}
     }
@@ -2540,23 +2547,24 @@ app.post('/api/admin/login', express.json(), (req, res) => {
   let role = null, school = null, schoolName = null;
 
   var sa = SCHOOL_ADMINS.find(function(s) { return s.password === password; });
-  if (sa) { role = 'school_admin'; school = sa.code; schoolName = sa.name; }
+  var allowBeta = false;
+  if (sa) { role = 'school_admin'; school = sa.code; schoolName = sa.name; allowBeta = !!sa.allow_beta; }
   else if (password === ADMIN_PASSWORD) role = 'admin';
   else if (password === MANAGER_PASSWORD) role = 'manager';
   if (!role) return res.json({ ok: false, msg: '密码错误' });
 
   var tokenHours = parseInt(process.env.TOKEN_EXPIRY_HOURS) || 12;
-  var token = signToken({ role, school, schoolName, exp: Date.now() + tokenHours * 3600000 });
+  var token = signToken({ role, school, schoolName, allowBeta, exp: Date.now() + tokenHours * 3600000 });
   var schools = [];
   if (role === 'admin') {
     schools = (SCHOOL_ADMINS || []).slice();
   } else if (school) {
     var sa = SCHOOL_ADMINS ? SCHOOL_ADMINS.find(function(s) { return s.code === school; }) : null;
     if (sa) schools.push({ code: sa.code, name: sa.name });
+    if (allowBeta && !schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
   }
-  var betaSchools = (process.env.BETA_ADMIN_SCHOOLS || 'gxny,hnkj,gdcj').split(',');
-  if ((role === 'admin' || betaSchools.includes(school)) && !schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
-  res.json({ ok: true, token, role, school, schoolName, schools: schools });
+  if (role === 'admin' && !schools.find(function(s) { return s.code === 'beta'; })) schools.push({ code: 'beta', name: '🛠 内测服' });
+  res.json({ ok: true, token, role, school, schoolName, allowBeta, schools: schools });
 });
 
 function getAdminSession(req) {
@@ -2593,8 +2601,8 @@ function schoolScope(req, res, next) {
     req.adminSchool = req.query.school || null;
   } else if (sess.role === 'school_admin') {
     if (!sess.school) return res.status(403).json({ ok: false, msg: '无学校权限' });
-    // school_admin: can only switch between own school and beta
-    var allowed = [sess.school, 'beta'];
+    var allowed = [sess.school];
+    if (sess.allowBeta) allowed.push('beta');
     req.adminSchool = allowed.indexOf(req.query.school) >= 0 ? req.query.school : sess.school;
   } else {
     req.adminSchool = sess.school || req.query.school || null;
