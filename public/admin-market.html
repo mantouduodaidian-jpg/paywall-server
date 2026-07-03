@@ -627,6 +627,23 @@ tr:hover td{background:#f8fcf9}
   </div>
 </div>
 
+<!-- Credit Adjust Modal -->
+<div class="modal-overlay" id="creditAdjustModal" onclick="if(event.target===this)closeCreditAdjust()">
+  <div class="modal" style="max-width:440px;border-radius:22px;padding:28px 24px;box-shadow:0 18px 50px rgba(0,0,0,.16)">
+    <h2 id="creditAdjustTitle" style="font-size:18px;color:#333;margin-bottom:8px">信用分调整</h2>
+    <div id="creditAdjustTarget" style="font-size:12px;color:#888;margin-bottom:14px"></div>
+    <div style="padding:12px 14px;border-radius:16px;background:#f7fbf8;border:1px solid rgba(78,158,128,.08);margin-bottom:14px">
+      <div style="font-size:11px;color:rgba(0,0,0,.38)">调整后分值</div>
+      <div id="creditAdjustPreview" style="margin-top:6px;font-size:18px;font-weight:700;color:#4e9e80">--</div>
+    </div>
+    <textarea id="creditAdjustReason" placeholder="请输入本次加减分说明（将展示给前台用户）" style="min-height:84px"></textarea>
+    <div class="btns" style="gap:10px;margin-top:14px">
+      <button class="btn-ghost" onclick="closeCreditAdjust()" style="flex:1;border-radius:14px;padding:12px 0">取消</button>
+      <button class="btn-primary" onclick="confirmCreditAdjust()" style="flex:1;border-radius:14px;padding:12px 0">确认调整</button>
+    </div>
+  </div>
+</div>
+
 <!-- Reject Product Modal -->
 <div class="modal-overlay" id="rejectProdModal" onclick="if(event.target===this)closeRejectProd()">
   <div class="modal"><h2>✕ 拒绝理由</h2>
@@ -697,6 +714,7 @@ tr:hover td{background:#f8fcf9}
 
 
 var _confirmResolve = null;
+var _creditAdjustCtx = null;
 function showConfirm(msg) {
   document.getElementById('confirmMsg').textContent = msg;
   document.getElementById('confirmIcon').textContent = msg.includes('删除') ? '🗑️' : msg.includes('封禁') ? '🚫' : msg.includes('禁言') ? '🔇' : msg.includes('转账') ? '💰' : '🤔';
@@ -1569,9 +1587,43 @@ async function resolveReport(id, action) {
 
 // ====== REVIEWS ======
 async function updateCredit(sid, delta) {
-  var reason = prompt("修改理由（选填）:");
-  await apiFetch("/api/marketplace/credit", {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({student_id:sid,delta:delta,reason:reason||""})});
-  toast("✅ 信誉分已更新"); loadReviews();
+  await openCreditAdjust(sid, delta);
+}
+async function openCreditAdjust(sid, delta) {
+  if (!sid || !delta) return;
+  var previewEl = document.getElementById('creditAdjustPreview');
+  var targetEl = document.getElementById('creditAdjustTarget');
+  var titleEl = document.getElementById('creditAdjustTitle');
+  var reasonEl = document.getElementById('creditAdjustReason');
+  previewEl.textContent = '加载中...';
+  targetEl.textContent = '学号：' + sid;
+  titleEl.textContent = delta > 0 ? '信用分加分' : '信用分扣分';
+  reasonEl.value = '';
+  document.getElementById('creditAdjustModal').classList.add('show');
+  _creditAdjustCtx = { sid: sid, delta: delta };
+  try {
+    const r = await apiFetch('/api/marketplace/credit?student_id=' + encodeURIComponent(sid));
+    const d = await r.json();
+    var current = d && d.credit_score ? d.credit_score : 80;
+    var next = Math.max(0, Math.min(100, current + delta));
+    previewEl.textContent = current + ' → ' + next + '  (' + (delta > 0 ? '+' : '') + delta + ')';
+    previewEl.style.color = delta > 0 ? '#60b88e' : '#cf5f76';
+  } catch(e) {
+    previewEl.textContent = '无法读取当前分数';
+    previewEl.style.color = '#cf5f76';
+  }
+}
+function closeCreditAdjust() {
+  document.getElementById('creditAdjustModal').classList.remove('show');
+  _creditAdjustCtx = null;
+}
+async function confirmCreditAdjust() {
+  if (!_creditAdjustCtx) return;
+  var reason = (document.getElementById('creditAdjustReason').value || '').trim();
+  await apiFetch('/api/marketplace/credit', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id:_creditAdjustCtx.sid,delta:_creditAdjustCtx.delta,reason:reason||''})});
+  closeCreditAdjust();
+  toast('✅ 信誉分已更新');
+  loadReviews();
 }
 
 async function lookupCreditTarget() {
