@@ -558,6 +558,12 @@ tr:hover td{background:#f8fcf9}
   <div class="tab-content" id="tabReviews" style="display:none">
     <div class="section">
       <h3>📋 交易评价 <span class="badge" id="reviewCount">0</span></h3>
+      <div class="toolbar" style="margin-top:12px">
+        <input type="text" id="creditTargetId" placeholder="输入学号查看信用记录 / 调分" style="max-width:220px">
+        <button class="btn btn-green" onclick="updateCreditByToolbar(2)">+ 加分</button>
+        <button class="btn btn-red" onclick="updateCreditByToolbar(-2)">- 扣分</button>
+        <button class="btn btn-ghost" onclick="openCreditLogFromToolbar()">信用记录</button>
+      </div>
       <div class="list" id="reviewList"><div class="empty">暂无评价</div></div>
     </div>
   </div>
@@ -1552,6 +1558,17 @@ async function updateCredit(sid, delta) {
   var reason = prompt("修改理由（选填）:");
   await apiFetch("/api/marketplace/credit", {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({student_id:sid,delta:delta,reason:reason||""})});
   toast("✅ 信誉分已更新"); loadReviews();
+}
+
+async function updateCreditByToolbar(delta) {
+  var sid = (document.getElementById('creditTargetId').value || '').trim();
+  if (!sid) return toast('请先输入学号');
+  await updateCredit(sid, delta);
+}
+async function openCreditLogFromToolbar() {
+  var sid = (document.getElementById('creditTargetId').value || '').trim();
+  if (!sid) return toast('请先输入学号');
+  await showCreditLog(sid, sid);
 }
 
 async function loadReviews() {
