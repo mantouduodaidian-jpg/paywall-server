@@ -1102,26 +1102,35 @@ app.get("/api/marketplace/credit", async (req, res) => {
 
 app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, res) => {
   try {
-    const { student_id, delta, reason } = req.body;
+    var student_id = String(req.body.student_id || '').trim();
+    const { delta, reason } = req.body;
     if (!student_id || !delta) return res.status(400).json({ error: "参数不足" });
-    const r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,credit_score,name,school"), { headers: SB_HEADERS });
-    const d = await r.json();
-    const v = Array.isArray(d) ? d[0] : null;
+
+    let r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,student_id,credit_score,name,school"), { headers: SB_HEADERS });
+    let d = await r.json();
+    let v = Array.isArray(d) ? d[0] : null;
+
+    if (!v && !/^beta_/i.test(student_id) && /^[a-zA-Z][\w.-]*$/.test(student_id)) {
+      student_id = 'beta_' + student_id;
+      r = await fetch(SB("verifications?student_id=eq."+encodeURIComponent(student_id)+"&select=id,student_id,credit_score,name,school"), { headers: SB_HEADERS });
+      d = await r.json();
+      v = Array.isArray(d) ? d[0] : null;
+    }
+
     if (!v) return res.status(404).json({ error: "用户不存在" });
+    var targetStudentId = String(v.student_id || student_id);
     var newScore = Math.max(0, Math.min(100, (v.credit_score||80) + delta));
     await fetch(SB("verifications?id=eq."+v.id), { method: "PATCH", headers: SB_HEADERS2, body: JSON.stringify({ credit_score: newScore }) });
-    addLog("credit_update", "verification", student_id, (delta>0?"+":"")+delta+" 原因:"+(reason||""));
+    addLog("credit_update", "verification", targetStudentId, (delta>0?"+":"")+delta+" 原因:"+(reason||""));
     try {
-      if (v.student_id) {
-        var toneMsg = delta > 0 ? '✅ 你的信用分已调整，再接再厉。' : '⚠️ 你的信用分已调整，谨言慎行。';
-        await fetch(SB('messages'), {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: v.student_id, to_name: v.name || '', content: toneMsg, created_at: new Date().toISOString(), read: false })
-        });
-      }
+      var toneMsg = delta > 0 ? '✅ 你的信用分已调整，再接再厉。' : '⚠️ 你的信用分已调整，谨言慎行。';
+      await fetch(SB('messages'), {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: targetStudentId, to_name: v.name || '', content: toneMsg, created_at: new Date().toISOString(), read: false })
+      });
     } catch(e) {}
-    res.json({ ok: true, credit_score: newScore });
+    res.json({ ok: true, credit_score: newScore, student_id: targetStudentId });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
