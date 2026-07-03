@@ -768,12 +768,20 @@ app.get('/api/marketplace/admin/stats', schoolScope, async (req, res) => {
 // Send notification message from system kefu to user
 async function sendNotify(ownerStudentId, ownerName, school, msg) {
   if (!ownerStudentId) return;
+  const targetId = String(ownerStudentId);
   const sysId = 'sys_' + (school || 'admin');
+  const createdAt = new Date().toISOString();
   try {
-    await fetch(SB('messages'), {
-      method: 'POST', headers: SB_HEADERS2,
-      body: JSON.stringify({ product_id: 0, from_student_id: sysId, from_name: '系统通知', to_student_id: ownerStudentId, to_name: ownerName, content: msg, created_at: new Date().toISOString(), read: false })
+    const r = await fetch(SB('messages'), {
+      method: 'POST',
+      headers: Object.assign({}, SB_HEADERS2, { Prefer: 'return=representation' }),
+      body: JSON.stringify({ product_id: 0, from_student_id: sysId, from_name: '系统通知', to_student_id: targetId, to_name: ownerName, content: msg, created_at: createdAt, read: false })
     });
+    const data = await r.json().catch(() => null);
+    const saved = (Array.isArray(data) ? data[0] : data) || { product_id: 0, from_student_id: sysId, from_name: '系统通知', to_student_id: targetId, to_name: ownerName, content: msg, created_at: createdAt, read: false };
+    if (onlineUsers && onlineUsers.has(targetId)) {
+      onlineUsers.get(targetId).send(JSON.stringify({ type: 'notification', data: saved }));
+    }
   } catch(e) {}
 }
 
@@ -1105,7 +1113,11 @@ app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, re
     try {
       if (v.student_id) {
         var toneMsg = delta > 0 ? '✅ 你的信用分已调整，再接再厉。' : '⚠️ 你的信用分已调整，谨言慎行。';
-        sendNotify(v.student_id, v.name || '', v.school || '', toneMsg);
+        await fetch(SB('messages'), {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+          body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: v.student_id, to_name: v.name || '', content: toneMsg, created_at: new Date().toISOString(), read: false })
+        });
       }
     } catch(e) {}
     res.json({ ok: true, credit_score: newScore });
