@@ -560,7 +560,12 @@ tr:hover td{background:#f8fcf9}
       <h3>📋 交易评价 <span class="badge" id="reviewCount">0</span></h3>
       <div class="toolbar" style="margin-top:12px">
         <button class="btn btn-ghost" onclick="prefillCreditTargetFromSchool()">先切当前学校</button>
-        <input type="text" id="creditTargetId" placeholder="再输入学号查看信用记录 / 调分" style="max-width:220px">
+        <input type="text" id="creditTargetId" placeholder="输入学号后点查询" style="max-width:220px">
+        <button class="btn btn-primary" onclick="lookupCreditTarget()">查询</button>
+        <span id="creditTargetStatus" style="font-size:12px;color:#999"></span>
+      </div>
+      <div class="toolbar" id="creditActionBar" style="display:none">
+        <div id="creditTargetCard" style="padding:8px 12px;border-radius:12px;background:#f7fbf8;color:#4e9e80;font-size:12px;font-weight:600"></div>
         <button class="btn btn-green" onclick="updateCreditByToolbar(2)">+ 加分</button>
         <button class="btn btn-red" onclick="updateCreditByToolbar(-2)">- 扣分</button>
         <button class="btn btn-ghost" onclick="openCreditLogFromToolbar()">信用记录</button>
@@ -1567,6 +1572,40 @@ async function updateCredit(sid, delta) {
   var reason = prompt("修改理由（选填）:");
   await apiFetch("/api/marketplace/credit", {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({student_id:sid,delta:delta,reason:reason||""})});
   toast("✅ 信誉分已更新"); loadReviews();
+}
+
+async function lookupCreditTarget() {
+  var sid = (document.getElementById('creditTargetId').value || '').trim();
+  var statusEl = document.getElementById('creditTargetStatus');
+  var bar = document.getElementById('creditActionBar');
+  var card = document.getElementById('creditTargetCard');
+  if (!sid) {
+    statusEl.textContent = '请先输入学号';
+    statusEl.style.color = '#cf5f76';
+    bar.style.display = 'none';
+    return;
+  }
+  statusEl.textContent = '查询中...';
+  statusEl.style.color = '#999';
+  bar.style.display = 'none';
+  try {
+    const r = await apiFetch('/api/marketplace/credit?student_id=' + encodeURIComponent(sid));
+    const d = await r.json();
+    if (!d || !d.student_id) {
+      statusEl.textContent = '无当前学号';
+      statusEl.style.color = '#cf5f76';
+      bar.style.display = 'none';
+      return;
+    }
+    statusEl.textContent = '已找到';
+    statusEl.style.color = '#60b88e';
+    card.textContent = '学号：' + sid + ' · 当前信用分：' + (d.credit_score || 80);
+    bar.style.display = 'flex';
+  } catch(e) {
+    statusEl.textContent = '查询失败';
+    statusEl.style.color = '#cf5f76';
+    bar.style.display = 'none';
+  }
 }
 
 async function updateCreditByToolbar(delta) {
