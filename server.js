@@ -1100,6 +1100,20 @@ app.get("/api/marketplace/credit", async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.get('/api/marketplace/credit/logs', async (req, res) => {
+  try {
+    const { student_id, limit: lmt } = req.query;
+    if (!student_id) return res.status(400).json({ error: 'student_id required' });
+    let url = 'logs?order=created_at.desc&select=*';
+    url += '&action=eq.' + encodeURIComponent('credit_update');
+    url += '&target_id=eq.' + encodeURIComponent(String(student_id));
+    if (lmt) url += '&limit=' + lmt;
+    else url += '&limit=20';
+    const r = await fetch(SB(url), { headers: SB_HEADERS });
+    res.json(await r.json());
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, res) => {
   try {
     var student_id = String(req.body.student_id || '').trim();
@@ -1124,11 +1138,7 @@ app.patch("/api/marketplace/credit", schoolScope, express.json(), async (req, re
     addLog("credit_update", "verification", targetStudentId, (delta>0?"+":"")+delta+" 原因:"+(reason||""));
     try {
       var toneMsg = delta > 0 ? '✅ 你的信用分已调整，再接再厉。' : '⚠️ 你的信用分已调整，谨言慎行。';
-      await fetch(SB('messages'), {
-        method: 'POST',
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-        body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: targetStudentId, to_name: v.name || '', content: toneMsg, created_at: new Date().toISOString(), read: false })
-      });
+      await sendNotify(targetStudentId, v.name || '', v.school || '', toneMsg);
     } catch(e) {}
     res.json({ ok: true, credit_score: newScore, student_id: targetStudentId });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1665,10 +1675,7 @@ app.post('/api/marketplace/announcements', schoolScope, express.json(), async (r
       const msg = '📣 公告：' + title + (content ? ' - ' + content : '');
       await Promise.all(targets.map(function(v) {
         if (!v.student_id) return Promise.resolve();
-        return fetch(SB('messages'), {
-          method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ product_id: 0, from_student_id: 'system', from_name: '系统通知', to_student_id: v.student_id, content: msg, created_at: new Date().toISOString(), read: false })
-        }).catch(() => {});
+        return sendNotify(v.student_id, '', v.school || school || '', msg).catch(() => {});
       }));
     } catch(e) {}
     res.json(t);
@@ -2694,10 +2701,7 @@ app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async
       var pd = await pr.json();
       var prod = Array.isArray(pd) ? pd[0] : null;
       if (prod && prod.owner_student_id) {
-        await fetch(SB('messages'), {
-          method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer '+SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-          body: JSON.stringify({ product_id: id, from_student_id: 'system', from_name: '系统通知', to_student_id: prod.owner_student_id, content: '💰 您售出的商品「'+prod.title+'」的款项已到账，请查看账户余额。', created_at: new Date().toISOString(), read: false })
-        });
+        await sendNotify(prod.owner_student_id, '', '', '💰 您售出的商品「'+prod.title+'」的款项已到账，请查看账户余额。');
       }
     } catch(e) {}
     res.json({ ok: true });

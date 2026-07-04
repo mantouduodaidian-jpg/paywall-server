@@ -8,27 +8,55 @@ const SCHOOLS = [
 ];
 
 Page({
-  data: { user: null, schoolName: '', avatarLetter: '?', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80 },
+  data: { user: null, schoolName: '', avatarLetter: '?', showPicker: false, schools: SCHOOLS, soundOn: true, creditScore: 80, creditHint: '信用分会根据平台处理结果动态调整', showCreditLogs: false, creditLogs: [], creditLogsLoading: false },
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ active: 3 });
+      this.getTabBar().setData({ selected: 3, showMessageDot: !!app.globalData.messageTabDot });
     }
     const user = app.globalData.user || wx.getStorageSync('user');
     if (user) {
       const s = SCHOOLS.find(s => s.code === user.school);
       this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] });
-      // Load credit score
       var self = this;
-      app.request('/api/marketplace/reviews?student_id=' + user.student_id).then(function(d) {
-        if (d && d.credit_score) self.setData({ creditScore: d.credit_score });
+      app.request('/api/marketplace/credit?student_id=' + encodeURIComponent(user.student_id || '')).then(function(d) {
+        self.setData({ creditScore: d && d.credit_score ? d.credit_score : 80 });
+      }).catch(function() {
+        self.setData({ creditScore: 80 });
       });
     }
     this.setData({ soundOn: app._soundEnabled !== false });
+    if (user && typeof app.refreshMessageDot === 'function') app.refreshMessageDot(user.student_id);
+  },
+  loadCreditLogs() {
+    if (!this.data.user) return;
+    this.setData({ creditLogsLoading: true });
+    app.request('/api/marketplace/credit/logs?limit=20&student_id=' + encodeURIComponent(this.data.user.student_id || ''))
+      .then(function(res) {
+        var arr = Array.isArray(res) ? res : [];
+        arr = arr.map(function(item) {
+          var detail = String(item.detail || '');
+          var deltaMatch = detail.match(/^([+-]\d+)/);
+          var deltaText = deltaMatch ? deltaMatch[1] : '';
+          var reason = detail.replace(/^([+-]\d+)\s*原因:/, '').trim();
+          return Object.assign({}, item, {
+            deltaText: deltaText,
+            reasonText: reason || '管理员调整',
+            timeText: item.created_at ? String(item.created_at).replace('T', ' ').substring(0, 16) : ''
+          });
+        });
+        this.setData({ creditLogs: arr, creditLogsLoading: false, showCreditLogs: true });
+      }.bind(this))
+      .catch(function() {
+        this.setData({ creditLogs: [], creditLogsLoading: false, showCreditLogs: true });
+      }.bind(this));
+  },
+  hideCreditLogs() {
+    this.setData({ showCreditLogs: false });
   },
   toggleSound() {
     var on = !app._soundEnabled;
     if (on) {
-      try { // 开启时响一声
+      try {
         var ctx = wx.createInnerAudioContext();
         ctx.obeyMuteSwitch = false;
         ctx.src = '/sounds/notif.wav';
@@ -44,21 +72,9 @@ Page({
     if (user) { const s = SCHOOLS.find(s => s.code === user.school); this.setData({ user, schoolName: s ? s.name : '', avatarLetter: (user.name || '?')[0] }); }
     wx.stopPullDownRefresh();
   },
-  showSchoolPicker() { this.setData({ showPicker: true }); },
-  hideSchoolPicker() { this.setData({ showPicker: false }); },
-  pickSchool(e) {
-    const code = e.currentTarget.dataset.code;
-    const user = this.data.user;
-    if (user.school === 'beta' && code !== 'beta') return app.toast('内测账号不可切换学校');
-    const s = SCHOOLS.find(s => s.code === code);
-    user.school = code;
-    app.globalData.user = user;
-    wx.setStorageSync('user', user);
-    wx.setStorageSync('userSchool', code);
-    this.setData({ user, schoolName: s ? s.name : '', showPicker: false });
-    app.globalData._needRefresh = true;
-    app.toast('学校已设置');
-  },
+  showSchoolPicker() {},
+  hideSchoolPicker() {},
+  pickSchool() {},
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
   doLogout() {
     wx.showModal({
@@ -88,7 +104,6 @@ Page({
   },
   goMyPurchases() {
     if (!this.data.user) return app.toast('请先登录');
-    app.globalData.tabIntent = 'bought';
-    wx.switchTab({ url: '/pages/index/index' });
-  }
+    wx.navigateTo({ url: '/pages/purchase/purchase' });
+  },
 });
