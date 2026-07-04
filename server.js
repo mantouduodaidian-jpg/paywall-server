@@ -1301,6 +1301,70 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
     res.json(p);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+
+// Serve product images as binary with in-memory + file cache
+var IMG_CACHE_DIR = './cache/img/';
+var imgMemCache = new Map();
+try { require('fs').mkdirSync(IMG_CACHE_DIR, { recursive: true }); } catch(e) {}
+app.get('/api/product-image/:id/:idx', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), idx = parseInt(req.params.idx);
+    var cacheKey = id + '-' + idx;
+    if (imgMemCache.has(cacheKey)) {
+      var entry = imgMemCache.get(cacheKey);
+      res.setHeader('Content-Type', entry.type);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(entry.buf);
+    }
+    var cacheFile = IMG_CACHE_DIR + cacheKey + '.img';
+    try {
+      var buf = require('fs').readFileSync(cacheFile);
+      var ext = require('fs').readFileSync(cacheFile + '.type', 'utf8');
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(buf);
+    } catch(e) {}
+    const r = await fetch(SB('products?id=eq.'+id+'&select=images'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const p = Array.isArray(data) ? data[0] : null;
+    if (!p || !Array.isArray(p.images) || !p.images[idx]) return res.status(404).end();
+    var img = p.images[idx];
+    if (typeof img !== 'string' || !img) return res.status(404).end();
+    if (/^data:image\//.test(img)) {
+      var match = img.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+      if (!match) return res.status(404).end();
+      var raw = Buffer.from(match[2], 'base64');
+      var ext = match[1];
+      imgMemCache.set(cacheKey, { buf: raw, type: 'image/' + ext });
+      try { require('fs').writeFileSync(cacheFile, raw); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      res.send(raw);
+      if (_sharp) {
+        _sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+          .then(function(c) { imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' }); try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {} })
+          .catch(function(){});
+      }
+      return;
+    }
+    if (img.indexOf('/api/product-image/') === 0) return res.status(404).end();
+    if (img.charAt(0) === '/') return res.redirect(img);
+    if (/^https?:\/\//.test(img)) return res.redirect(img);
+    return res.redirect('/' + img.replace(/^\/+/, ''));
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/products/:id', async (req, res) => {
+  try {
+    const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
+    const data = await r.json();
+    var p = data[0] || null;
+    if (p && p.images && p.images.length) {
+      p.images = p.images.map(function(img, idx) { return '/api/product-image/' + p.id + '/' + idx; });
+    }
+    res.json(p);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 // Serve product images as binary with in-memory + file cache
 var IMG_CACHE_DIR = './cache/img/';
 var imgMemCache = new Map();
