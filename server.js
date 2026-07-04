@@ -1120,21 +1120,20 @@ app.get('/api/marketplace/products', async (req, res) => {
       var pf = item_type === 'rent' ? 'rent_price' : 'price';
       orderBy = 'pinned.desc,' + pf + '.' + (sort === 'price_asc' ? 'asc' : 'desc');
     }
+
     var schoolValues = schoolValuesForFilter(school);
     var schoolFilter = '';
     if (schoolValues.length) {
       schoolFilter = '&or=(' + schoolValues.map(function(value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
     }
-    function applySchool(url) {
-      return schoolFilter ? url + schoolFilter : url;
-    }
+    function applySchool(url) { return schoolFilter ? url + schoolFilter : url; }
+
     let idList = String(ids || '').split(',').map(function(v){ return String(v || '').trim(); }).filter(Boolean);
-    if (idList.length) {
-      idList = idList.filter(function(v, idx, arr){ return arr.indexOf(v) === idx; });
-    }
+    if (idList.length) idList = idList.filter(function(v, idx, arr){ return arr.indexOf(v) === idx; });
     const hasIdsFilter = idList.length > 0;
     var idFilter = '';
     if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
+
     const allowBetaPending = school === 'beta' && !admin;
     const baseLiveFilter = allowBetaPending ? 'listed=eq.true' : 'status=eq.approved&listed=eq.true';
 
@@ -1164,10 +1163,9 @@ app.get('/api/marketplace/products', async (req, res) => {
       countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&select=id');
       if (category) countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&category=eq.' + category + '&select=id');
     }
-    if (!hasIdsFilter && ids !== undefined) {
-      return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
-    }
+    if (!hasIdsFilter && ids !== undefined) return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
     if (idFilter) countUrl += idFilter;
+
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
@@ -1202,6 +1200,7 @@ app.get('/api/marketplace/products', async (req, res) => {
     var priceField = item_type === 'rent' ? 'rent_price' : 'price';
     if (price_min) { url += '&' + priceField + '=gte.' + price_min; countUrl += '&' + priceField + '=gte.' + price_min; }
     if (price_max) { url += '&' + priceField + '=lte.' + price_max; countUrl += '&' + priceField + '=lte.' + price_max; }
+
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
@@ -1224,6 +1223,70 @@ app.get('/api/marketplace/products', async (req, res) => {
       } else delete p.images;
     });
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/marketplace/products/:id', async (req, res) => {
+  try {
+    const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
+    const data = await r.json();
+    var p = data[0] || null;
+    if (p && p.images && p.images.length) {
+      p.images = p.images.map(function(img, idx) { return '/api/product-image/' + p.id + '/' + idx; });
+    }
+    res.json(p);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Serve product images as binary with in-memory + file cache
+var IMG_CACHE_DIR = './cache/img/';
+var imgMemCache = new Map();
+try { require('fs').mkdirSync(IMG_CACHE_DIR, { recursive: true }); } catch(e) {}
+app.get('/api/product-image/:id/:idx', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), idx = parseInt(req.params.idx);
+    var cacheKey = id + '-' + idx;
+    if (imgMemCache.has(cacheKey)) {
+      var entry = imgMemCache.get(cacheKey);
+      res.setHeader('Content-Type', entry.type);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(entry.buf);
+    }
+    var cacheFile = IMG_CACHE_DIR + cacheKey + '.img';
+    try {
+      var buf = require('fs').readFileSync(cacheFile);
+      var ext = require('fs').readFileSync(cacheFile + '.type', 'utf8');
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(buf);
+    } catch(e) {}
+    const r = await fetch(SB('products?id=eq.'+id+'&select=images'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const p = Array.isArray(data) ? data[0] : null;
+    if (!p || !Array.isArray(p.images) || !p.images[idx]) return res.status(404).end();
+    var img = p.images[idx];
+    if (typeof img !== 'string' || !img) return res.status(404).end();
+    if (/^data:image\//.test(img)) {
+      var match = img.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+      if (!match) return res.status(404).end();
+      var raw = Buffer.from(match[2], 'base64');
+      var ext = match[1];
+      imgMemCache.set(cacheKey, { buf: raw, type: 'image/' + ext });
+      try { require('fs').writeFileSync(cacheFile, raw); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      res.send(raw);
+      if (_sharp) {
+        _sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+          .then(function(c) { imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' }); try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {} })
+          .catch(function(){});
+      }
+      return;
+    }
+    if (img.indexOf('/api/product-image/') === 0) return res.status(404).end();
+    if (img.charAt(0) === '/') return res.redirect(img);
+    if (/^https?:\/\//.test(img)) return res.redirect(img);
+    return res.redirect('/' + img.replace(/^\/+/, ''));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
