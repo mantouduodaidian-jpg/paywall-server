@@ -865,8 +865,11 @@ function login() {
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         // Show school selector for super admin only
         SCHOOL_LIST = d.schools || [];
+        if (d.role === 'school_admin' && d.allowBeta && !SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
+          SCHOOL_LIST.push({ code: 'beta', name: '🛠 内测服' });
+        }
         var listKey = 'schoolList_' + (d.role || 'admin');
-        localStorage.setItem(listKey, JSON.stringify(d.schools || []));
+        localStorage.setItem(listKey, JSON.stringify(SCHOOL_LIST));
         localStorage.removeItem('schoolList');
         var sel = document.getElementById('schoolSelector');
         if (d.role === 'admin') {
@@ -958,8 +961,12 @@ async function autoLogin() {
       sel.innerHTML = '<option value="">所有学校</option>' + SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   } else if (role === 'school_admin') {
+    if (allowBeta && !SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
+      SCHOOL_LIST.push({ code: 'beta', name: '🛠 内测服' });
+      try { localStorage.setItem(listKey, JSON.stringify(SCHOOL_LIST)); } catch(e) {}
+    }
     if (sel) {
-      sel.style.display = (SCHOOL_LIST.length > 1 && allowBeta) ? 'inline-block' : 'none';
+      sel.style.display = allowBeta ? 'inline-block' : 'none';
       sel.innerHTML = SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===curSchool?' selected':'')+'>'+s.name+'</option>'; }).join('');
     }
   } else {

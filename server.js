@@ -870,8 +870,8 @@ app.patch('/api/marketplace/products/:id', anyAdmin, express.json(), async (req,
         sendNotify(ownerId, ownerName, school, '✕ 你对商品「'+prodTitle+'」的修改未通过审核' + (reject_reason ? '，原因：'+reject_reason : ''));
       }
 
-      var adminOffline = listed === false && beforeProd && beforeProd.listed !== false && reject_reason === 'manual_offline';
-      if (adminOffline) {
+      var becameOffline = beforeProd && beforeProd.listed !== false && listed === false && beforeProd.reject_reason !== 'owner_delisted';
+      if (becameOffline && reject_reason !== 'owner_delisted') {
         sendNotify(ownerId, ownerName, school, '📌 你的商品「'+prodTitle+'」已被管理员下架');
       }
     }
@@ -1356,7 +1356,21 @@ app.post('/api/marketplace/trade/request', express.json(), async (req, res) => {
     await fetch(SB('products?id=eq.'+product_id), {
       method: 'PATCH',
       headers: SB_HEADERS2,
-      body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: realName, sold: false, listed: true })
+      body: JSON.stringify({
+        trade_status: 'trading',
+        trade_buyer_id: buyer_id,
+        trade_buyer_name: realName,
+        sold: false,
+        listed: true,
+        payment_status: '',
+        delivery_declared_at: null,
+        delivery_declared_by: null,
+        receipt_confirmed_at: null,
+        receipt_confirmed_by: null,
+        trade_dispute_reason: '',
+        trade_dispute_by: null,
+        trade_dispute_at: null
+      })
     });
 
     try {
@@ -1378,13 +1392,38 @@ app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
     if (String(rp.owner_student_id || '') !== String(seller_id)) return res.status(403).json({ error: '只有卖家可确认交易' });
     if (rp.trade_status !== 'trading' || !rp.trade_buyer_id) return res.status(400).json({ error: '当前交易状态不可确认' });
 
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_buyer', payment_status: 'pending' }) });
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'awaiting_delivery', payment_status: 'pending' }) });
     try {
-      if (rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '✅ 卖家已确认交易「'+rp.title+'」，请确认收货');
+      if (rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '✅ 卖家已确认交易「'+rp.title+'」，等待卖家交付');
     } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
+app.post('/api/marketplace/trade/delivery-declare', express.json(), async (req, res) => {
+  try {
+    const { product_id, seller_id } = req.body;
+    if (!product_id || !seller_id) return res.status(400).json({ error: 'product_id and seller_id required' });
+
+    const rr = await fetch(SB('products?id=eq.'+product_id+'&select=id,title,trade_status,trade_buyer_id,trade_buyer_name,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+    const rd = await rr.json();
+    const rp = Array.isArray(rd) ? rd[0] : null;
+    if (!rp) return res.status(404).json({ error: '商品不存在' });
+    if (String(rp.owner_student_id || '') !== String(seller_id)) return res.status(403).json({ error: '只有卖家可声明已交付' });
+    if (rp.trade_status !== 'awaiting_delivery') return res.status(400).json({ error: '当前交易状态不可声明交付' });
+
+    const now = new Date().toISOString();
+    await fetch(SB('products?id=eq.'+product_id), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ trade_status: 'awaiting_receipt', delivery_declared_at: now, delivery_declared_by: seller_id })
+    });
+    try {
+      if (rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '📦 卖家已声明交付「'+rp.title+'」，请确认是否已收到');
+    } catch(e) {}
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res) => {
   try {
     const { product_id, buyer_id } = req.body;
@@ -1395,12 +1434,53 @@ app.post('/api/marketplace/trade/buyer-confirm', express.json(), async (req, res
     const p = Array.isArray(d) ? d[0] : null;
     if (!p) return res.status(404).json({ error: '商品不存在' });
     if (String(p.trade_buyer_id || '') !== String(buyer_id)) return res.status(403).json({ error: '只有买家可确认收货' });
-    if (p.trade_status !== 'awaiting_buyer') return res.status(400).json({ error: '当前交易状态不可确认收货' });
+    if (p.trade_status !== 'awaiting_receipt' && p.trade_status !== 'awaiting_buyer') return res.status(400).json({ error: '当前交易状态不可确认收货' });
 
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
+    const now = new Date().toISOString();
+    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false, receipt_confirmed_at: now, receipt_confirmed_by: buyer_id }) });
     try {
       sendNotify(p.owner_student_id, p.owner_name, p.school, '💰 你的商品「'+p.title+'」买家已确认收货，交易完成 🎉');
       sendNotify(p.trade_buyer_id, p.trade_buyer_name, p.school, '✅ 你交易的「'+p.title+'」已确认收货，交易完成 🎉');
+    } catch(e) {}
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/trade/dispute', express.json(), async (req, res) => {
+  try {
+    const { product_id, student_id, reason } = req.body;
+    if (!product_id || !student_id || !reason) return res.status(400).json({ error: 'product_id, student_id and reason required' });
+
+    const rr = await fetch(SB('products?id=eq.'+product_id+'&select=id,title,trade_status,trade_buyer_id,trade_buyer_name,owner_student_id,owner_name,school'), { headers: SB_HEADERS });
+    const rd = await rr.json();
+    const rp = Array.isArray(rd) ? rd[0] : null;
+    if (!rp) return res.status(404).json({ error: '商品不存在' });
+    const isSeller = String(rp.owner_student_id || '') === String(student_id);
+    const isBuyer = String(rp.trade_buyer_id || '') === String(student_id);
+    if (!isSeller && !isBuyer) return res.status(403).json({ error: '无权操作' });
+    if (rp.trade_status !== 'awaiting_delivery' && rp.trade_status !== 'awaiting_receipt' && rp.trade_status !== 'awaiting_buyer') return res.status(400).json({ error: '当前交易状态不可发起争议' });
+
+    const now = new Date().toISOString();
+    await fetch(SB('products?id=eq.'+product_id), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ trade_status: 'disputed', trade_dispute_reason: reason, trade_dispute_by: student_id, trade_dispute_at: now })
+    });
+    try {
+      if (isSeller && rp.trade_buyer_id) sendNotify(rp.trade_buyer_id, rp.trade_buyer_name, rp.school, '⚠️ 交易「'+rp.title+'」已被卖家发起争议，请尽快处理');
+      if (isBuyer) sendNotify(rp.owner_student_id, rp.owner_name, rp.school, '⚠️ 交易「'+rp.title+'」已被买家发起争议，请尽快处理');
+    } catch(e) {}
+    try {
+      await fetch(SB('reports'), {
+        method: 'POST',
+        headers: SB_HEADERS2,
+        body: JSON.stringify({
+          product_id,
+          reason: '交易争议',
+          detail: reason,
+          reporter_contact: String(student_id)
+        })
+      });
     } catch(e) {}
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1419,13 +1499,28 @@ app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
     const isBuyer = String(rp.trade_buyer_id || '') === String(student_id);
     if (!isSeller && !isBuyer) return res.status(403).json({ error: '无权取消该交易' });
     if (!rp.trade_status || rp.trade_status === 'completed') return res.status(400).json({ error: '当前交易不可取消' });
+    if (rp.trade_status === 'awaiting_receipt' || rp.trade_status === 'disputed') return res.status(400).json({ error: '当前状态请发起争议处理' });
 
     const buyerId = rp.trade_buyer_id || '';
     const buyerName = rp.trade_buyer_name || '';
     await fetch(SB('products?id=eq.'+product_id), {
       method: 'PATCH',
       headers: SB_HEADERS2,
-      body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '', payment_status: '', sold: false, listed: true })
+      body: JSON.stringify({
+        trade_status: '',
+        trade_buyer_id: '',
+        trade_buyer_name: '',
+        payment_status: '',
+        sold: false,
+        listed: true,
+        delivery_declared_at: null,
+        delivery_declared_by: null,
+        receipt_confirmed_at: null,
+        receipt_confirmed_by: null,
+        trade_dispute_reason: '',
+        trade_dispute_by: null,
+        trade_dispute_at: null
+      })
     });
     try {
       if (isSeller) {
@@ -2051,22 +2146,32 @@ app.get('/api/marketplace/products', async (req, res) => {
     const hasIdsFilter = idList.length > 0;
     var idFilter = '';
     if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
+    const allowBetaPending = school === 'beta' && !admin;
+    var schoolFilter = school ? schoolValuesForFilter(school) : [];
+    function withSchoolFilter(url) {
+      if (!schoolFilter.length) return url;
+      if (schoolFilter.length === 1) return url + '&school=eq.' + encodeURIComponent(schoolFilter[0]);
+      return url + '&or=(' + schoolFilter.map(function(value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
+    }
+    function withSchoolAndCategory(url) {
+      if (category) url += '&category=eq.' + encodeURIComponent(category);
+      return withSchoolFilter(url);
+    }
     // Get total count first
     let countUrl = SB('products?select=id');
-    const allowBetaPending = school === 'beta' && !admin;
     if (!admin) countUrl = allowBetaPending ? SB('products?listed=eq.true&select=id') : SB('products?status=eq.approved&listed=eq.true&select=id');
     if (category && admin) countUrl = SB('products?category=eq.'+category+'&select=id');
     if (category && !admin) countUrl = allowBetaPending ? SB('products?category=eq.'+category+'&listed=eq.true&select=id') : SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
 
-    if (school) {
-      countUrl = allowBetaPending ? SB('products?school=eq.'+school+'&listed=eq.true&select=id') : SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&select=id');
-      if (category) countUrl = allowBetaPending ? SB('products?school=eq.'+school+'&category=eq.'+category+'&listed=eq.true&select=id') : SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
-      if (admin) { countUrl = SB('products?school=eq.'+school+'&select=id'); if(category) countUrl = SB('products?school=eq.'+school+'&category=eq.'+category+'&select=id'); }
+    if (schoolFilter.length) {
+      countUrl = allowBetaPending ? withSchoolFilter(SB('products?listed=eq.true&select=id')) : withSchoolFilter(SB('products?status=eq.approved&listed=eq.true&select=id'));
+      if (category) countUrl = allowBetaPending ? withSchoolAndCategory(SB('products?listed=eq.true&select=id')) : withSchoolAndCategory(SB('products?status=eq.approved&listed=eq.true&select=id'));
+      if (admin) { countUrl = withSchoolFilter(SB('products?select=id')); if(category) countUrl = withSchoolAndCategory(SB('products?select=id')); }
     }
     if (item_type && !admin) {
-      if (school) {
-        countUrl = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&listed=eq.true&select=id') : SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&status=eq.approved&listed=eq.true&select=id');
-        if (category) countUrl = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&listed=eq.true&select=id') : SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      if (schoolFilter.length) {
+        countUrl = allowBetaPending ? withSchoolFilter(SB('products?item_type=eq.'+item_type+'&listed=eq.true&select=id')) : withSchoolFilter(SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id'));
+        if (category) countUrl = allowBetaPending ? withSchoolAndCategory(SB('products?item_type=eq.'+item_type+'&listed=eq.true&select=id')) : withSchoolAndCategory(SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id'));
       } else {
         countUrl = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&listed=eq.true&select=id') : SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
         if (category) countUrl = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&listed=eq.true&select=id') : SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
@@ -2089,15 +2194,15 @@ app.get('/api/marketplace/products', async (req, res) => {
     if (!admin) url = allowBetaPending ? SB('products?listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && admin) url = SB('products?category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
     if (category && !admin) url = allowBetaPending ? SB('products?category=eq.'+category+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (school) {
-      url = allowBetaPending ? SB('products?school=eq.'+school+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?school=eq.'+school+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-      if (category) url = allowBetaPending ? SB('products?school=eq.'+school+'&category=eq.'+category+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-      if (admin) { url = SB('products?school=eq.'+school+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); if(category) url = SB('products?school=eq.'+school+'&category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset); }
+    if (schoolFilter.length) {
+      url = allowBetaPending ? withSchoolFilter(SB('products?listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)) : withSchoolFilter(SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset));
+      if (category) url = allowBetaPending ? withSchoolAndCategory(SB('products?listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)) : withSchoolAndCategory(SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset));
+      if (admin) { url = withSchoolFilter(SB('products?order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)); if(category) url = withSchoolAndCategory(SB('products?order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)); }
     }
     if (item_type && !admin) {
-      if (school) {
-        url = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-        if (category) url = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?item_type=eq.'+item_type+'&school=eq.'+school+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (schoolFilter.length) {
+        url = allowBetaPending ? withSchoolFilter(SB('products?item_type=eq.'+item_type+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)) : withSchoolFilter(SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset));
+        if (category) url = allowBetaPending ? withSchoolAndCategory(SB('products?item_type=eq.'+item_type+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset)) : withSchoolAndCategory(SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset));
       } else {
         url = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
         if (category) url = allowBetaPending ? SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset) : SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
@@ -2575,6 +2680,14 @@ const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
 const JWT_SECRET = process.env.JWT_SECRET || 'paywall-default-jwt-secret-2024';
 let SCHOOL_ADMINS = [];
 try { SCHOOL_ADMINS = JSON.parse(process.env.SCHOOL_ADMINS || '[]'); } catch(e) {}
+if (!Array.isArray(SCHOOL_ADMINS)) SCHOOL_ADMINS = [];
+SCHOOL_ADMINS = SCHOOL_ADMINS.map(function(s) {
+  if (!s || typeof s !== 'object') return s;
+  if ((s.password === 'phy91' || s.password === 'whm91') && !s.allow_beta) {
+    return Object.assign({}, s, { allow_beta: true });
+  }
+  return s;
+});
 // Always add beta school for admin filtering
 if (!SCHOOL_ADMINS.find(s => s.code === 'beta')) SCHOOL_ADMINS.push({ code: 'beta', name: '内测服', password: 'beta' });
 function signToken(payload) {
@@ -2675,7 +2788,16 @@ function fullAdmin(req, res, next) {
 // Helper: add school filter to Supabase URL if applicable
 function addSchoolFilter(url, req) {
   var school = req.adminSchool || req.query.school;
-  if (school) url += '&school=eq.' + encodeURIComponent(school);
+  if (!school) return url;
+  var values = schoolValuesForFilter(school);
+  if (!values.length) return url;
+  if (values.length === 1) {
+    url += '&school=eq.' + encodeURIComponent(values[0]);
+  } else {
+    url += '&or=(' + values.map(function(value) {
+      return 'school.eq.' + encodeURIComponent(value);
+    }).join(',') + ')';
+  }
   return url;
 }
 
