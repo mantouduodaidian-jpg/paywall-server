@@ -2295,7 +2295,11 @@ app.get('/api/product-image/:id/:idx', async (req, res) => {
     const p = Array.isArray(data) ? data[0] : null;
     if (!p || !Array.isArray(p.images) || !p.images[idx]) return res.status(404).end();
     var img = p.images[idx];
-    var match = img.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (typeof img !== 'string' || !img) return res.status(404).end();
+    if (img.indexOf('/api/product-image/') === 0 && img !== req.originalUrl) {
+      return res.redirect(img);
+    }
+    var match = img.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
     if (!match) return res.redirect(img);
     var raw = Buffer.from(match[2], 'base64');
     var ext = match[1];
