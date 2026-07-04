@@ -81,7 +81,8 @@ app.use((req, res, next) => {
 });
 app.use(express.static(join(__dirname, 'public')));
 
-// ==================== 产品 API =============app.get('/api/products', (req, res) => {
+// ==================== 产品 API ====================
+app.get('/api/products', (req, res) => {
   res.json(q('SELECT * FROM products'));
 });
 
@@ -126,7 +127,8 @@ app.delete('/api/passwords/used/all', (req, res) => {
   res.json({ ok: true });
 });
 
-// ==================== 会话系统（当日24:00过期）=============const sessions = new Map();
+// ==================== 会话系统（当日24:00过期）====================
+const sessions = new Map();
 
 function getMidnight() {
   const now = new Date();
