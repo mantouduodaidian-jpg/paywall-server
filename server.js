@@ -1111,47 +1111,116 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
 
 app.get('/api/marketplace/products', async (req, res) => {
   try {
-    const { category, search, admin, limit, offset, owner, item_type } = req.query;
+    const { category, search, admin, limit, offset, owner, item_type, school, sort, price_min, price_max, ids } = req.query;
     const pageSize = parseInt(limit) || 20;
     const pageOffset = parseInt(offset) || 0;
-    // Get total count first
+    var orderBy = 'pinned.desc,created_at.desc';
+    if (sort === 'oldest') orderBy = 'pinned.desc,created_at.asc';
+    if (sort === 'price_asc' || sort === 'price_desc') {
+      var pf = item_type === 'rent' ? 'rent_price' : 'price';
+      orderBy = 'pinned.desc,' + pf + '.' + (sort === 'price_asc' ? 'asc' : 'desc');
+    }
+    var schoolValues = schoolValuesForFilter(school);
+    var schoolFilter = '';
+    if (schoolValues.length) {
+      schoolFilter = '&or=(' + schoolValues.map(function(value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
+    }
+    function applySchool(url) {
+      return schoolFilter ? url + schoolFilter : url;
+    }
+    let idList = String(ids || '').split(',').map(function(v){ return String(v || '').trim(); }).filter(Boolean);
+    if (idList.length) {
+      idList = idList.filter(function(v, idx, arr){ return arr.indexOf(v) === idx; });
+    }
+    const hasIdsFilter = idList.length > 0;
+    var idFilter = '';
+    if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
+    const allowBetaPending = school === 'beta' && !admin;
+    const baseLiveFilter = allowBetaPending ? 'listed=eq.true' : 'status=eq.approved&listed=eq.true';
+
     let countUrl = SB('products?select=id');
-    if (!admin) countUrl = SB('products?status=eq.approved&listed=eq.true&select=id');
-    if (category && admin) countUrl = SB('products?category=eq.'+category+'&select=id');
-    if (category && !admin) countUrl = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
-    if (owner) {
-      countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&select=id");
-      if (category) countUrl = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&select=id");
+    if (!admin) countUrl = SB('products?' + baseLiveFilter + '&select=id');
+    if (category && admin) countUrl = SB('products?category=eq.' + category + '&select=id');
+    if (category && !admin) countUrl = SB('products?category=eq.' + category + '&' + baseLiveFilter + '&select=id');
+    if (schoolValues.length) {
+      countUrl = applySchool(SB('products?' + baseLiveFilter + '&select=id'));
+      if (category) countUrl = applySchool(SB('products?category=eq.' + category + '&' + baseLiveFilter + '&select=id'));
+      if (admin) {
+        countUrl = applySchool(SB('products?select=id'));
+        if (category) countUrl = applySchool(SB('products?category=eq.' + category + '&select=id'));
+      }
     }
     if (item_type && !admin) {
-      countUrl = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&select=id');
-      if (category) countUrl = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&select=id');
+      var itemBase = 'item_type=eq.' + item_type + '&' + baseLiveFilter;
+      if (schoolValues.length) {
+        countUrl = applySchool(SB('products?' + itemBase + '&select=id'));
+        if (category) countUrl = applySchool(SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&select=id'));
+      } else {
+        countUrl = SB('products?' + itemBase + '&select=id');
+        if (category) countUrl = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&select=id');
+      }
     }
+    if (owner) {
+      countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&select=id');
+      if (category) countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&category=eq.' + category + '&select=id');
+    }
+    if (!hasIdsFilter && ids !== undefined) {
+      return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
+    }
+    if (idFilter) countUrl += idFilter;
     const countR = await fetch(countUrl, { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
 
-    // Get page
-    let url = SB('products?order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (!admin) url = SB('products?status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (category && admin) url = SB('products?category=eq.'+category+'&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (category && !admin) url = SB('products?category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-    if (owner) {
-      url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
-      if (category) url = SB("products?owner_student_id=eq."+encodeURIComponent(owner)+"&category=eq."+category+"&order=pinned.desc,created_at.desc&select=*&limit="+pageSize+"&offset="+pageOffset);
+    let url = SB('products?order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    if (!admin) url = SB('products?' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    if (category && admin) url = SB('products?category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    if (category && !admin) url = SB('products?category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    if (schoolValues.length) {
+      url = applySchool(SB('products?' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+      if (category) url = applySchool(SB('products?category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+      if (admin) {
+        url = applySchool(SB('products?order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+        if (category) url = applySchool(SB('products?category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+      }
     }
     if (item_type && !admin) {
-      url = SB('products?item_type=eq.'+item_type+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
-      if (category) url = SB('products?item_type=eq.'+item_type+'&category=eq.'+category+'&status=eq.approved&listed=eq.true&order=pinned.desc,created_at.desc&select=*&limit='+pageSize+'&offset='+pageOffset);
+      if (schoolValues.length) {
+        url = applySchool(SB('products?item_type=eq.' + item_type + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+        if (category) url = applySchool(SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
+      } else {
+        url = SB('products?item_type=eq.' + item_type + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+        if (category) url = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+      }
     }
+    if (owner) {
+      url = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+      if (category) url = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    }
+    if (orderBy !== 'pinned.desc,created_at.desc') url = url.replace(/pinned\.desc,created_at\.desc/g, orderBy);
+    if (idFilter) url += idFilter;
+    var priceField = item_type === 'rent' ? 'rent_price' : 'price';
+    if (price_min) { url += '&' + priceField + '=gte.' + price_min; countUrl += '&' + priceField + '=gte.' + price_min; }
+    if (price_max) { url += '&' + priceField + '=lte.' + price_max; countUrl += '&' + priceField + '=lte.' + price_max; }
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
+    if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
+    if (price_max) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v <= parseFloat(price_max); });
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
+    if (Array.isArray(data) && data.length) {
+      try {
+        var nr = await fetch(SB('verifications?status=eq.approved&select=student_id,nickname,gender'), { headers: SB_HEADERS });
+        var nd = await nr.json();
+        var nmap = {}; var gmap = {};
+        (Array.isArray(nd) ? nd : []).forEach(function(v){ if(v.student_id) { if(v.nickname) nmap[v.student_id] = v.nickname; if(v.gender) gmap[v.student_id] = v.gender; } });
+        data.forEach(function(p){ if(p.owner_student_id) { if(nmap[p.owner_student_id]) p.owner_nickname = nmap[p.owner_student_id]; if(gmap[p.owner_student_id]) p.owner_gender = gmap[p.owner_student_id]; } });
+      } catch(e) {}
+    }
     if (Array.isArray(data)) data.forEach(function(p){
       if (!p.month_key) p.month_key = getMonthKey(p.created_at);
       if (p.images && p.images.length) {
-        if (req.query.admin) p.images = p.images.map(function(img, idx){ return '/api/product-image/'+p.id+'/'+idx; });
-        else p.images = ['/api/product-image/'+p.id+'/0'];
+        if (req.query.admin) p.images = p.images.map(function(img, idx){ return '/api/product-image/' + p.id + '/' + idx; });
+        else p.images = ['/api/product-image/' + p.id + '/0'];
       } else delete p.images;
     });
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
@@ -1167,6 +1236,60 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
       p.images = p.images.map(function(img, idx) { return '/api/product-image/' + p.id + '/' + idx; });
     }
     res.json(p);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+// Serve product images as binary with in-memory + file cache
+var IMG_CACHE_DIR = './cache/img/';
+var imgMemCache = new Map();
+try { require('fs').mkdirSync(IMG_CACHE_DIR, { recursive: true }); } catch(e) {}
+app.get('/api/product-image/:id/:idx', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id), idx = parseInt(req.params.idx);
+    var cacheKey = id + '-' + idx;
+    // Try in-memory cache (fastest, survives within session)
+    if (imgMemCache.has(cacheKey)) {
+      var entry = imgMemCache.get(cacheKey);
+      res.setHeader('Content-Type', entry.type);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(entry.buf);
+    }
+    var cacheFile = IMG_CACHE_DIR + cacheKey + '.img';
+    // Try file cache
+    try {
+      var buf = require('fs').readFileSync(cacheFile);
+      var ext = require('fs').readFileSync(cacheFile + '.type', 'utf8');
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(buf);
+    } catch(e) {}
+    // Fetch from DB
+    const r = await fetch(SB('products?id=eq.'+id+'&select=images'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const p = Array.isArray(data) ? data[0] : null;
+    if (!p || !Array.isArray(p.images) || !p.images[idx]) return res.status(404).end();
+    var img = p.images[idx];
+    if (typeof img !== 'string' || !img) return res.status(404).end();
+    if (/^data:image\//.test(img)) {
+      var match = img.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([\s\S]+)$/);
+      if (!match) return res.status(404).end();
+      var raw = Buffer.from(match[2], 'base64');
+      var ext = match[1];
+      imgMemCache.set(cacheKey, { buf: raw, type: 'image/' + ext });
+      try { require('fs').writeFileSync(cacheFile, raw); require('fs').writeFileSync(cacheFile+'.type', ext); } catch(e) {}
+      res.setHeader('Content-Type', 'image/' + ext);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      res.send(raw);
+      if (_sharp) {
+        _sharp(raw).resize(800, 800, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 70 }).toBuffer()
+          .then(function(c) { imgMemCache.set(cacheKey, { buf: c, type: 'image/jpeg' }); try { require('fs').writeFileSync(cacheFile, c); require('fs').writeFileSync(cacheFile+'.type', 'jpeg'); } catch(e) {} })
+          .catch(function(){});
+      }
+      return;
+    }
+    if (img.indexOf('/api/product-image/') === 0) return res.status(404).end();
+    if (img.charAt(0) === '/') return res.redirect(img);
+    if (/^https?:\/\//.test(img)) return res.redirect(img);
+    return res.redirect('/' + img.replace(/^\/+/, ''));
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
