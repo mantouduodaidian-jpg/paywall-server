@@ -51,6 +51,27 @@ function q(sql, params = []) {
 }
 function qOne(sql, params = []) { const rows = q(sql, params); return rows.length ? rows[0] : null; }
 
+function normalizeSchoolCode(school) {
+  if (!school) return '';
+  if (school === '广西农业职业技术大学' || school === 'gxny') return 'gxny';
+  if (school === '海南科技职业大学' || school === 'hnkj') return 'hnkj';
+  if (school === '广东财经大学' || school === 'gdcj') return 'gdcj';
+  if (school === '柳州铁道职业技术学院' || school === 'lztd') return 'lztd';
+  if (school === '内测服' || school === 'beta') return 'beta';
+  return String(school).trim();
+}
+
+function schoolValuesForFilter(school) {
+  var code = normalizeSchoolCode(school);
+  if (!code) return [];
+  if (code === 'gxny') return ['gxny', '广西农业职业技术大学'];
+  if (code === 'hnkj') return ['hnkj', '海南科技职业大学'];
+  if (code === 'gdcj') return ['gdcj', '广东财经大学'];
+  if (code === 'lztd') return ['lztd', '柳州铁道职业技术学院'];
+  if (code === 'beta') return ['beta', '内测服'];
+  return [code];
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
