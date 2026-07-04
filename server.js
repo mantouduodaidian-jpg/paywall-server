@@ -1147,6 +1147,13 @@ app.get('/api/marketplace/products', async (req, res) => {
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
+    if (Array.isArray(data)) data.forEach(function(p){
+      if (!p.month_key) p.month_key = getMonthKey(p.created_at);
+      if (p.images && p.images.length) {
+        if (req.query.admin) p.images = p.images.map(function(img, idx){ return '/api/product-image/'+p.id+'/'+idx; });
+        else p.images = ['/api/product-image/'+p.id+'/0'];
+      } else delete p.images;
+    });
     res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1155,16 +1162,28 @@ app.get('/api/marketplace/products/:id', async (req, res) => {
   try {
     const r = await fetch(SB('products?id=eq.'+req.params.id+'&select=*'), { headers: SB_HEADERS });
     const data = await r.json();
-    res.json(data[0] || null);
+    var p = data[0] || null;
+    if (p && p.images && p.images.length) {
+      p.images = p.images.map(function(img, idx) { return '/api/product-image/' + p.id + '/' + idx; });
+    }
+    res.json(p);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ====== Messages API ======
 const KEFU_ID = 'kefu_001';
 const KEFU_NAME = '校园严选客服';
+app.get('/api/marketplace/notifications', async (req, res) => {
+  try {
+    const { student_id } = req.query;
+    if (!student_id) return res.json([]);
+    const r = await fetch(SB('messages?to_student_id=eq.'+encodeURIComponent(student_id)+'&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at'), { headers: SB_HEADERS });
+    const data = await r.json();
+    res.json(Array.isArray(data) ? data : []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
-    const { product_id, student_id, other_student_id, since_id } = req.query;
     var fields = 'id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at';
     // Two-participant chat: filter both sides via Supabase
     if (student_id && other_student_id) {
