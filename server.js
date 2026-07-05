@@ -61,6 +61,9 @@ function normalizeSchoolCode(school) {
   return String(school).trim();
 }
 
+const KEFU_ID = 'kefu_beta';
+const KEFU_NAME = '内测客服';
+
 function schoolValuesForFilter(school) {
   var code = normalizeSchoolCode(school);
   if (!code) return [];
@@ -125,6 +128,38 @@ app.delete('/api/passwords/used/all', (req, res) => {
   if (pid) q("DELETE FROM passwords WHERE used = 1 AND product_id = ?", [pid]);
   else q("DELETE FROM passwords WHERE used = 1");
   res.json({ ok: true });
+});
+
+// ==================== 二豆校园内测登录 ====================
+app.post('/api/marketplace/beta-login', (req, res) => {
+  const { name = '', password = '' } = req.body || {};
+  const betaName = String(name || '').trim().toLowerCase();
+  const betaPwd = String(password || '').trim();
+  if (!betaName || !betaPwd) {
+    return res.status(400).json({ ok: false, msg: '请输入用户名和密码' });
+  }
+
+  const betaAccounts = {
+    phy: { password: 'phy91', name: 'phy', nickname: 'phy' },
+    whm: { password: 'whm91', name: 'whm', nickname: 'whm' },
+    wqs: { password: 'wqs91', name: 'wqs', nickname: 'wqs' }
+  };
+  const account = betaAccounts[betaName];
+  if (!account || account.password !== betaPwd) {
+    return res.status(401).json({ ok: false, msg: '用户名或密码错误' });
+  }
+
+  const user = {
+    student_id: betaName,
+    name: account.name,
+    nickname: account.nickname,
+    school: 'beta',
+    gender: '',
+    is_beta: true
+  };
+  const token = randomBytes(24).toString('hex');
+  sessions.set(token, { createdAt: Date.now(), expiresAt: getMidnight(), user_id: user.student_id, school: 'beta', beta: true });
+  res.json({ ok: true, user, token });
 });
 
 // ==================== 会话系统（当日24:00过期）====================
@@ -1314,33 +1349,31 @@ app.get('/api/marketplace/notifications', async (req, res) => {
   try {
     const { student_id } = req.query;
     if (!student_id) return res.json([]);
-    const r = await fetch(SB('messages?to_student_id=eq.'+encodeURIComponent(student_id)+'&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at'), { headers: SB_HEADERS });
+    const r = await fetch(SB('messages?to_student_id=eq.'+encodeURIComponent(student_id)+'&from_student_id=like.sys_%25&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at'), { headers: SB_HEADERS });
     const data = await r.json();
     res.json(Array.isArray(data) ? data : []);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 app.get('/api/marketplace/messages', async (req, res) => {
   try {
+    const { student_id, other_student_id, product_id, since_id } = req.query;
     var fields = 'id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at';
-    // Two-participant chat: filter both sides via Supabase
     if (student_id && other_student_id) {
-      var url1 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
-      var url2 = SB("messages?or=(from_student_id.eq."+encodeURIComponent(other_student_id)+",to_student_id.eq."+encodeURIComponent(other_student_id)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:''));
-      var [r1,r2] = await Promise.all([fetch(url1,{headers:SB_HEADERS}), fetch(url2,{headers:SB_HEADERS})]);
-      var [d1,d2] = await Promise.all([r1.json(), r2.json()]);
-      var intersect = (Array.isArray(d1)?d1:[]).concat(Array.isArray(d2)?d2:[]);
-      var seen = {}; intersect = intersect.filter(function(m){ if(seen[m.id])return false; seen[m.id]=true; return true; });
-      intersect.sort(function(a,b){ return new Date(a.created_at)-new Date(b.created_at); });
-      return res.json(intersect);
+      var url = SB("messages?or=(and(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(other_student_id)+"),and(from_student_id.eq."+encodeURIComponent(other_student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+"))&order=created_at.asc&select="+fields+(since_id ? '&id=gt.'+since_id : ''));
+      var r = await fetch(url, { headers: SB_HEADERS });
+      var data = await r.json();
+      return res.json(Array.isArray(data) ? data : []);
     }
     var s = student_id || other_student_id;
     if (s) {
-      var r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(s)+",to_student_id.eq."+encodeURIComponent(s)+")&order=created_at.asc&select="+fields+(since_id?'&id=gt.'+since_id:'')), { headers: SB_HEADERS });
-      return res.json(await r.json());
+      var r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(s)+",to_student_id.eq."+encodeURIComponent(s)+")&order=created_at.asc&select="+fields+(since_id ? '&id=gt.'+since_id : '')), { headers: SB_HEADERS });
+      var data = await r.json();
+      return res.json(Array.isArray(data) ? data : []);
     }
     if (product_id) {
-      var r = await fetch(SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select='+fields+(since_id?'&id=gt.'+since_id:'')), { headers: SB_HEADERS });
-      return res.json(await r.json());
+      var r = await fetch(SB('messages?product_id=eq.'+product_id+'&order=created_at.asc&select='+fields+(since_id ? '&id=gt.'+since_id : '')), { headers: SB_HEADERS });
+      var data = await r.json();
+      return res.json(Array.isArray(data) ? data : []);
     }
     res.json([]);
   } catch(e) { res.status(500).json({ error: e.message }); }
@@ -1356,22 +1389,19 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     let arr = Array.isArray(data) ? data : [];
     let seen = {}, contacts = [];
     arr.forEach(function(m) {
-      var otherId = m.from_student_id === student_id ? m.to_student_id : m.from_student_id;
-      var otherName = m.from_student_id === student_id ? m.to_name : m.from_name;
+      var otherId = String(m.from_student_id || '') === String(student_id) ? m.to_student_id : m.from_student_id;
+      var otherName = String(m.from_student_id || '') === String(student_id) ? m.to_name : m.from_name;
       if (!otherId) return;
       if (!seen[otherId]) {
         seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
       }
-      // Track latest message time
       if (new Date(m.created_at) > new Date(seen[otherId].last_time)) {
         seen[otherId].last_time = m.created_at;
         seen[otherId].last_message = m.content;
         seen[otherId].product_id = m.product_id;
       }
-      // Count unread
-      if (m.to_student_id === student_id && !m.read) seen[otherId].unread++;
-      // Try to improve name from any message
-      var nameCandidate = m.from_student_id === student_id ? m.to_name : m.from_name;
+      if (String(m.to_student_id || '') === String(student_id) && !m.read) seen[otherId].unread++;
+      var nameCandidate = String(m.from_student_id || '') === String(student_id) ? m.to_name : m.from_name;
       if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
         seen[otherId].name = nameCandidate;
       }
@@ -1379,12 +1409,8 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     contacts = Object.keys(seen).map(function(k) {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
-    if (student_id === KEFU_ID) {
-      contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
-    } else {
-      contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
-      contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
-    }
+    contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
+    contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
     res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -1458,15 +1484,35 @@ const adminTokens = new Map();
 
 app.post('/api/admin/login', express.json(), (req, res) => {
   const { password } = req.body;
-  let role = null;
-  if (password === ADMIN_PASSWORD) role = 'admin';
-  else if (password === MANAGER_PASSWORD) role = 'manager';
+  let role = null, school = null, schoolName = null;
+  var allowBeta = false;
+
+  var sa = SCHOOL_ADMINS.find(function(s) { return s.password === password; });
+  if (sa) {
+    role = 'school_admin';
+    school = sa.code;
+    schoolName = sa.name;
+    allowBeta = !!sa.allow_beta;
+  } else if (password === ADMIN_PASSWORD) {
+    role = 'admin';
+  } else if (password === MANAGER_PASSWORD) {
+    role = 'manager';
+  }
   if (!role) return res.json({ ok: false, msg: '密码错误' });
 
   const token = randomBytes(24).toString('hex');
-  adminTokens.set(token, { role, createdAt: Date.now() });
+  adminTokens.set(token, { role, createdAt: Date.now(), school: school, allowBeta: allowBeta });
   setTimeout(() => adminTokens.delete(token), 86400000);
-  res.json({ ok: true, token, role });
+
+  const schools = SCHOOL_ADMINS.map(function(s) { return { code: s.code, name: s.name }; });
+  if (allowBeta && !schools.find(function(s) { return s.code === 'beta'; })) {
+    schools.push({ code: 'beta', name: '内测服' });
+  }
+  if (role === 'admin' && !schools.find(function(s) { return s.code === 'beta'; })) {
+    schools.push({ code: 'beta', name: '内测服' });
+  }
+
+  res.json({ ok: true, token, role, school, schoolName, allowBeta, schools });
 });
 
 function anyAdmin(req, res, next) {
@@ -1477,6 +1523,8 @@ function anyAdmin(req, res, next) {
   const sess = adminTokens.get(auth.slice(7));
   if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
   req.adminRole = sess.role;
+  req.adminSchool = sess.school || '';
+  req.adminAllowBeta = !!sess.allowBeta;
   next();
 }
 
@@ -1489,6 +1537,8 @@ function fullAdmin(req, res, next) {
   if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
   if (sess.role !== 'admin') return res.status(403).json({ ok: false, msg: '无权限' });
   req.adminRole = sess.role;
+  req.adminSchool = sess.school || '';
+  req.adminAllowBeta = !!sess.allowBeta;
   next();
 }
 
@@ -1510,7 +1560,23 @@ wss.on('connection', (ws, req) => {
   let isAdmin = false;
   ws.on('message', async (raw) => {
     try {
-      const msg = JSON.parse(raw.toString());
+      var rawText = '';
+      if (typeof raw === 'string') rawText = raw;
+      else if (raw != null && typeof raw.toString === 'function') rawText = raw.toString();
+      rawText = String(rawText || '').trim();
+      if (!rawText || rawText === 'undefined' || rawText === 'null') {
+        console.warn('ws ignore empty payload');
+        return;
+      }
+      if ((rawText.charAt(0) !== '{' || rawText.charAt(rawText.length - 1) !== '}') && (rawText.charAt(0) !== '[' || rawText.charAt(rawText.length - 1) !== ']')) {
+        console.warn('ws ignore non-json payload:', rawText.slice(0, 80));
+        return;
+      }
+      const msg = JSON.parse(rawText);
+      if (!msg || typeof msg !== 'object') {
+        console.warn('ws ignore invalid message object');
+        return;
+      }
       if (msg.type === 'auth' && msg.student_id) {
         userId = msg.student_id;
         onlineUsers.set(userId, ws);

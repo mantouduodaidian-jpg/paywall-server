@@ -863,7 +863,6 @@ function login() {
         if (d.school) { localStorage.setItem('adminDebugBoundSchool', d.school); }
         var sn = d.schoolName || '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
-        // Show school selector for super admin only
         SCHOOL_LIST = d.schools || [];
         if (d.role === 'school_admin' && d.allowBeta && !SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
           SCHOOL_LIST.push({ code: 'beta', name: '🛠 内测服' });
@@ -872,14 +871,12 @@ function login() {
         localStorage.setItem(listKey, JSON.stringify(SCHOOL_LIST));
         localStorage.removeItem('schoolList');
         var sel = document.getElementById('schoolSelector');
-        if (d.role === 'admin') {
-          sel.style.display = 'inline-block';
-          sel.innerHTML = '<option value="">所有学校</option>' + d.schools.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
-        } else if (d.schools && d.schools.length > 1) {
-          sel.style.display = 'inline-block';
-          sel.innerHTML = d.schools.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
-        } else {
-          sel.style.display = 'none';
+        if (sel) {
+          var options = '';
+          if (d.role === 'admin') options += '<option value="">所有学校</option>';
+          options += SCHOOL_LIST.map(function(s) { return '<option value="'+s.code+'"'+(s.code===d.school?' selected':'')+'>'+s.name+'</option>'; }).join('');
+          sel.style.display = (d.role === 'admin' || (d.role === 'school_admin' && d.allowBeta)) ? 'inline-block' : 'none';
+          sel.innerHTML = options;
         }
         document.getElementById('loginGate').style.display = 'none';
         document.getElementById('app').classList.add('show');
@@ -888,6 +885,10 @@ function login() {
         document.getElementById('loginError').style.display = 'block';
         setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
       }
+    })
+    .catch(function() {
+      document.getElementById('loginError').style.display = 'block';
+      setTimeout(() => document.getElementById('loginError').style.display = 'none', 2000);
     });
 }
 function applyRole() {
@@ -1017,28 +1018,29 @@ async function loadOverview() {
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/admin/stats'));
     const d = await r.json();
+    const safe = d || {};
     document.getElementById('statsContainer').innerHTML =
-      '<div class="stat-card"><div class="num green">'+d.total+'</div><div class="label">总商品</div></div>'+
-      '<div class="stat-card"><div class="num yellow">'+d.pending+'</div><div class="label">待审核</div></div>'+
-      '<div class="stat-card"><div class="num green">'+d.approved+'</div><div class="label">已通过</div></div>'+
-      '<div class="stat-card"><div class="num blue">'+d.listed+'</div><div class="label">已上架</div></div>'+
-      '<div class="stat-card"><div class="num blue">'+d.verTotal+'</div><div class="label">认证总申请</div></div>'+
-      '<div class="stat-card"><div class="num yellow">'+d.verPending+'</div><div class="label">待审核</div></div>'+
-      '<div class="stat-card"><div class="num green">'+d.verApproved+'</div><div class="label">已通过</div></div>'+
-      '<div class="stat-card"><div class="num red">'+(d.verTotal-d.verPending-d.verApproved)+'</div><div class="label">已拒绝</div></div>'+
-      '<div class="stat-card"><div class="num red">'+d.reportsPending+'</div><div class="label">待处理举报</div></div>'+
-      '<div class="stat-card"><div class="num green">'+d.announcements+'</div><div class="label">公告</div></div>';
+      '<div class="stat-card"><div class="num green">'+(safe.total||0)+'</div><div class="label">总商品</div></div>'+
+      '<div class="stat-card"><div class="num yellow">'+(safe.pending||0)+'</div><div class="label">待审核</div></div>'+
+      '<div class="stat-card"><div class="num green">'+(safe.approved||0)+'</div><div class="label">已通过</div></div>'+
+      '<div class="stat-card"><div class="num blue">'+(safe.listed||0)+'</div><div class="label">已上架</div></div>'+
+      '<div class="stat-card"><div class="num blue">'+(safe.verTotal||0)+'</div><div class="label">认证总申请</div></div>'+
+      '<div class="stat-card"><div class="num yellow">'+(safe.verPending||0)+'</div><div class="label">待审核</div></div>'+
+      '<div class="stat-card"><div class="num green">'+(safe.verApproved||0)+'</div><div class="label">已通过</div></div>'+
+      '<div class="stat-card"><div class="num red">'+((safe.verTotal||0)-(safe.verPending||0)-(safe.verApproved||0))+'</div><div class="label">已拒绝</div></div>'+
+      '<div class="stat-card"><div class="num red">'+(safe.reportsPending||0)+'</div><div class="label">待处理举报</div></div>'+
+      '<div class="stat-card"><div class="num green">'+(safe.announcements||0)+'</div><div class="label">公告</div></div>';
     // Badges
     const pb = document.getElementById('prodBadge');
-    var sellPending = d.pending - (d.rentPending||0);
+    var sellPending = (safe.pending||0) - (safe.rentPending||0);
     if (sellPending > 0) { pb.textContent = sellPending; pb.style.display = 'inline'; } else pb.style.display = 'none';
     const rb2 = document.getElementById('rentBadge');
-    if (d.rentPending > 0) { rb2.textContent = d.rentPending; rb2.style.display = 'inline'; } else rb2.style.display = 'none';
+    if ((safe.rentPending||0) > 0) { rb2.textContent = safe.rentPending; rb2.style.display = 'inline'; } else rb2.style.display = 'none';
     const rb = document.getElementById('reportBadge');
-    var _txb = document.getElementById("txBadge"); if (_txb && d.txPending > 0) { _txb.textContent = d.txPending; _txb.style.display = "inline"; } else if(_txb) _txb.style.display = "none";
-    if (d.reportsPending > 0) { rb.textContent = d.reportsPending; rb.style.display = 'inline'; } else rb.style.display = 'none';
+    var _txb = document.getElementById("txBadge"); if (_txb && (safe.txPending||0) > 0) { _txb.textContent = safe.txPending; _txb.style.display = "inline"; } else if(_txb) _txb.style.display = "none";
+    if ((safe.reportsPending||0) > 0) { rb.textContent = safe.reportsPending; rb.style.display = 'inline'; } else rb.style.display = 'none';
     const vb = document.getElementById('verBadge');
-    if (d.verPending > 0) { vb.textContent = d.verPending; vb.style.display = 'inline'; } else vb.style.display = 'none';
+    if ((safe.verPending||0) > 0) { vb.textContent = safe.verPending; vb.style.display = 'inline'; } else vb.style.display = 'none';
   } catch(e) {}
   // Charts
   try {
@@ -1938,6 +1940,7 @@ async function loadTransactions() {
     const f = document.getElementById('txFilter').value;
     let filtered = f ? arr.filter(function(t) { return (t.payment_status||'pending') === f; }) : arr;
     const tbody = document.getElementById('txTbody');
+    if (!tbody) return;
     if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty">暂无交易记录</div></td></tr>'; return; }
     tbody.innerHTML = filtered.map(function(t) {
       var status = t.payment_status || 'pending';
@@ -1946,7 +1949,7 @@ async function loadTransactions() {
       var statusColor = {pending:'#5b9bd5',paid:'#4e9e80',failed:'#e74c3c'};
       return '<tr><td><input type="checkbox" class="txCb" value="'+t.id+'"></td><td style="color:#ccc">'+t.id+'</td>'+
         '<td style="max-width:100px;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</td>'+
-        '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price).toFixed(2)+'</td>'+
+        '<td style="color:#4e9e80;font-weight:600">¥'+parseFloat(t.price || 0).toFixed(2)+'</td>'+
         '<td style="color:#999;font-size:10px">'+(t.school?schoolName(t.school):'-')+'</td>'+
         '<td style="color:#555">'+dispName(t.owner_student_id, t.owner_name)+'</td>'+
         '<td style="color:#555">'+esc(t.trade_buyer_name||t.trade_buyer_id||'-')+'</td>'+
@@ -1957,7 +1960,10 @@ async function loadTransactions() {
           (status==='failed'?'<button class="btn btn-green btn-sm" onclick="markTx('+t.id+',&apos;paid&apos;)">🔄 重试转账</button>':'')+
         '</td></tr>';
     }).join('');
-  } catch(e) { document.getElementById('txTbody').innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>'; }
+  } catch(e) {
+    var tbody = document.getElementById('txTbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10"><div class="empty">加载失败</div></td></tr>';
+  }
 }
 async function markTx(id, status) {
   if (status === 'paid' && !confirm('确认已转账给卖家？')) return;
