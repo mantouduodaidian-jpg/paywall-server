@@ -1823,19 +1823,9 @@ async function loadKefuContacts() {
     var _kb = document.getElementById('kefuBadge');
     if (_kb) { _kb.textContent = _ku || '0'; _kb.style.display = _ku > 0 ? '' : 'none'; }
     
-    // Also load all verified users from this school
-    try {
-      const vR = await apiFetch(getSchoolParam('/api/verify/list'));
-      const vData = await vR.json();
-      var users = Array.isArray(vData) ? vData : [];
-      var existing = {};
-      _kefuAllContacts.forEach(function(c) { existing[c.student_id] = true; });
-      users.forEach(function(u) {
-        if (!existing[u.student_id] && u.student_id.indexOf('kefu_') !== 0) {
-          _kefuAllContacts.push({ student_id: u.student_id, name: u.name, last_message: '', unread: 0 });
-        }
-      });
-    } catch(e) {}
+    // Keep the inbox limited to real conversations returned by /api/marketplace/contacts.
+    // Verified users are only used by _adminNickCache for display names; do not merge
+    // /api/verify/list here, or every verified user appears as a chat contact.
     renderKefuContacts();
   } catch(e) {}
 }
