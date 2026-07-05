@@ -1186,7 +1186,7 @@ app.post('/api/marketplace/products', express.json(), async (req, res) => {
     const r = await fetch(SB('products'), {
       method: 'POST',
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0 })
+      body: JSON.stringify({ title, price: parseFloat(price), category: category||'其他', desc: desc||'', images: images||[], contact: contact||'', quality: quality||'八成新', verified: false, status: 'pending', listed: true, sold: false, owner_student_id: req.body.owner_student_id||'', owner_name: req.body.owner_name||'', school: req.body.school || req.body.owner_school || '', gender_pref: req.body.gender_pref||'all', item_type: req.body.item_type||'sell', rent_price: parseFloat(req.body.rent_price)||0, rent_period: req.body.rent_period||'day', deposit: parseFloat(req.body.deposit)||0 })
     });
     const t = await r.json();
     addLog('product_create', 'product', t?.id||'?', title);
@@ -1220,6 +1220,14 @@ app.get('/api/marketplace/products', async (req, res) => {
     var idFilter = '';
     if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
 
+    var ownerFilter = '';
+    if (owner) {
+      var ownerValue = String(owner || '').trim();
+      var ownerAlt = ownerValue.indexOf('beta_') === 0 ? ownerValue.replace(/^beta_/, '') : ('beta_' + ownerValue);
+      var ownerValues = [ownerValue, ownerAlt].filter(function(v, idx, arr){ return v && arr.indexOf(v) === idx; });
+      ownerFilter = 'or=(' + ownerValues.map(function(v){ return 'owner_student_id.eq.' + encodeURIComponent(v); }).join(',') + ')';
+    }
+
     const allowBetaPending = school === 'beta' && !admin;
     const baseLiveFilter = allowBetaPending ? 'listed=eq.true' : 'status=eq.approved&listed=eq.true';
 
@@ -1245,9 +1253,9 @@ app.get('/api/marketplace/products', async (req, res) => {
         if (category) countUrl = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&select=id');
       }
     }
-    if (owner) {
-      countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&select=id');
-      if (category) countUrl = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&category=eq.' + category + '&select=id');
+    if (ownerFilter) {
+      countUrl = SB('products?' + ownerFilter + '&select=id');
+      if (category) countUrl = SB('products?category=eq.' + category + '&' + ownerFilter + '&select=id');
     }
     if (!hasIdsFilter && ids !== undefined) return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
     if (idFilter) countUrl += idFilter;
@@ -1277,9 +1285,9 @@ app.get('/api/marketplace/products', async (req, res) => {
         if (category) url = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
       }
     }
-    if (owner) {
-      url = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-      if (category) url = SB('products?owner_student_id=eq.' + encodeURIComponent(owner) + '&category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+    if (ownerFilter) {
+      url = SB('products?' + ownerFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
+      if (category) url = SB('products?category=eq.' + category + '&' + ownerFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
     }
     if (orderBy !== 'pinned.desc,created_at.desc') url = url.replace(/pinned\.desc,created_at\.desc/g, orderBy);
     if (idFilter) url += idFilter;
@@ -1413,15 +1421,21 @@ app.get('/api/marketplace/messages', async (req, res) => {
 // Get unique contacts for a user
 app.get('/api/marketplace/contacts', async (req, res) => {
   try {
-    const { student_id } = req.query;
+    const { student_id, school } = req.query;
     if (!student_id) return res.json([]);
     const r = await fetch(SB("messages?or=(from_student_id.eq."+encodeURIComponent(student_id)+",to_student_id.eq."+encodeURIComponent(student_id)+")&order=created_at.desc&select=id,product_id,from_student_id,from_name,to_student_id,to_name,content,read,created_at"), { headers: SB_HEADERS });
     let data = await r.json();
     let arr = Array.isArray(data) ? data : [];
     let seen = {}, contacts = [];
     arr.forEach(function(m) {
-      var otherId = String(m.from_student_id || '') === String(student_id) ? m.to_student_id : m.from_student_id;
-      var otherName = String(m.from_student_id || '') === String(student_id) ? m.to_name : m.from_name;
+      var fromId = String(m.from_student_id || '');
+      var toId = String(m.to_student_id || '');
+      var fromName = String(m.from_name || '');
+      var toName = String(m.to_name || '');
+      var isSystemMsg = fromId === 'system' || toId === 'system' || fromId.indexOf('sys_') === 0 || toId.indexOf('sys_') === 0 || fromName === '系统通知' || toName === '系统通知';
+      if (isSystemMsg) return;
+      var otherId = fromId === String(student_id) ? toId : fromId;
+      var otherName = fromId === String(student_id) ? toName : fromName;
       if (!otherId) return;
       if (!seen[otherId]) {
         seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
@@ -1432,7 +1446,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         seen[otherId].product_id = m.product_id;
       }
       if (String(m.to_student_id || '') === String(student_id) && !m.read) seen[otherId].unread++;
-      var nameCandidate = String(m.from_student_id || '') === String(student_id) ? m.to_name : m.from_name;
+      var nameCandidate = fromId === String(student_id) ? toName : fromName;
       if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
         seen[otherId].name = nameCandidate;
       }
@@ -1441,9 +1455,26 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
     try {
-      var ids = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).filter(Boolean).join(',');
-      if (ids) {
-        var nr = await fetch(SB('verifications?student_id=in.(' + ids + ')&select=student_id,nickname,name'), { headers: SB_HEADERS });
+      var schoolValues = school ? schoolValuesForFilter(school).map(function(v) { return normalizeSchoolCode(v); }).filter(Boolean) : [];
+      if (schoolValues.length) {
+        var ids = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).filter(Boolean).join(',');
+        if (ids) {
+          var vR = await fetch(SB('verifications?student_id=in.(' + ids + ')&select=student_id,school'), { headers: SB_HEADERS });
+          var vData = await vR.json();
+          var schoolMap = {};
+          (Array.isArray(vData) ? vData : []).forEach(function(v) { if (v.student_id) schoolMap[String(v.student_id)] = normalizeSchoolCode(v.school); });
+          contacts = contacts.filter(function(c) {
+            if (c.student_id === KEFU_ID) return true;
+            var contactSchool = schoolMap[c.student_id] || '';
+            return !contactSchool || schoolValues.indexOf(contactSchool) >= 0;
+          });
+        }
+      }
+    } catch(e) {}
+    try {
+      var ids2 = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).filter(Boolean).join(',');
+      if (ids2) {
+        var nr = await fetch(SB('verifications?student_id=in.(' + ids2 + ')&select=student_id,nickname,name'), { headers: SB_HEADERS });
         var nd = await nr.json();
         var nickMap = {};
         (Array.isArray(nd) ? nd : []).forEach(function(v) {
