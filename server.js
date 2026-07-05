@@ -1409,6 +1409,22 @@ app.get('/api/marketplace/contacts', async (req, res) => {
     contacts = Object.keys(seen).map(function(k) {
       return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
+    try {
+      var ids = contacts.map(function(c) { return encodeURIComponent(c.student_id); }).filter(Boolean).join(',');
+      if (ids) {
+        var nr = await fetch(SB('verifications?student_id=in.(' + ids + ')&select=student_id,nickname,name'), { headers: SB_HEADERS });
+        var nd = await nr.json();
+        var nickMap = {};
+        (Array.isArray(nd) ? nd : []).forEach(function(v) {
+          if (v.student_id) nickMap[String(v.student_id)] = v.nickname || v.name || '';
+        });
+        contacts = contacts.map(function(c) {
+          var nickname = nickMap[String(c.student_id)] || '';
+          if (!nickname) return c;
+          return Object.assign({}, c, { nickname: nickname, name: (!c.name || c.name === c.student_id || c.name === '匿名卖家') ? nickname : c.name });
+        });
+      }
+    } catch(e) {}
     contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
     contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
     res.json(contacts);
