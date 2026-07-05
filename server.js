@@ -1524,9 +1524,13 @@ app.post('/api/admin/login', express.json(), (req, res) => {
   adminTokens.set(token, { role, createdAt: Date.now(), school: school, allowBeta: allowBeta });
   setTimeout(() => adminTokens.delete(token), 86400000);
 
-  const schools = SCHOOL_ADMINS.map(function(s) { return { code: s.code, name: s.name }; });
-  if (allowBeta && !schools.find(function(s) { return s.code === 'beta'; })) {
-    schools.push({ code: 'beta', name: '内测服' });
+  let schools = [];
+  if (role === 'school_admin') {
+    schools = SCHOOL_ADMINS.filter(function(s) {
+      return s.code === school || (allowBeta && s.code === 'beta');
+    }).map(function(s) { return { code: s.code, name: s.name }; });
+  } else if (role === 'admin') {
+    schools = SCHOOL_ADMINS.map(function(s) { return { code: s.code, name: s.name }; });
   }
   if (role === 'admin' && !schools.find(function(s) { return s.code === 'beta'; })) {
     schools.push({ code: 'beta', name: '内测服' });
