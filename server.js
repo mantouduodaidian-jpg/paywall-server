@@ -1480,6 +1480,26 @@ app.delete('/api/expenses/:id', async (req, res) => {
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'x130977889X';
 const MANAGER_PASSWORD = process.env.MANAGER_PASSWORD || 'manager123';
+const DEFAULT_SCHOOL_ADMINS = [
+  { code: 'gxny', name: '广西农业职业技术大学', password: 'phy91' },
+  { code: 'hnkj', name: '海南科技职业大学', password: 'wqs91' },
+  { code: 'gdcj', name: '广东财经大学', password: 'whm91' },
+  { code: 'lztd', name: '柳州铁道职业技术学院', password: 'wly91' }
+];
+let SCHOOL_ADMINS = [];
+try {
+  SCHOOL_ADMINS = process.env.SCHOOL_ADMINS ? JSON.parse(process.env.SCHOOL_ADMINS) : DEFAULT_SCHOOL_ADMINS;
+} catch(e) {
+  SCHOOL_ADMINS = DEFAULT_SCHOOL_ADMINS;
+}
+const BETA_ADMIN_SCHOOLS = String(process.env.BETA_ADMIN_SCHOOLS || 'gxny,gdcj').split(',').map(function(s) { return normalizeSchoolCode(s.trim()); }).filter(Boolean);
+SCHOOL_ADMINS = SCHOOL_ADMINS.map(function(s) {
+  if (!s || typeof s !== 'object') return s;
+  var code = normalizeSchoolCode(s.code || s.school || s.name || '');
+  var allowBeta = !!s.allow_beta || BETA_ADMIN_SCHOOLS.indexOf(code) >= 0;
+  return Object.assign({}, s, { code: code, allow_beta: allowBeta });
+}).filter(function(s) { return s && s.code && s.password; });
+if (!SCHOOL_ADMINS.find(function(s) { return s.code === 'beta'; })) SCHOOL_ADMINS.push({ code: 'beta', name: '内测服', password: process.env.BETA_PASSWORD || 'beta', allow_beta: true });
 const adminTokens = new Map();
 
 app.post('/api/admin/login', express.json(), (req, res) => {
@@ -1515,12 +1535,14 @@ app.post('/api/admin/login', express.json(), (req, res) => {
   res.json({ ok: true, token, role, school, schoolName, allowBeta, schools });
 });
 
-function anyAdmin(req, res, next) {
+function getAdminSession(req) {
   const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ ok: false, msg: '未授权' });
-  }
-  const sess = adminTokens.get(auth.slice(7));
+  if (!auth || !auth.startsWith('Bearer ')) return null;
+  return adminTokens.get(auth.slice(7)) || null;
+}
+
+function anyAdmin(req, res, next) {
+  const sess = getAdminSession(req);
   if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
   req.adminRole = sess.role;
   req.adminSchool = sess.school || '';
@@ -1528,12 +1550,30 @@ function anyAdmin(req, res, next) {
   next();
 }
 
-function fullAdmin(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ ok: false, msg: '未授权' });
+function schoolScope(req, res, next) {
+  const sess = getAdminSession(req);
+  if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
+  req.adminRole = sess.role;
+  req.adminAllowBeta = !!sess.allowBeta;
+  var requestedSchool = normalizeSchoolCode((req.query && req.query.school) || (req.body && req.body.school) || '');
+  if (sess.role === 'admin') {
+    req.adminSchool = requestedSchool || '';
+    return next();
   }
-  const sess = adminTokens.get(auth.slice(7));
+  if (sess.role === 'school_admin') {
+    var ownSchool = normalizeSchoolCode(sess.school || '');
+    if (requestedSchool && requestedSchool !== ownSchool && !(sess.allowBeta && requestedSchool === 'beta')) {
+      return res.status(403).json({ ok: false, msg: '无权限访问该学校' });
+    }
+    req.adminSchool = requestedSchool || ownSchool;
+    return next();
+  }
+  req.adminSchool = requestedSchool || '';
+  next();
+}
+
+function fullAdmin(req, res, next) {
+  const sess = getAdminSession(req);
   if (!sess) return res.status(401).json({ ok: false, msg: 'token无效或已过期' });
   if (sess.role !== 'admin') return res.status(403).json({ ok: false, msg: '无权限' });
   req.adminRole = sess.role;
@@ -1541,6 +1581,52 @@ function fullAdmin(req, res, next) {
   req.adminAllowBeta = !!sess.allowBeta;
   next();
 }
+
+function applyAdminSchoolFilterToUrl(url, school) {
+  var values = schoolValuesForFilter(school);
+  if (!values.length) return url;
+  if (values.length === 1) return url + '&school=eq.' + encodeURIComponent(values[0]);
+  return url + '&or=(' + values.map(function(value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
+}
+
+// ====== Transactions API ======
+app.get('/api/marketplace/transactions', schoolScope, async (req, res) => {
+  try {
+    var url = SB('products?payment_status=in.(pending,paid,failed)&select=id,title,price,owner_name,owner_student_id,trade_buyer_name,trade_buyer_id,trade_status,payment_status,created_at,school&order=created_at.desc');
+    url = applyAdminSchoolFilterToUrl(url, req.adminSchool || req.query.school || '');
+    const r = await fetch(url, { headers: SB_HEADERS });
+    const data = await r.json();
+    res.json(Array.isArray(data) ? data : []);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async (req, res) => {
+  try {
+    const { id, status } = req.body;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    await fetch(SB('products?id=eq.' + encodeURIComponent(id)), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ payment_status: status || 'paid' })
+    });
+    addLog('transaction_pay', 'product', id, status || 'paid');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/marketplace/admin/transaction/:id', schoolScope, express.json(), async (req, res) => {
+  try {
+    const id = req.params.id;
+    const status = req.body.status || 'paid';
+    await fetch(SB('products?id=eq.' + encodeURIComponent(id)), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ payment_status: status })
+    });
+    addLog('transaction_pay', 'product', id, status);
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 const PORT = process.env.PORT || 3456;
 
