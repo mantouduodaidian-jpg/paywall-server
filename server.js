@@ -75,6 +75,15 @@ function schoolValuesForFilter(school) {
   return [code];
 }
 
+function getMonthKey(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  return y + '-' + m;
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
@@ -779,6 +788,28 @@ app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
     const { product_id } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
     await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '' }) });
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.patch('/api/marketplace/products/:id/owner-delist', express.json(), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { student_id } = req.body || {};
+    if (!id || !student_id) return res.status(400).json({ error: 'missing fields' });
+
+    const r = await fetch(SB('products?id=eq.'+id+'&select=id,owner_student_id,status,sold,trade_status,listed'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const product = Array.isArray(data) ? data[0] : null;
+    if (!product) return res.status(404).json({ error: '商品不存在' });
+    if (String(product.owner_student_id || '') !== String(student_id)) return res.status(403).json({ error: '无权下架该商品' });
+    if (product.sold || product.trade_status) return res.status(400).json({ error: '交易中或已售出的商品不可下架' });
+
+    await fetch(SB('products?id=eq.'+id), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ listed: false, reject_reason: 'owner_delisted' })
+    });
     res.json({ ok: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
