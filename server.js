@@ -1489,8 +1489,8 @@ app.get('/api/marketplace/contacts', async (req, res) => {
         });
       }
     } catch(e) {}
-    contacts = contacts.filter(function(c) { return c.student_id !== KEFU_ID; });
-    contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
+    var hasKefuContact = contacts.some(function(c) { return String(c.student_id || '').indexOf('kefu_') === 0; });
+    if (!hasKefuContact) contacts.unshift({ student_id: KEFU_ID, name: KEFU_NAME, unread: 0, last_message: '你好，有什么可以帮你的？', last_time: null, product_id: 0 });
     res.json(contacts);
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
