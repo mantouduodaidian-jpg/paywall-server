@@ -1437,7 +1437,7 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       var otherId = fromId === String(student_id) ? toId : fromId;
       var otherName = fromId === String(student_id) ? toName : fromName;
       if (!otherId) return;
-      var contactKey = otherId.indexOf('beta_') === 0 ? otherId.replace(/^beta_/, '') : otherId;
+      var contactKey = otherId.indexOf('kefu_') === 0 ? KEFU_ID : (otherId.indexOf('beta_') === 0 ? otherId.replace(/^beta_/, '') : otherId);
       if (!seen[contactKey]) {
         seen[contactKey] = { student_id: otherId, name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
       }
