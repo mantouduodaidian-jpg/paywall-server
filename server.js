@@ -1437,22 +1437,24 @@ app.get('/api/marketplace/contacts', async (req, res) => {
       var otherId = fromId === String(student_id) ? toId : fromId;
       var otherName = fromId === String(student_id) ? toName : fromName;
       if (!otherId) return;
-      if (!seen[otherId]) {
-        seen[otherId] = { name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
+      var contactKey = otherId.indexOf('beta_') === 0 ? otherId.replace(/^beta_/, '') : otherId;
+      if (!seen[contactKey]) {
+        seen[contactKey] = { student_id: otherId, name: otherName || otherId, product_id: m.product_id, unread: 0, last_time: m.created_at, last_message: m.content };
       }
-      if (new Date(m.created_at) > new Date(seen[otherId].last_time)) {
-        seen[otherId].last_time = m.created_at;
-        seen[otherId].last_message = m.content;
-        seen[otherId].product_id = m.product_id;
+      if (new Date(m.created_at) > new Date(seen[contactKey].last_time)) {
+        seen[contactKey].student_id = otherId;
+        seen[contactKey].last_time = m.created_at;
+        seen[contactKey].last_message = m.content;
+        seen[contactKey].product_id = m.product_id;
       }
-      if (String(m.to_student_id || '') === String(student_id) && !m.read) seen[otherId].unread++;
+      if (String(m.to_student_id || '') === String(student_id) && !m.read) seen[contactKey].unread++;
       var nameCandidate = fromId === String(student_id) ? toName : fromName;
-      if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[otherId].name && !nameCandidate.match(/^\d+$/)) {
-        seen[otherId].name = nameCandidate;
+      if (nameCandidate && nameCandidate.length > 0 && nameCandidate !== seen[contactKey].name && !nameCandidate.match(/^\d+$/)) {
+        seen[contactKey].name = nameCandidate;
       }
     });
     contacts = Object.keys(seen).map(function(k) {
-      return { student_id: k, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
+      return { student_id: seen[k].student_id, name: seen[k].name, unread: seen[k].unread, last_message: seen[k].last_message, last_time: seen[k].last_time, product_id: seen[k].product_id };
     });
     try {
       var schoolValues = school ? schoolValuesForFilter(school).map(function(v) { return normalizeSchoolCode(v); }).filter(Boolean) : [];
