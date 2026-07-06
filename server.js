@@ -84,6 +84,45 @@ function getMonthKey(dateStr) {
   return y + '-' + m;
 }
 
+function getTradeMonthKey(dateStr) {
+  return getMonthKey(dateStr);
+}
+
+function normalizeOrderStatus(status) {
+  var s = String(status || '').trim().toLowerCase();
+  if (!s) return 'pending';
+  if (s === 'done') return 'completed';
+  if (s === 'success') return 'paid';
+  if (s === 'finish') return 'completed';
+  if (s === 'complete') return 'completed';
+  if (s === 'paid') return 'paid';
+  if (s === 'processing') return 'processing';
+  if (s === 'cancel') return 'cancelled';
+  if (s === 'canceled') return 'cancelled';
+  if (s === 'cancelled') return 'cancelled';
+  if (s === 'failed') return 'failed';
+  if (s === 'refunded') return 'refunded';
+  return s;
+}
+
+function buildOrderNo() {
+  return 'T' + new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14) + randomBytes(4).toString('hex').toUpperCase();
+}
+
+function rowToOrder(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    order_no: row.order_no,
+    product_id: row.product_id,
+    password_id: row.password_id || null,
+    amount: row.amount,
+    status: normalizeOrderStatus(row.status),
+    paid_at: row.paid_at || null,
+    created_at: row.created_at || null,
+  };
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
@@ -767,28 +806,87 @@ app.post('/api/marketplace/login', express.json(), async (req, res) => {
 // ====== Trade API ======
 app.post('/api/marketplace/trade/request', express.json(), async (req, res) => {
   try {
-    const { product_id, buyer_id, buyer_name } = req.body;
+    const { product_id, buyer_id, buyer_name, amount } = req.body;
     if (!product_id || !buyer_id) return res.status(400).json({ error: 'missing fields' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: buyer_name||'' }) });
-    res.json({ ok: true });
+
+    const prodRes = await fetch(SB('products?id=eq.' + product_id + '&select=id,price,title,trade_status,sold,listed,owner_student_id,owner_name'), { headers: SB_HEADERS });
+    const prodData = await prodRes.json();
+    const product = Array.isArray(prodData) ? prodData[0] : null;
+    if (!product) return res.status(404).json({ error: '商品不存在' });
+    if (product.sold || product.trade_status) return res.status(400).json({ error: '商品已在交易中' });
+
+    const order_no = buildOrderNo();
+    const orderAmount = amount !== undefined && amount !== null && amount !== '' ? parseFloat(amount) : parseFloat(product.price || 0);
+    const buyerName = String(buyer_name || '').trim();
+
+    q('INSERT INTO orders (product_id, order_no, amount, status, created_at) VALUES (?, ?, ?, ?, ?)', [product_id, order_no, isNaN(orderAmount) ? 0 : orderAmount, 'pending', new Date().toISOString()]);
+    const created = qOne('SELECT * FROM orders WHERE order_no = ?', [order_no]);
+
+    await fetch(SB('products?id=eq.' + product_id), {
+      method: 'PATCH',
+      headers: SB_HEADERS2,
+      body: JSON.stringify({ trade_status: 'trading', trade_buyer_id: buyer_id, trade_buyer_name: buyerName })
+    });
+
+    addLog('trade_request', 'order', order_no, JSON.stringify({ product_id, buyer_id, buyer_name: buyerName, amount: orderAmount }));
+    notifyAdmin('trade_request', { order_no, product_id, buyer_id, buyer_name: buyerName, amount: orderAmount });
+    onlineUsers.forEach(function(ws) {
+      try { ws.send(JSON.stringify({ type: 'trade_request', data: { order_no, product_id, buyer_id, buyer_name: buyerName, amount: orderAmount } })); } catch(e) {}
+    });
+
+    res.json({ ok: true, order: rowToOrder(created) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/marketplace/trade/confirm', express.json(), async (req, res) => {
   try {
-    const { product_id } = req.body;
-    if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
-    res.json({ ok: true });
+    const { product_id, order_no } = req.body;
+    if (!product_id && !order_no) return res.status(400).json({ error: 'product_id or order_no required' });
+
+    let order = null;
+    if (order_no) {
+      order = qOne('SELECT * FROM orders WHERE order_no = ?', [order_no]);
+    } else {
+      order = qOne('SELECT * FROM orders WHERE product_id = ? ORDER BY id DESC LIMIT 1', [product_id]);
+    }
+
+    if (order) {
+      q('UPDATE orders SET status = ?, paid_at = ? WHERE id = ?', ['completed', new Date().toISOString(), order.id]);
+      addLog('trade_confirm', 'order', order.order_no, JSON.stringify({ product_id: order.product_id }));
+      notifyAdmin('trade_confirm', { order_no: order.order_no, product_id: order.product_id });
+    }
+
+    if (product_id) {
+      await fetch(SB('products?id=eq.' + product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: 'completed', sold: true, listed: false }) });
+    }
+
+    res.json({ ok: true, order: rowToOrder(order) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/marketplace/trade/cancel', express.json(), async (req, res) => {
   try {
-    const { product_id } = req.body;
-    if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    await fetch(SB('products?id=eq.'+product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '' }) });
-    res.json({ ok: true });
+    const { product_id, order_no } = req.body;
+    if (!product_id && !order_no) return res.status(400).json({ error: 'product_id or order_no required' });
+
+    let order = null;
+    if (order_no) {
+      order = qOne('SELECT * FROM orders WHERE order_no = ?', [order_no]);
+    } else {
+      order = qOne('SELECT * FROM orders WHERE product_id = ? ORDER BY id DESC LIMIT 1', [product_id]);
+    }
+
+    if (order && normalizeOrderStatus(order.status) !== 'completed') {
+      q('UPDATE orders SET status = ? WHERE id = ?', ['cancelled', order.id]);
+      addLog('trade_cancel', 'order', order.order_no, JSON.stringify({ product_id: order.product_id }));
+      notifyAdmin('trade_cancel', { order_no: order.order_no, product_id: order.product_id });
+    }
+
+    if (product_id) {
+      await fetch(SB('products?id=eq.' + product_id), { method: 'PATCH', headers: SB_HEADERS2, body: JSON.stringify({ trade_status: '', trade_buyer_id: '', trade_buyer_name: '' }) });
+    }
+
+    res.json({ ok: true, order: rowToOrder(order) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1688,13 +1786,12 @@ app.post('/api/marketplace/transactions/pay', schoolScope, express.json(), async
   try {
     const { id, status } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
-    await fetch(SB('products?id=eq.' + encodeURIComponent(id)), {
-      method: 'PATCH',
-      headers: SB_HEADERS2,
-      body: JSON.stringify({ payment_status: status || 'paid' })
-    });
-    addLog('transaction_pay', 'product', id, status || 'paid');
-    res.json({ ok: true });
+    const order = qOne('SELECT * FROM orders WHERE id = ?', [id]);
+    if (!order) return res.status(404).json({ error: 'order not found' });
+    const nextStatus = normalizeOrderStatus(status || 'paid');
+    q('UPDATE orders SET status = ?, paid_at = ? WHERE id = ?', [nextStatus, nextStatus === 'paid' || nextStatus === 'completed' ? new Date().toISOString() : order.paid_at || null, id]);
+    addLog('transaction_pay', 'order', id, nextStatus);
+    res.json({ ok: true, order: rowToOrder(qOne('SELECT * FROM orders WHERE id = ?', [id])) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1702,13 +1799,12 @@ app.patch('/api/marketplace/admin/transaction/:id', schoolScope, express.json(),
   try {
     const id = req.params.id;
     const status = req.body.status || 'paid';
-    await fetch(SB('products?id=eq.' + encodeURIComponent(id)), {
-      method: 'PATCH',
-      headers: SB_HEADERS2,
-      body: JSON.stringify({ payment_status: status })
-    });
-    addLog('transaction_pay', 'product', id, status);
-    res.json({ ok: true });
+    const order = qOne('SELECT * FROM orders WHERE id = ?', [id]);
+    if (!order) return res.status(404).json({ error: 'order not found' });
+    const nextStatus = normalizeOrderStatus(status);
+    q('UPDATE orders SET status = ?, paid_at = ? WHERE id = ?', [nextStatus, nextStatus === 'paid' || nextStatus === 'completed' ? (order.paid_at || new Date().toISOString()) : order.paid_at || null, id]);
+    addLog('transaction_pay', 'order', id, nextStatus);
+    res.json({ ok: true, order: rowToOrder(qOne('SELECT * FROM orders WHERE id = ?', [id])) });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
