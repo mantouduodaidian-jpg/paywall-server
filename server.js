@@ -401,7 +401,8 @@ function mapModel(provider, model) {
 
 const SUPABASE_URL = 'https://hcinnimptpsjocbkkbna.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjaW5uaW1wdHBzam9jYmtrYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxMjgsImV4cCI6MjA5NzY2ODEyOH0.AeEZcgDaVFqn4LmqK5dMqj7qOzYl0WUly398jG_dcpM';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SUPABASE_KEY = SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || SUPABASE_ANON_KEY;
 const SB = (path) => SUPABASE_URL + '/rest/v1/' + path;
 const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 const SB_HEADERS2 = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
