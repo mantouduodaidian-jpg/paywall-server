@@ -400,7 +400,8 @@ function mapModel(provider, model) {
 }
 
 const SUPABASE_URL = 'https://hcinnimptpsjocbkkbna.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjaW5uaW1wdHBzam9jYmtrYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxMjgsImV4cCI6MjA5NzY2ODEyOH0.AeEZcgDaVFqn4LmqK5dMqj7qOzYl0WUly398jG_dcpM';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjaW5uaW1wdHBzam9jYmtrYm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwOTIxMjgsImV4cCI6MjA5NzY2ODEyOH0.AeEZcgDaVFqn4LmqK5dMqj7qOzYl0WUly398jG_dcpM';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || SUPABASE_ANON_KEY;
 const SB = (path) => SUPABASE_URL + '/rest/v1/' + path;
 const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' };
 const SB_HEADERS2 = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
@@ -653,6 +654,16 @@ app.get('/api/marketplace/admin/stats', anyAdmin, async (req, res) => {
     const reports = await reportR.json();
     const announcements = await annR.json();
     const arr = p => Array.isArray(p) ? p : [];
+    const dbg = {
+      productStatus: prodR.status,
+      verificationStatus: verR.status,
+      reportStatus: reportR.status,
+      announcementStatus: annR.status,
+      productShape: Array.isArray(products) ? 'array' : typeof products,
+      verificationShape: Array.isArray(verifications) ? 'array' : typeof verifications,
+      reportShape: Array.isArray(reports) ? 'array' : typeof reports,
+      announcementShape: Array.isArray(announcements) ? 'array' : typeof announcements,
+    };
     res.json({
       total: arr(products).length,
       verified: arr(products).filter(p => p.verified).length,
@@ -665,6 +676,7 @@ app.get('/api/marketplace/admin/stats', anyAdmin, async (req, res) => {
       reports: arr(reports).length,
       reportsPending: arr(reports).filter(r => r.status === 'pending').length,
       announcements: arr(announcements).length,
+      _debug: dbg,
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -972,34 +984,15 @@ app.post('/api/marketplace/sellers/ban', express.json(), async (req, res) => {
 });
 
 // ====== Categories API ======
-const CATEGORY_FALLBACKS = [
-  { id: 1, name: '教材笔记', icon: '📚', sort_order: 1 },
-  { id: 2, name: '数码配件', icon: '🔌', sort_order: 2 },
-  { id: 3, name: '宿舍用品', icon: '🛏️', sort_order: 3 },
-  { id: 4, name: '生活百货', icon: '🛒', sort_order: 4 },
-  { id: 5, name: '其他', icon: '📦', sort_order: 5 },
-];
 app.get('/api/marketplace/categories', async (req, res) => {
   try {
     const r = await fetch(SB('categories?order=sort_order.asc&select=*'), { headers: SB_HEADERS });
     const data = await r.json();
-    const arr = Array.isArray(data) ? data.filter(Boolean) : [];
-    if (arr.length) return res.json(arr);
-  } catch(e) {}
-  try {
-    const r = await fetch(SB('products?select=category&limit=5000'), { headers: SB_HEADERS });
-    const data = await r.json();
-    const seen = new Set();
-    const fallback = [];
-    (Array.isArray(data) ? data : []).forEach(function(p) {
-      const name = String(p && p.category || '').trim();
-      if (!name || seen.has(name)) return;
-      seen.add(name);
-      fallback.push({ id: fallback.length + 1, name: name, icon: '📦', sort_order: fallback.length + 1 });
-    });
-    if (fallback.length) return res.json(fallback);
-  } catch(e) {}
-  res.json(CATEGORY_FALLBACKS);
+    if (Array.isArray(data)) return res.json(data.filter(Boolean));
+    return res.json([]);
+  } catch(e) {
+    return res.json([]);
+  }
 });
 
 app.post('/api/marketplace/categories', fullAdmin, express.json(), async (req, res) => {
@@ -1336,11 +1329,10 @@ app.get('/api/marketplace/products', async (req, res) => {
       }
       if (category) params.push('category=eq.' + encodeURIComponent(category));
       if (item_type && !admin) params.push('item_type=eq.' + encodeURIComponent(item_type));
-      var orFilters = [];
       if (school) {
         var schoolValues = schoolValuesForFilter(school);
         if (schoolValues.length) {
-          orFilters.push('(' + schoolValues.map(function (value) {
+          params.push('or=(' + schoolValues.map(function (value) {
             return 'school.eq.' + encodeURIComponent(value);
           }).join(',') + ')');
         }
@@ -1351,12 +1343,11 @@ app.get('/api/marketplace/products', async (req, res) => {
         var ownerValues = [ownerValue, ownerAlt].filter(function (v, idx, arr) { return v && arr.indexOf(v) === idx; });
         if (ownerValues.length === 1) params.push('owner_student_id=eq.' + encodeURIComponent(ownerValues[0]));
         else if (ownerValues.length > 1) {
-          orFilters.push('(' + ownerValues.map(function (v) {
+          params.push('or=(' + ownerValues.map(function (v) {
             return 'owner_student_id.eq.' + encodeURIComponent(v);
           }).join(',') + ')');
         }
       }
-      if (orFilters.length) params.push('or=(' + orFilters.join(',') + ')');
       var idList = String(ids || '').split(',').map(function (v) { return String(v || '').trim(); }).filter(Boolean);
       if (idList.length) idList = idList.filter(function (v, idx, arr) { return arr.indexOf(v) === idx; });
       if (!idList.length && ids !== undefined) return null;
@@ -1385,6 +1376,14 @@ app.get('/api/marketplace/products', async (req, res) => {
 
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
+    const _debug = {
+      countStatus: countR.status,
+      listStatus: r.status,
+      countShape: Array.isArray(countData) ? 'array' : typeof countData,
+      listShape: Array.isArray(data) ? 'array' : typeof data,
+      countPreview: Array.isArray(countData) ? countData.slice(0, 2) : countData,
+      listPreview: Array.isArray(data) ? data.slice(0, 2) : data,
+    };
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
     if (Array.isArray(data) && data.length) {
       try {
@@ -1402,7 +1401,7 @@ app.get('/api/marketplace/products', async (req, res) => {
         else p.images = ['/api/product-image/' + p.id + '/0'];
       } else delete p.images;
     });
-    res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset });
+    res.json({ data: Array.isArray(data) ? data : [], total, limit: pageSize, offset: pageOffset, _debug });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
