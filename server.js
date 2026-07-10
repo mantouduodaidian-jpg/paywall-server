@@ -972,11 +972,34 @@ app.post('/api/marketplace/sellers/ban', express.json(), async (req, res) => {
 });
 
 // ====== Categories API ======
+const CATEGORY_FALLBACKS = [
+  { id: 1, name: '教材笔记', icon: '📚', sort_order: 1 },
+  { id: 2, name: '数码配件', icon: '🔌', sort_order: 2 },
+  { id: 3, name: '宿舍用品', icon: '🛏️', sort_order: 3 },
+  { id: 4, name: '生活百货', icon: '🛒', sort_order: 4 },
+  { id: 5, name: '其他', icon: '📦', sort_order: 5 },
+];
 app.get('/api/marketplace/categories', async (req, res) => {
   try {
     const r = await fetch(SB('categories?order=sort_order.asc&select=*'), { headers: SB_HEADERS });
-    res.json(await r.json());
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    const data = await r.json();
+    const arr = Array.isArray(data) ? data.filter(Boolean) : [];
+    if (arr.length) return res.json(arr);
+  } catch(e) {}
+  try {
+    const r = await fetch(SB('products?select=category&limit=5000'), { headers: SB_HEADERS });
+    const data = await r.json();
+    const seen = new Set();
+    const fallback = [];
+    (Array.isArray(data) ? data : []).forEach(function(p) {
+      const name = String(p && p.category || '').trim();
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      fallback.push({ id: fallback.length + 1, name: name, icon: '📦', sort_order: fallback.length + 1 });
+    });
+    if (fallback.length) return res.json(fallback);
+  } catch(e) {}
+  res.json(CATEGORY_FALLBACKS);
 });
 
 app.post('/api/marketplace/categories', fullAdmin, express.json(), async (req, res) => {
@@ -1305,98 +1328,63 @@ app.get('/api/marketplace/products', async (req, res) => {
       orderBy = 'pinned.desc,' + pf + '.' + (sort === 'price_asc' ? 'asc' : 'desc');
     }
 
-    var schoolValues = schoolValuesForFilter(school);
-    var schoolFilter = '';
-    if (schoolValues.length) {
-      schoolFilter = '&or=(' + schoolValues.map(function(value) { return 'school.eq.' + encodeURIComponent(value); }).join(',') + ')';
-    }
-    function applySchool(url) { return schoolFilter ? url + schoolFilter : url; }
-
-    let idList = String(ids || '').split(',').map(function(v){ return String(v || '').trim(); }).filter(Boolean);
-    if (idList.length) idList = idList.filter(function(v, idx, arr){ return arr.indexOf(v) === idx; });
-    const hasIdsFilter = idList.length > 0;
-    var idFilter = '';
-    if (hasIdsFilter) idFilter = '&id=in.(' + idList.map(encodeURIComponent).join(',') + ')';
-
-    var ownerFilter = '';
-    if (owner) {
-      var ownerValue = String(owner || '').trim();
-      var ownerAlt = ownerValue.indexOf('beta_') === 0 ? ownerValue.replace(/^beta_/, '') : ('beta_' + ownerValue);
-      var ownerValues = [ownerValue, ownerAlt].filter(function(v, idx, arr){ return v && arr.indexOf(v) === idx; });
-      ownerFilter = 'or=(' + ownerValues.map(function(v){ return 'owner_student_id.eq.' + encodeURIComponent(v); }).join(',') + ')';
-    }
-
-    const allowBetaPending = school === 'beta' && !admin;
-    const baseLiveFilter = allowBetaPending ? 'listed=eq.true' : 'status=eq.approved&listed=eq.true';
-
-    let countUrl = SB('products?select=id');
-    if (!admin) countUrl = SB('products?' + baseLiveFilter + '&select=id');
-    if (category && admin) countUrl = SB('products?category=eq.' + category + '&select=id');
-    if (category && !admin) countUrl = SB('products?category=eq.' + category + '&' + baseLiveFilter + '&select=id');
-    if (schoolValues.length) {
-      countUrl = applySchool(SB('products?' + baseLiveFilter + '&select=id'));
-      if (category) countUrl = applySchool(SB('products?category=eq.' + category + '&' + baseLiveFilter + '&select=id'));
-      if (admin) {
-        countUrl = applySchool(SB('products?select=id'));
-        if (category) countUrl = applySchool(SB('products?category=eq.' + category + '&select=id'));
+    function buildQuery(selectExpr) {
+      var params = [];
+      if (!admin) {
+        if (school === 'beta') params.push('listed=eq.true');
+        else params.push('status=eq.approved', 'listed=eq.true');
       }
-    }
-    if (item_type && !admin) {
-      var itemBase = 'item_type=eq.' + item_type + '&' + baseLiveFilter;
-      if (schoolValues.length) {
-        countUrl = applySchool(SB('products?' + itemBase + '&select=id'));
-        if (category) countUrl = applySchool(SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&select=id'));
-      } else {
-        countUrl = SB('products?' + itemBase + '&select=id');
-        if (category) countUrl = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&select=id');
+      if (category) params.push('category=eq.' + encodeURIComponent(category));
+      if (item_type && !admin) params.push('item_type=eq.' + encodeURIComponent(item_type));
+      var orFilters = [];
+      if (school) {
+        var schoolValues = schoolValuesForFilter(school);
+        if (schoolValues.length) {
+          orFilters.push('(' + schoolValues.map(function (value) {
+            return 'school.eq.' + encodeURIComponent(value);
+          }).join(',') + ')');
+        }
       }
+      if (owner) {
+        var ownerValue = String(owner || '').trim();
+        var ownerAlt = ownerValue.indexOf('beta_') === 0 ? ownerValue.replace(/^beta_/, '') : ('beta_' + ownerValue);
+        var ownerValues = [ownerValue, ownerAlt].filter(function (v, idx, arr) { return v && arr.indexOf(v) === idx; });
+        if (ownerValues.length === 1) params.push('owner_student_id=eq.' + encodeURIComponent(ownerValues[0]));
+        else if (ownerValues.length > 1) {
+          orFilters.push('(' + ownerValues.map(function (v) {
+            return 'owner_student_id.eq.' + encodeURIComponent(v);
+          }).join(',') + ')');
+        }
+      }
+      if (orFilters.length) params.push('or=(' + orFilters.join(',') + ')');
+      var idList = String(ids || '').split(',').map(function (v) { return String(v || '').trim(); }).filter(Boolean);
+      if (idList.length) idList = idList.filter(function (v, idx, arr) { return arr.indexOf(v) === idx; });
+      if (!idList.length && ids !== undefined) return null;
+      if (idList.length) params.push('id=in.(' + idList.map(encodeURIComponent).join(',') + ')');
+      if (price_min) {
+        var minField = item_type === 'rent' ? 'rent_price' : 'price';
+        params.push(minField + '=gte.' + price_min);
+      }
+      if (price_max) {
+        var maxField = item_type === 'rent' ? 'rent_price' : 'price';
+        params.push(maxField + '=lte.' + price_max);
+      }
+      params.push('select=' + selectExpr);
+      return params.join('&');
     }
-    if (ownerFilter) {
-      countUrl = SB('products?' + ownerFilter + '&select=id');
-      if (category) countUrl = SB('products?category=eq.' + category + '&' + ownerFilter + '&select=id');
-    }
-    if (!hasIdsFilter && ids !== undefined) return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
-    if (idFilter) countUrl += idFilter;
 
-    const countR = await fetch(countUrl, { headers: SB_HEADERS });
+    var countQuery = buildQuery('id');
+    if (countQuery === null) return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
+    const countR = await fetch(SB('products?' + countQuery), { headers: SB_HEADERS });
     let countData = await countR.json();
     let total = Array.isArray(countData) ? countData.length : 0;
 
-    let url = SB('products?order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-    if (!admin) url = SB('products?' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-    if (category && admin) url = SB('products?category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-    if (category && !admin) url = SB('products?category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-    if (schoolValues.length) {
-      url = applySchool(SB('products?' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-      if (category) url = applySchool(SB('products?category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-      if (admin) {
-        url = applySchool(SB('products?order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-        if (category) url = applySchool(SB('products?category=eq.' + category + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-      }
-    }
-    if (item_type && !admin) {
-      if (schoolValues.length) {
-        url = applySchool(SB('products?item_type=eq.' + item_type + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-        if (category) url = applySchool(SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset));
-      } else {
-        url = SB('products?item_type=eq.' + item_type + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-        if (category) url = SB('products?item_type=eq.' + item_type + '&category=eq.' + category + '&' + baseLiveFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-      }
-    }
-    if (ownerFilter) {
-      url = SB('products?' + ownerFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-      if (category) url = SB('products?category=eq.' + category + '&' + ownerFilter + '&order=pinned.desc,created_at.desc&select=*&limit=' + pageSize + '&offset=' + pageOffset);
-    }
-    if (orderBy !== 'pinned.desc,created_at.desc') url = url.replace(/pinned\.desc,created_at\.desc/g, orderBy);
-    if (idFilter) url += idFilter;
-    var priceField = item_type === 'rent' ? 'rent_price' : 'price';
-    if (price_min) { url += '&' + priceField + '=gte.' + price_min; countUrl += '&' + priceField + '=gte.' + price_min; }
-    if (price_max) { url += '&' + priceField + '=lte.' + price_max; countUrl += '&' + priceField + '=lte.' + price_max; }
+    var listQuery = buildQuery('*');
+    if (listQuery === null) return res.json({ data: [], total: 0, limit: pageSize, offset: pageOffset });
+    var url = SB('products?' + listQuery + '&order=' + orderBy + '&limit=' + pageSize + '&offset=' + pageOffset);
 
     const r = await fetch(url, { headers: SB_HEADERS });
     let data = await r.json();
-    if (price_min) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v >= parseFloat(price_min); });
-    if (price_max) data = (Array.isArray(data) ? data : []).filter(function(p){ var v = (item_type === 'rent' ? parseFloat(p.rent_price) : parseFloat(p.price)); return !isNaN(v) && v <= parseFloat(price_max); });
     if (search) data = (Array.isArray(data) ? data : []).filter(p => p.title?.toLowerCase().includes(search.toLowerCase()));
     if (Array.isArray(data) && data.length) {
       try {

@@ -770,7 +770,11 @@ function toast(msg, dur) {
 function apiFetch(url, opts) {
   opts = opts || {};
   opts.headers = opts.headers || {};
-  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  var liveToken = localStorage.getItem('marketAdminToken') || token || '';
+  if (liveToken) {
+    token = liveToken;
+    opts.headers['Authorization'] = 'Bearer ' + liveToken;
+  }
   return fetch(url, opts).then(function(r) {
     if (r.status === 401) { showLoginGate(); throw new Error('未授权'); }
     return r;
@@ -858,10 +862,17 @@ function login() {
         token = d.token; localStorage.setItem('marketAdminToken', d.token);
         if (d.role) { role = d.role; localStorage.setItem('marketAdminRole', d.role); }
         if (typeof d.allowBeta !== 'undefined') localStorage.setItem('adminAllowBeta', d.allowBeta ? '1' : '0');
-        if (d.school) { localStorage.setItem('adminSchool', d.school); localStorage.setItem('adminSchoolName', d.schoolName || ''); }
+        if (d.role === 'admin') {
+          localStorage.removeItem('adminSchool');
+          localStorage.removeItem('adminSchoolName');
+          document.getElementById('headerSchool').textContent = '';
+        } else if (d.school) {
+          localStorage.setItem('adminSchool', d.school); localStorage.setItem('adminSchoolName', d.schoolName || '');
+        }
         if (d.role) { localStorage.setItem('adminDebugRole', d.role); }
         if (d.school) { localStorage.setItem('adminDebugBoundSchool', d.school); }
         var sn = d.schoolName || '';
+        if (d.role === 'admin') sn = '';
         document.getElementById('headerSchool').textContent = sn ? '- ' + sn : '';
         SCHOOL_LIST = d.schools || [];
         if (d.role === 'school_admin' && d.allowBeta && !SCHOOL_LIST.find(function(s) { return s.code === 'beta'; })) {
@@ -1018,6 +1029,7 @@ async function loadOverview() {
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/admin/stats'));
     const d = await r.json();
+    window.__adminStatsDebug = d;
     const safe = d || {};
     document.getElementById('statsContainer').innerHTML =
       '<div class="stat-card"><div class="num green">'+(safe.total||0)+'</div><div class="label">总商品</div></div>'+
@@ -1029,7 +1041,8 @@ async function loadOverview() {
       '<div class="stat-card"><div class="num green">'+(safe.verApproved||0)+'</div><div class="label">已通过</div></div>'+
       '<div class="stat-card"><div class="num red">'+((safe.verTotal||0)-(safe.verPending||0)-(safe.verApproved||0))+'</div><div class="label">已拒绝</div></div>'+
       '<div class="stat-card"><div class="num red">'+(safe.reportsPending||0)+'</div><div class="label">待处理举报</div></div>'+
-      '<div class="stat-card"><div class="num green">'+(safe.announcements||0)+'</div><div class="label">公告</div></div>';
+      '<div class="stat-card"><div class="num green">'+(safe.announcements||0)+'</div><div class="label">公告</div></div>'+
+      '<div class="stat-card" style="grid-column:1 / -1;text-align:left"><div class="label" style="white-space:pre-wrap;word-break:break-all;color:#666">stats debug: '+esc(JSON.stringify(d))+'</div></div>';
     // Badges
     const pb = document.getElementById('prodBadge');
     var sellPending = (safe.pending||0) - (safe.rentPending||0);
@@ -1041,16 +1054,30 @@ async function loadOverview() {
     if ((safe.reportsPending||0) > 0) { rb.textContent = safe.reportsPending; rb.style.display = 'inline'; } else rb.style.display = 'none';
     const vb = document.getElementById('verBadge');
     if ((safe.verPending||0) > 0) { vb.textContent = safe.verPending; vb.style.display = 'inline'; } else vb.style.display = 'none';
-  } catch(e) {}
+  } catch(e) {
+    const box = document.getElementById('statsContainer');
+    if (box) box.innerHTML = '<div class="stat-card"><div class="num red">ERR</div><div class="label">'+esc(String(e && e.message ? e.message : e))+'</div></div>';
+  }
   // Charts
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=60'));
     const d = await r.json();
+    window.__adminProductsDebug = d;
     const all = Array.isArray(d) ? d : (d.data || []);
     renderBarChart(all);
     renderCatChart(all);
     renderStatusChart(all);
-  } catch(e) {}
+    var sc2 = document.getElementById('statsContainer');
+    if (sc2) sc2.innerHTML += '<div class="stat-card" style="grid-column:1 / -1;text-align:left"><div class="label" style="white-space:pre-wrap;word-break:break-all;color:#666">products debug: total=' + esc(String(d && d.total !== undefined ? d.total : 'n/a')) + ' size=' + esc(String(all.length)) + '</div></div>';
+  } catch(e) {
+    var _bar = document.getElementById('chartBar');
+    var _cat = document.getElementById('chartCat');
+    var _status = document.getElementById('chartStatus');
+    var _msg = '<div style="padding:20px;text-align:center;color:#e74c3c">'+esc(String(e && e.message ? e.message : e))+'</div>';
+    if (_bar) _bar.innerHTML = _msg;
+    if (_cat) _cat.innerHTML = _msg;
+    if (_status) _status.innerHTML = _msg;
+  }
   // Transactions
   try {
     const txR = await apiFetch(getSchoolParam('/api/marketplace/transactions'));
@@ -1066,7 +1093,10 @@ async function loadOverview() {
     var sc = document.getElementById('statsContainer');
     if (sc) sc.innerHTML += '<div class="stat-card"><div class="num blue">¥'+pendingTotal.toFixed(2)+'</div><div class="label">待转账金额 <span style="color:#ccc">('+pendingCount+'笔)</span></div></div>';
     if (sc) sc.innerHTML += '<div class="stat-card"><div class="num green">¥'+paidTotal.toFixed(2)+'</div><div class="label">已交易金额 <span style="color:#ccc">('+paidCount+'笔)</span></div></div>';
-  } catch(e) {}
+  } catch(e) {
+    var _txBox = document.getElementById('txChart');
+    if (_txBox) _txBox.innerHTML = '<div class="empty">'+esc(String(e && e.message ? e.message : e))+'</div>';
+  }
   // Recent
   try {
     const r = await apiFetch(getSchoolParam('/api/marketplace/products?admin=1&limit=5'));
